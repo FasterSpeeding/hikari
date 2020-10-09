@@ -76,38 +76,53 @@ class ShardStateEvent(ShardEvent, abc.ABC):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class ShardConnectedEvent(ShardStateEvent):
     """Event fired when a shard connects."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<docstring inherited from ShardEvent>>.
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class ShardDisconnectedEvent(ShardStateEvent):
     """Event fired when a shard disconnects."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<docstring inherited from ShardEvent>>.
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class ShardReadyEvent(ShardStateEvent):
     """Event fired when a shard declares it is ready."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<docstring inherited from ShardEvent>>.
 
     actual_gateway_version: int = attr.ib(repr=True)
@@ -151,26 +166,36 @@ class ShardReadyEvent(ShardStateEvent):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class ShardResumedEvent(ShardStateEvent):
     """Event fired when a shard resumes an existing session."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<docstring inherited from ShardEvent>>.
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class MemberChunkEvent(ShardEvent, typing.Sequence["guilds.Member"]):
     """Event fired when a member chunk payload is received on a gateway shard."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<docstring inherited from ShardEvent>>.
 
     guild_id: snowflakes.Snowflake = attr.ib(repr=True)

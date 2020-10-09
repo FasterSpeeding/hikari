@@ -41,6 +41,7 @@ if typing.TYPE_CHECKING:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class StartingEvent(base_events.Event):
     """Event that is triggered before the application connects to discord.
@@ -65,11 +66,14 @@ class StartingEvent(base_events.Event):
     `StoppedEvent`
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class StartedEvent(base_events.Event):
     """Event that is triggered after the application has started.
@@ -88,11 +92,14 @@ class StartedEvent(base_events.Event):
     `StoppedEvent`
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class StoppingEvent(base_events.Event):
     """Event that is triggered as soon as the application is requested to close.
@@ -119,11 +126,14 @@ class StoppingEvent(base_events.Event):
     `StoppedEvent`
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class StoppedEvent(base_events.Event):
     """Event that is triggered once the application has disconnected.
@@ -149,5 +159,7 @@ class StoppedEvent(base_events.Event):
     `StoppingEvent`
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.

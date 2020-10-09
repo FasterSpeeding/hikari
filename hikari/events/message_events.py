@@ -201,6 +201,7 @@ class MessageCreateEvent(MessageEvent, abc.ABC):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 @base_events.requires_intents(intents.Intents.GUILD_MESSAGES)
 class GuildMessageCreateEvent(MessageCreateEvent):
@@ -209,13 +210,17 @@ class GuildMessageCreateEvent(MessageCreateEvent):
     This contains the full message in the internal `message` attribute.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>
 
     message: messages.Message = attr.ib()
     # <<inherited docstring from MessageCreateEvent>>
 
-    shard: shard_.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: shard_.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>
 
     @property
@@ -279,6 +284,7 @@ class GuildMessageCreateEvent(MessageCreateEvent):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 @base_events.requires_intents(intents.Intents.DM_MESSAGES)
 class DMMessageCreateEvent(MessageCreateEvent):
@@ -287,13 +293,17 @@ class DMMessageCreateEvent(MessageCreateEvent):
     This contains the full message in the internal `message` attribute.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>
 
     message: messages.Message = attr.ib()
     # <<inherited docstring from MessageCreateEvent>>
 
-    shard: shard_.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: shard_.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>
 
 
@@ -442,6 +452,7 @@ class MessageUpdateEvent(MessageEvent, abc.ABC):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 @base_events.requires_intents(intents.Intents.GUILD_MESSAGES)
 class GuildMessageUpdateEvent(MessageUpdateEvent):
@@ -452,13 +463,17 @@ class GuildMessageUpdateEvent(MessageUpdateEvent):
         due to Discord limitations.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>
 
     message: messages.PartialMessage = attr.ib()
     # <<inherited docstring from MessageUpdateEvent>>
 
-    shard: shard_.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: shard_.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>
 
     @property
@@ -538,6 +553,7 @@ class GuildMessageUpdateEvent(MessageUpdateEvent):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 @base_events.requires_intents(intents.Intents.DM_MESSAGES)
 class DMMessageUpdateEvent(MessageUpdateEvent):
@@ -548,13 +564,17 @@ class DMMessageUpdateEvent(MessageUpdateEvent):
         due to Discord limitations.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>
 
     message: messages.PartialMessage = attr.ib()
     # <<inherited docstring from MessageUpdateEvent>>
 
-    shard: shard_.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: shard_.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>
 
 
@@ -634,6 +654,7 @@ class MessageDeleteEvent(MessageEvent, abc.ABC):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 @base_events.requires_intents(intents.Intents.GUILD_MESSAGES)
 class GuildMessageDeleteEvent(MessageDeleteEvent):
@@ -648,7 +669,9 @@ class GuildMessageDeleteEvent(MessageDeleteEvent):
     checking the `is_bulk` attribute.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>
 
     channel_id: snowflakes.Snowflake = attr.ib()
@@ -669,7 +692,9 @@ class GuildMessageDeleteEvent(MessageDeleteEvent):
     message_ids: typing.AbstractSet[snowflakes.Snowflake] = attr.ib()
     # <<inherited docstring from MessageDeleteEvent>>
 
-    shard: shard_.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: shard_.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>
 
     @property
@@ -690,6 +715,7 @@ class GuildMessageDeleteEvent(MessageDeleteEvent):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 @base_events.requires_intents(intents.Intents.DM_MESSAGES)
 class DMMessageDeleteEvent(MessageDeleteEvent):
@@ -706,7 +732,9 @@ class DMMessageDeleteEvent(MessageDeleteEvent):
     `is_bulk` attribute.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>
 
     channel_id: snowflakes.Snowflake = attr.ib()
@@ -718,5 +746,7 @@ class DMMessageDeleteEvent(MessageDeleteEvent):
     message_ids: typing.AbstractSet[snowflakes.Snowflake] = attr.ib()
     # <<inherited docstring from MessageDeleteEvent>>
 
-    shard: shard_.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: shard_.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>

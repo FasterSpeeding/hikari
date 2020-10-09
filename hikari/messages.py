@@ -146,6 +146,7 @@ class MessageActivityType(int, enums.Enum):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Attachment(snowflakes.Unique, files.WebResource):
     """Represents a file attached to a message.
@@ -180,6 +181,7 @@ class Attachment(snowflakes.Unique, files.WebResource):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Reaction:
     """Represents a reaction in a message."""
@@ -198,6 +200,7 @@ class Reaction:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class MessageActivity:
     """Represents the activity of a rich presence-enabled message."""
@@ -210,6 +213,7 @@ class MessageActivity:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class MessageCrosspost:
     """Represents information about a cross-posted message.
@@ -218,7 +222,12 @@ class MessageCrosspost:
     "published" to another.
     """
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        repr=False,
+        eq=False,
+        hash=False,
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None},
+    )
     """The client application that models may use for procedures."""
 
     # TODO: get clarification on this! If it cannot happen, this should subclass PartialMessage too.
@@ -245,6 +254,7 @@ class MessageCrosspost:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(slots=True, kw_only=True, init=True, repr=True, eq=False, weakref_slot=False)
 class PartialMessage(snowflakes.Unique):
     """A message representation containing partially populated information.
@@ -260,7 +270,12 @@ class PartialMessage(snowflakes.Unique):
         nullability.
     """
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        repr=False,
+        eq=False,
+        hash=False,
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None},
+    )
     """The client application that models may use for procedures."""
 
     id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
@@ -814,6 +829,7 @@ class PartialMessage(snowflakes.Unique):
             await self.app.rest.delete_all_reactions_for_emoji(channel=self.channel_id, message=self.id, emoji=emoji)
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Message(PartialMessage):
     """Represents a message with all known details."""

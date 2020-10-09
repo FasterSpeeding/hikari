@@ -132,14 +132,19 @@ class TypingEvent(shard_events.ShardEvent, abc.ABC):
 
 @base_events.requires_intents(intents.Intents.GUILD_MESSAGE_TYPING)
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class GuildTypingEvent(TypingEvent):
     """Event fired when a user starts typing in a guild channel."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>.
 
     channel_id: snowflakes.Snowflake = attr.ib()
@@ -249,14 +254,19 @@ class GuildTypingEvent(TypingEvent):
 
 @base_events.requires_intents(intents.Intents.DM_MESSAGES)
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class DMTypingEvent(TypingEvent):
     """Event fired when a user starts typing in a guild channel."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>.
 
     channel_id: snowflakes.Snowflake = attr.ib()

@@ -55,6 +55,7 @@ AsyncReaderT = typing.TypeVar("AsyncReaderT", bound=files.AsyncReader)
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, init=True, slots=True, kw_only=True, weakref_slot=False)
 class EmbedResource(files.Resource[AsyncReaderT]):
     """A base type for any resource provided in an embed.
@@ -96,6 +97,7 @@ class EmbedResource(files.Resource[AsyncReaderT]):
         return self.resource.stream(executor=executor, head_only=head_only)
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, init=True, slots=True, kw_only=True, weakref_slot=False)
 class EmbedResourceWithProxy(EmbedResource[AsyncReaderT]):
     """Resource with a corresponding proxied element."""
@@ -111,6 +113,7 @@ class EmbedResourceWithProxy(EmbedResource[AsyncReaderT]):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class EmbedFooter:
     """Represents an embed footer."""
@@ -124,6 +127,7 @@ class EmbedFooter:
     """The URL of the footer icon, or `builtins.None` if not present."""
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class EmbedImage(EmbedResourceWithProxy[AsyncReaderT]):
     """Represents an embed image."""
@@ -147,6 +151,7 @@ class EmbedImage(EmbedResourceWithProxy[AsyncReaderT]):
     """
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class EmbedVideo(EmbedResource[AsyncReaderT]):
     """Represents an embed video.
@@ -168,6 +173,7 @@ class EmbedVideo(EmbedResource[AsyncReaderT]):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=False, kw_only=True, slots=True, weakref_slot=False)
 class EmbedProvider:
     """Represents an embed provider.
@@ -190,6 +196,7 @@ class EmbedProvider:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class EmbedAuthor:
     """Represents an author of an embed."""
@@ -208,6 +215,7 @@ class EmbedAuthor:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class EmbedField:
     """Represents a field in a embed."""

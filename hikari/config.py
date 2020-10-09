@@ -57,6 +57,7 @@ def _ssl_factory(value: typing.Union[bool, ssl_.SSLContext]) -> ssl_.SSLContext:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(slots=True, kw_only=True, repr=True, weakref_slot=False)
 class BasicAuthHeader:
     """An object that can be set as a producer for a basic auth header."""
@@ -110,6 +111,7 @@ class BasicAuthHeader:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(slots=True, kw_only=True, weakref_slot=False)
 class ProxySettings:
     """Settings for configuring an HTTP-based proxy."""
@@ -197,6 +199,7 @@ class ProxySettings:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(slots=True, kw_only=True, weakref_slot=False)
 class HTTPTimeoutSettings:
     """Settings to control HTTP request timeouts."""
@@ -257,6 +260,7 @@ class HTTPTimeoutSettings:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(slots=True, kw_only=True, weakref_slot=False)
 class HTTPSettings:
     """Settings to control HTTP clients."""

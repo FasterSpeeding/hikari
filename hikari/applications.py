@@ -192,6 +192,7 @@ class ConnectionVisibility(int, enums.Enum):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class OwnConnection:
     """Represents a user's connection with a third party account.
@@ -231,6 +232,7 @@ class OwnConnection:
     """The visibility of the connection."""
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class OwnGuild(guilds.PartialGuild):
     """Represents a user bound partial guild object."""
@@ -254,11 +256,14 @@ class TeamMembershipState(int, enums.Enum):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=False, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class TeamMember:
     """Represents a member of a Team."""
 
-    app: traits.RESTAware = attr.ib(repr=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        repr=False, metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     """The client application that models may use for procedures."""
 
     membership_state: typing.Union[TeamMembershipState, int] = attr.ib(repr=False)
@@ -288,11 +293,17 @@ class TeamMember:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Team(snowflakes.Unique):
     """Represents a development team, along with all its members."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        repr=False,
+        eq=False,
+        hash=False,
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None},
+    )
     """The client application that models may use for procedures."""
 
     id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
@@ -364,11 +375,17 @@ class Team(snowflakes.Unique):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Application(snowflakes.Unique):
     """Represents the information of an Oauth2 Application."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        repr=False,
+        eq=False,
+        hash=False,
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None},
+    )
     """The client application that models may use for procedures."""
 
     id: snowflakes.Snowflake = attr.ib(

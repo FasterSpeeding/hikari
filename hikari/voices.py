@@ -38,11 +38,17 @@ if typing.TYPE_CHECKING:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class VoiceState:
     """Represents a user's voice connection status."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        repr=False,
+        eq=False,
+        hash=False,
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None},
+    )
     """The client application that models may use for procedures."""
 
     channel_id: typing.Optional[snowflakes.Snowflake] = attr.ib(eq=False, hash=False, repr=True)
@@ -86,6 +92,7 @@ class VoiceState:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class VoiceRegion:
     """Represents a voice region server."""

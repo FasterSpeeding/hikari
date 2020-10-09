@@ -66,6 +66,7 @@ if typing.TYPE_CHECKING:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, init=False, weakref_slot=False)
 class HikariError(RuntimeError):
     """Base for an error raised by this API.
@@ -78,6 +79,7 @@ class HikariError(RuntimeError):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, init=False, weakref_slot=False)
 class HikariWarning(RuntimeWarning):
     """Base for a warning raised by this API.
@@ -89,6 +91,7 @@ class HikariWarning(RuntimeWarning):
     """
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class HikariInterrupt(KeyboardInterrupt, HikariError):
     """Exception raised when a kill signal is handled internally."""
@@ -100,6 +103,7 @@ class HikariInterrupt(KeyboardInterrupt, HikariError):
     """The signal name that was raised."""
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class GatewayError(HikariError):
     """A base exception type for anything that can be thrown by the Gateway."""
@@ -146,11 +150,13 @@ class ShardCloseCode(int, enums.Enum):
         return bool((self.value // 1000) == 1)
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class GatewayConnectionError(GatewayError):
     """An exception thrown if a connection issue occurs."""
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class GatewayServerClosedConnectionError(GatewayError):
     """An exception raised when the server closes the connection."""
@@ -186,6 +192,7 @@ class GatewayServerClosedConnectionError(GatewayError):
         return f"Server closed connection with code {self.code} ({self.reason})"
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class HTTPError(HikariError):
     """Base exception raised if an HTTP error occurs while making a request."""
@@ -194,6 +201,7 @@ class HTTPError(HikariError):
     """The error message."""
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class HTTPClientClosedError(HTTPError):
     """Exception raised if an `aiohttp.ClientSession` was closed.
@@ -325,6 +333,7 @@ class RESTErrorCode(int, enums.Enum):
     """API resource is currently overloaded. Try again a little later."""
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class HTTPResponseError(HTTPError):
     """Base exception for an erroneous HTTP response."""
@@ -367,6 +376,7 @@ class HTTPResponseError(HTTPError):
         return f"{name_value}: '{body[:200]}{'...' if chomped else ''}' for {self.url}"
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class ClientHTTPResponseError(HTTPResponseError):
     """Base exception for an erroneous HTTP response that is a client error.
@@ -376,6 +386,7 @@ class ClientHTTPResponseError(HTTPResponseError):
     """
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class BadRequestError(ClientHTTPResponseError):
     """Raised when you send an invalid request somehow."""
@@ -384,6 +395,7 @@ class BadRequestError(ClientHTTPResponseError):
     """The HTTP status code for the response."""
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class UnauthorizedError(ClientHTTPResponseError):
     """Raised when you are not authorized to access a specific resource."""
@@ -392,6 +404,7 @@ class UnauthorizedError(ClientHTTPResponseError):
     """The HTTP status code for the response."""
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class ForbiddenError(ClientHTTPResponseError):
     """Raised when you are not allowed to access a specific resource.
@@ -405,6 +418,7 @@ class ForbiddenError(ClientHTTPResponseError):
     """The HTTP status code for the response."""
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class NotFoundError(ClientHTTPResponseError):
     """Raised when something is not found."""
@@ -413,6 +427,7 @@ class NotFoundError(ClientHTTPResponseError):
     """The HTTP status code for the response."""
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, kw_only=True, slots=True, repr=False, weakref_slot=False)
 class RateLimitedError(ClientHTTPResponseError):
     """Raised when a non-global rate limit that cannot be handled occurs.
@@ -447,6 +462,7 @@ class RateLimitedError(ClientHTTPResponseError):
         return f"You are being rate-limited for {self.retry_after:,} seconds on route {self.route}. Please slow down!"
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, kw_only=True, slots=True, repr=False, weakref_slot=False)
 class RateLimitTooLongError(HTTPError):
     """Internal error raised if the wait for a rate limit is too long.
@@ -495,6 +511,7 @@ class RateLimitTooLongError(HTTPError):
         return 0
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class InternalServerError(HTTPResponseError):
     """Base exception for an erroneous HTTP response that is a server error.
@@ -504,6 +521,7 @@ class InternalServerError(HTTPResponseError):
     """
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, init=False, weakref_slot=False)
 class MissingIntentWarning(HikariWarning):
     """Warning raised when subscribing to an event that cannot be fired.
@@ -512,6 +530,7 @@ class MissingIntentWarning(HikariWarning):
     """
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class BulkDeleteError(HikariError):
     """Exception raised when a bulk delete fails midway through a call.
@@ -540,11 +559,13 @@ class BulkDeleteError(HikariError):
         return 100 * deleted / total
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, init=False, weakref_slot=False)
 class VoiceError(HikariError):
     """Error raised when a problem occurs with the voice subsystem."""
 
 
+@attr_extensions.with_pickle
 @attr.s(auto_exc=True, slots=True, repr=False, weakref_slot=False)
 class MissingIntentError(HikariError, ValueError):
     """Error raised when you try to perform an action without an intent.

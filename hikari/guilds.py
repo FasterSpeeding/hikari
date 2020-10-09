@@ -238,11 +238,17 @@ class GuildVerificationLevel(int, enums.Enum):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class GuildWidget:
     """Represents a guild widget."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        repr=False,
+        eq=False,
+        hash=False,
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None},
+    )
     """The client application that models may use for procedures."""
 
     channel_id: typing.Optional[snowflakes.Snowflake] = attr.ib(repr=True)
@@ -253,6 +259,7 @@ class GuildWidget:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=False, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Member(users.User):
     """Used to represent a guild bound member."""
@@ -454,11 +461,17 @@ class Member(users.User):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class PartialRole(snowflakes.Unique):
     """Represents a partial guild bound Role object."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        repr=False,
+        eq=False,
+        hash=False,
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None},
+    )
     """The client application that models may use for procedures."""
 
     id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
@@ -471,6 +484,7 @@ class PartialRole(snowflakes.Unique):
         return self.name
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Role(PartialRole):
     """Represents a guild bound Role object."""
@@ -527,6 +541,7 @@ class IntegrationExpireBehaviour(int, enums.Enum):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class IntegrationAccount:
     """An account that's linked to an integration."""
@@ -542,6 +557,7 @@ class IntegrationAccount:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class PartialIntegration(snowflakes.Unique):
     """A partial representation of an integration, found in audit logs."""
@@ -562,6 +578,7 @@ class PartialIntegration(snowflakes.Unique):
         return self.name
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Integration(PartialIntegration):
     """Represents a guild integration object."""
@@ -598,6 +615,7 @@ class Integration(PartialIntegration):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class GuildMemberBan:
     """Used to represent guild bans."""
@@ -610,11 +628,17 @@ class GuildMemberBan:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class PartialGuild(snowflakes.Unique):
     """Base object for any partial guild objects."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        repr=False,
+        eq=False,
+        hash=False,
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None},
+    )
     """The client application that models may use for procedures."""
 
     features: typing.Sequence[GuildFeatureish] = attr.ib(eq=False, hash=False, repr=False)
@@ -696,6 +720,7 @@ class PartialGuild(snowflakes.Unique):
         )
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class GuildPreview(PartialGuild):
     """A preview of a guild with the `GuildFeature.PUBLIC` feature."""
@@ -1081,6 +1106,7 @@ class Guild(PartialGuild, abc.ABC):
         """Get a role from the cache by it's ID."""
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class RESTGuild(Guild):
     """Guild specialization that is sent via the REST API only."""
@@ -1126,6 +1152,7 @@ class RESTGuild(Guild):
         return self._roles.get(snowflakes.Snowflake(role))
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class GatewayGuild(Guild):
     """Guild specialization that is sent via the gateway only."""

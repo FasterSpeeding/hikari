@@ -220,14 +220,19 @@ class ChannelCreateEvent(ChannelEvent, abc.ABC):
 
 @base_events.requires_intents(intents.Intents.GUILDS)
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class GuildChannelCreateEvent(GuildChannelEvent, ChannelCreateEvent):
     """Event fired when a guild channel is created."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>.
 
     channel: channels.GuildChannel = attr.ib(repr=True)
@@ -269,14 +274,19 @@ class ChannelUpdateEvent(ChannelEvent, abc.ABC):
 
 @base_events.requires_intents(intents.Intents.GUILDS)
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class GuildChannelUpdateEvent(GuildChannelEvent, ChannelUpdateEvent):
     """Event fired when a guild channel is edited."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>.
 
     channel: channels.GuildChannel = attr.ib(repr=True)
@@ -323,14 +333,19 @@ class ChannelDeleteEvent(ChannelEvent, abc.ABC):
 
 @base_events.requires_intents(intents.Intents.GUILDS)
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class GuildChannelDeleteEvent(GuildChannelEvent, ChannelDeleteEvent):
     """Event fired when a guild channel is deleted."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>.
 
     channel: channels.GuildChannel = attr.ib(repr=True)
@@ -398,14 +413,19 @@ class PinsUpdateEvent(ChannelEvent, abc.ABC):
 
 @base_events.requires_intents(intents.Intents.GUILDS)
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class GuildPinsUpdateEvent(PinsUpdateEvent, GuildChannelEvent):
     """Event fired when a message is pinned/unpinned in a guild channel."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>.
 
     channel_id: snowflakes.Snowflake = attr.ib()
@@ -451,14 +471,19 @@ class GuildPinsUpdateEvent(PinsUpdateEvent, GuildChannelEvent):
 
 # TODO: This is not documented as having an intent, is this right? The guild version requires GUILDS intent.
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class DMPinsUpdateEvent(PinsUpdateEvent, DMChannelEvent):
     """Event fired when a message is pinned/unpinned in a private channel."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>.
 
     channel_id: snowflakes.Snowflake = attr.ib()
@@ -512,14 +537,19 @@ class InviteEvent(GuildChannelEvent, abc.ABC):
 
 @base_events.requires_intents(intents.Intents.GUILD_INVITES)
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class InviteCreateEvent(InviteEvent):
     """Event fired when an invite is created in a channel."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>.
 
     invite: invites.InviteWithMetadata = attr.ib()
@@ -551,14 +581,19 @@ class InviteCreateEvent(InviteEvent):
 
 @base_events.requires_intents(intents.Intents.GUILD_INVITES)
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class InviteDeleteEvent(InviteEvent):
     """Event fired when an invite is deleted from a channel."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>.
 
     channel_id: snowflakes.Snowflake = attr.ib()
@@ -578,6 +613,7 @@ class InviteDeleteEvent(InviteEvent):
 
 @base_events.requires_intents(intents.Intents.GUILD_WEBHOOKS)
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class WebhookUpdateEvent(GuildChannelEvent):
     """Event fired when a webhook is created/updated/deleted in a channel.
@@ -588,10 +624,14 @@ class WebhookUpdateEvent(GuildChannelEvent):
     the channel manually beforehand.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from Event>>.
 
-    shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    shard: gateway_shard.GatewayShard = attr.ib(
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None}
+    )
     # <<inherited docstring from ShardEvent>>.
 
     channel_id: snowflakes.Snowflake = attr.ib()

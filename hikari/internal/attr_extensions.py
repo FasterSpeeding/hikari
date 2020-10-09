@@ -24,10 +24,17 @@ from __future__ import annotations
 
 __all__: typing.List[str] = [
     "with_copy",
+    "with_pickle",
     "copy_attrs",
     "deep_copy_attrs",
+    "get_state",
     "invalidate_deep_copy_cache",
     "invalidate_shallow_copy_cache",
+    "invalidate_state_getter_cache",
+    "invalidate_state_setter_cache",
+    "SKIP_DEEP_COPY",
+    "set_state",
+    "PICKLE_OVERRIDE",
 ]
 
 import copy as std_copy
@@ -36,16 +43,26 @@ import typing
 
 import attr
 
+from hikari import undefined
 from hikari.internal import ux
 
 ModelT = typing.TypeVar("ModelT")
 SKIP_DEEP_COPY: typing.Final[str] = "skip_deep_copy"
+PICKLE_OVERRIDE: typing.Final[str] = "skip_state_getter"
+_UNDEFINED = object()
 
 _DEEP_COPIERS: typing.MutableMapping[
     typing.Any, typing.Callable[[typing.Any, typing.MutableMapping[int, typing.Any]], None]
 ] = {}
 _SHALLOW_COPIERS: typing.MutableMapping[typing.Any, typing.Callable[[typing.Any], typing.Any]] = {}
 _LOGGER = logging.getLogger("hikari.models")
+
+_STATE_GETTER_CACHE: typing.MutableMapping[
+    typing.Any, typing.Callable[[typing.Any], typing.MutableMapping[str, typing.Any]]
+] = {}
+_STATE_SETTER_CACHE: typing.MutableMapping[
+    typing.Any, typing.Callable[[typing.Any, typing.MutableMapping[str, typing.Any]], None]
+] = {}
 
 
 def invalidate_shallow_copy_cache() -> None:
@@ -58,6 +75,18 @@ def invalidate_deep_copy_cache() -> None:
     """Remove all the globally cached generated deep copy functions."""
     _LOGGER.debug("Invalidating attr extensions deep copy cache")
     _DEEP_COPIERS.clear()
+
+
+def invalidate_state_getter_cache() -> None:
+    """Remove all the globally cached state getter methods used for pickling models."""
+    _LOGGER.debug("Invalidating attr extensions state getter cache")
+    _STATE_GETTER_CACHE.clear()
+
+
+def invalidate_state_setter_cache() -> None:
+    """Remove all the globally cached state setter methods used for pickling models."""
+    _LOGGER.debug("Invalidating attr extensions state setter cache")
+    _STATE_SETTER_CACHE.clear()
 
 
 def get_fields_definition(
@@ -255,4 +284,92 @@ def with_copy(cls: typing.Type[ModelT]) -> typing.Type[ModelT]:
     """
     cls.__copy__ = copy_attrs  # type: ignore[attr-defined]
     cls.__deepcopy__ = deep_copy_attrs  # type: ignore[attr-defined]
+    return cls
+
+
+def generate_state_getter(
+    cls: typing.Type[ModelT],
+) -> typing.Callable[[ModelT], typing.MutableMapping[str, typing.Any]]:
+    fields = attr.fields(cls)
+    getters = ",".join(
+        f"{field.name}=m.{field.name}"
+        for field in fields
+        if field.metadata.get(PICKLE_OVERRIDE, _UNDEFINED) is _UNDEFINED
+    )
+
+    # Explicitly handle the case of a model with no pickleable attributes by
+    # returning a lambda that returns an empty dictionary to avoid a sytnax error.
+    if not getters:
+        return lambda _: {}
+
+    code = f"def get_state(m): return dict({getters})"
+    globals_: typing.Dict[str, typing.Any] = {"UNDEFINED": undefined.UNDEFINED}
+    _LOGGER.debug("generating state getter function for %r: %r", cls, code)
+    exec(code, globals_)  # noqa: S102 - Use of exec detected.
+    return typing.cast("typing.Callable[[ModelT], typing.MutableMapping[str, typing.Any]]", globals_["get_state"])
+
+
+def get_or_generate_state_getter(
+    cls: typing.Type[ModelT],
+) -> typing.Callable[[ModelT], typing.MutableMapping[str, typing.Any]]:
+    try:
+        return _STATE_GETTER_CACHE[cls]
+    except KeyError:
+        state_getter = generate_state_getter(cls)
+        _STATE_GETTER_CACHE[cls] = state_getter
+        return state_getter
+
+
+def get_state(model: ModelT) -> typing.MutableMapping[str, typing.Any]:
+    return get_or_generate_state_getter(type(model))(model)
+
+
+def generate_state_setter(
+    cls: typing.Type[ModelT],
+) -> typing.Callable[[typing.Any, typing.MutableMapping[str, typing.Any]], None]:
+    fields = attr.fields(cls)
+
+    # Handle the case of a model with no fields by returning an empty lambda
+    # to avoid a syntax error being raised.
+    if not fields:
+        return lambda _, __: None
+
+    globals_ = {"UNDEFINED": undefined.UNDEFINED}
+    setters = []
+
+    for field in fields:
+        override = field.metadata.get(PICKLE_OVERRIDE, _UNDEFINED)
+        if override is not _UNDEFINED:
+            globals_[field.name] = override
+            setters.append(f"m.{field.name}={field.name}")
+        else:
+            setters.append(f"m.{field.name}=state[{field.name!r}]")
+
+    code = "def set_state(m, state):" + ";".join(setters)
+    _LOGGER.debug("generating state setter function for %r: %r", cls, code)
+    exec(code, globals_)  # noqa: S102 - Use of exec detected.
+    return typing.cast(
+        "typing.Callable[[typing.Any, typing.MutableMapping[str, typing.Any]], None]", globals_["set_state"]
+    )
+
+
+def get_or_generate_state_setter(
+    cls: typing.Type[ModelT],
+) -> typing.Callable[[typing.Any, typing.MutableMapping[str, typing.Any]], None]:
+    try:
+        return _STATE_SETTER_CACHE[cls]
+    except KeyError:
+        state_setter = generate_state_setter(cls)
+        _STATE_SETTER_CACHE[cls] = state_setter
+        return state_setter
+
+
+def set_state(model: ModelT, state: typing.MutableMapping[str, typing.Any]) -> None:
+    get_or_generate_state_setter(type(model))(model, state)
+
+
+# Unlike copy and deepcopy implementations, state getters and setters aren't inherited.
+def with_pickle(cls: typing.Type[ModelT]) -> typing.Type[ModelT]:
+    cls.__getstate__ = get_state  # type: ignore[attr-defined]
+    cls.__setstate__ = set_state  # type: ignore[attr-defined]
     return cls

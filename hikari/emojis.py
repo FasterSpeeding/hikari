@@ -107,6 +107,7 @@ class Emoji(files.WebResource, abc.ABC):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(hash=True, init=True, kw_only=False, slots=True, eq=False, weakref_slot=False)
 class UnicodeEmoji(Emoji):
     """Represents a unicode emoji.
@@ -242,6 +243,7 @@ class UnicodeEmoji(Emoji):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class CustomEmoji(snowflakes.Unique, Emoji):
     """Represents a custom emoji.
@@ -324,6 +326,7 @@ class CustomEmoji(snowflakes.Unique, Emoji):
         raise ValueError("Expected an emoji ID or emoji mention")
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class KnownCustomEmoji(CustomEmoji):
     """Represents an emoji that is known from a guild the bot is in.
@@ -333,7 +336,11 @@ class KnownCustomEmoji(CustomEmoji):
     """
 
     app: traits.RESTAware = attr.ib(
-        repr=False, eq=False, hash=False, init=True, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+        repr=False,
+        eq=False,
+        hash=False,
+        init=True,
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None},
     )
     """The client application that models may use for procedures."""
 

@@ -58,6 +58,7 @@ class WebhookType(int, enums.Enum):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Webhook(snowflakes.Unique):
     """Represents a webhook object on Discord.
@@ -67,7 +68,12 @@ class Webhook(snowflakes.Unique):
     send informational messages to specific channels.
     """
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        repr=False,
+        eq=False,
+        hash=False,
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None},
+    )
     """The client application that models may use for procedures."""
 
     id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)

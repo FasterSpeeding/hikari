@@ -95,6 +95,7 @@ class ChannelType(int, enums.Enum):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class ChannelFollow:
     """Relationship between a news channel and a subscriber channel.
@@ -103,7 +104,12 @@ class ChannelFollow:
     to any "broadcast" announcements that the news channel creates.
     """
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        repr=False,
+        eq=False,
+        hash=False,
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None},
+    )
     """Return the client application that models may use for procedures.
 
     Returns
@@ -209,6 +215,7 @@ class PermissionOverwriteType(int, enums.Enum):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class PermissionOverwrite(snowflakes.Unique):
     """Represents permission overwrites for a channel or role in a channel.
@@ -270,6 +277,7 @@ class PermissionOverwrite(snowflakes.Unique):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class PartialChannel(snowflakes.Unique):
     """Channel representation for cases where further detail is not provided.
@@ -278,7 +286,12 @@ class PartialChannel(snowflakes.Unique):
     not available from Discord.
     """
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        repr=False,
+        eq=False,
+        hash=False,
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None},
+    )
     """The client application that models may use for procedures."""
 
     id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
@@ -523,6 +536,7 @@ class TextChannel(PartialChannel, abc.ABC):
         return self.app.rest.trigger_typing(self.id)
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class PrivateChannel(PartialChannel):
     """The base for anything that is a private (non-guild bound) channel."""
@@ -536,6 +550,7 @@ class PrivateChannel(PartialChannel):
     """
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class DMChannel(PrivateChannel, TextChannel):
     """Represents a direct message text channel that is between you and another user."""
@@ -552,6 +567,7 @@ class DMChannel(PrivateChannel, TextChannel):
         return f"{self.__class__.__name__} with: {self.recipient}"
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class GroupDMChannel(PrivateChannel):
     """Represents a group direct message channel.
@@ -625,6 +641,7 @@ class GroupDMChannel(PrivateChannel):
         )
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class GuildChannel(PartialChannel):
     """The base for anything that is a guild channel."""
@@ -676,6 +693,7 @@ class GuildChannel(PartialChannel):
         return None
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class GuildCategory(GuildChannel):
     """Represents a guild category channel.
@@ -685,6 +703,7 @@ class GuildCategory(GuildChannel):
     """
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class GuildTextChannel(GuildChannel, TextChannel):
     """Represents a guild text channel."""
@@ -720,6 +739,7 @@ class GuildTextChannel(GuildChannel, TextChannel):
     """
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, slots=True, kw_only=True, weakref_slot=False)
 class GuildNewsChannel(GuildChannel, TextChannel):
     """Represents an news channel."""
@@ -744,6 +764,7 @@ class GuildNewsChannel(GuildChannel, TextChannel):
     """
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class GuildStoreChannel(GuildChannel):
     """Represents a store channel.
@@ -754,6 +775,7 @@ class GuildStoreChannel(GuildChannel):
     """
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class GuildVoiceChannel(GuildChannel):
     """Represents an voice channel."""

@@ -320,6 +320,7 @@ class User(PartialUser, abc.ABC):
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class PartialUserImpl(PartialUser):
     """Implementation for partial information about a user.
@@ -331,7 +332,12 @@ class PartialUserImpl(PartialUser):
     id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
     """The ID of this user."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = attr.ib(
+        repr=False,
+        eq=False,
+        hash=False,
+        metadata={attr_extensions.SKIP_DEEP_COPY: True, attr_extensions.PICKLE_OVERRIDE: None},
+    )
     """Reference to the client application that models may use for procedures."""
 
     discriminator: undefined.UndefinedOr[str] = attr.ib(eq=False, hash=False, repr=True)
@@ -380,6 +386,7 @@ class PartialUserImpl(PartialUser):
         return f"{self.username}#{self.discriminator}"
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class UserImpl(PartialUserImpl, User):
     """Concrete implementation of user information."""
@@ -407,6 +414,7 @@ class UserImpl(PartialUserImpl, User):
     """The public flags for this user."""
 
 
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class OwnUser(UserImpl):
     """Represents a user with extended OAuth2 information."""

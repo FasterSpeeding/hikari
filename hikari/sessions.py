@@ -37,6 +37,7 @@ if typing.TYPE_CHECKING:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class SessionStartLimit:
     """Used to represent information about the current session start limits."""
@@ -78,6 +79,7 @@ class SessionStartLimit:
 
 
 @attr_extensions.with_copy
+@attr_extensions.with_pickle
 @attr.s(eq=True, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class GatewayBot:
     """Used to represent gateway information for the connected bot."""
