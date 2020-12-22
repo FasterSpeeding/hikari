@@ -25,15 +25,14 @@ from __future__ import annotations
 
 __all__: typing.List[str] = ["GatewayBot", "SessionStartLimit"]
 
+import datetime
 import typing
 
 import attr
+import marshie
 
 from hikari.internal import attr_extensions
 from hikari.internal import time
-
-if typing.TYPE_CHECKING:
-    import datetime
 
 
 @attr_extensions.with_copy
@@ -41,21 +40,23 @@ if typing.TYPE_CHECKING:
 class SessionStartLimit:
     """Used to represent information about the current session start limits."""
 
-    total: int = attr.ib(repr=True)
+    total: int = marshie.attrib("total", deserialize=int, repr=True)
     """The total number of session starts the current bot is allowed."""
 
-    remaining: int = attr.ib(repr=True)
+    remaining: int = marshie.attrib("remaining", deserialize=int, repr=True)
     """The remaining number of session starts this bot has."""
 
-    reset_after: datetime.timedelta = attr.ib(repr=True)
+    reset_after: datetime.timedelta = marshie.attrib(
+        "reset_after", deserialize=lambda value: datetime.timedelta(minutes=value), repr=True
+    )
     """When `SessionStartLimit.remaining` will reset for the current bot.
 
     After it resets it will be set to `SessionStartLimit.total`.
     """
 
-    # This is not documented at the time of writing, but is a confirmed API
-    # feature, so I have included it for completeness.
-    max_concurrency: int = attr.ib(repr=True)
+    # I do not trust that this may never be zero for some unknown reason. If it was 0, it
+    # would hang the application on start up, so I enforce it is at least 1.
+    max_concurrency: int = marshie.attrib("max_concurrency", deserialize=lambda v: max(v, 1), mdefault=1, repr=True)
     """Maximum connection concurrency.
 
     This defines how many shards can be started at once within a 5 second
@@ -82,11 +83,13 @@ class SessionStartLimit:
 class GatewayBot:
     """Used to represent gateway information for the connected bot."""
 
-    url: str = attr.ib(repr=True)
+    url: str = marshie.attrib("url", repr=True)
     """The WSS URL that can be used for connecting to the gateway."""
 
-    shard_count: int = attr.ib(repr=True)
+    shard_count: int = marshie.attrib("shards", deserialize=int, repr=True)
     """The recommended number of shards to use when connecting to the gateway."""
 
-    session_start_limit: SessionStartLimit = attr.ib(repr=True)
+    session_start_limit: SessionStartLimit = marshie.attrib(
+        "session_start_limit", deserialize=marshie.Ref(SessionStartLimit), repr=True
+    )
     """Information about the bot's current session start limit."""

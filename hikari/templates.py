@@ -25,20 +25,23 @@ from __future__ import annotations
 
 __all__: typing.List[str] = ["Template", "TemplateGuild", "TemplateRole", "Templateish"]
 
+import datetime
 import typing
 
 import attr
+import marshie
 
+from hikari import colors
 from hikari import guilds
+from hikari import permissions as permissions_
+from hikari import snowflakes
 from hikari.internal import attr_extensions
+from hikari.internal import data_binding
+from hikari.internal import time
 
 if typing.TYPE_CHECKING:
-    import datetime
 
     from hikari import channels as channels_
-    from hikari import colors
-    from hikari import permissions as permissions_
-    from hikari import snowflakes
     from hikari import users
 
 
@@ -47,25 +50,27 @@ if typing.TYPE_CHECKING:
 class TemplateRole(guilds.PartialRole):
     """The partial role object attached to `Template`."""
 
-    permissions: permissions_.Permissions = attr.ib(eq=False, hash=False, repr=False)
+    permissions: permissions_.Permissions = marshie.attrib(
+        "permissions", deserialize=lambda value: snowflakes.Snowflake(int(value)), eq=False, hash=False, repr=False
+    )
     """The guild wide permissions this role gives to the members it's attached to,
 
     This may be overridden by channel overwrites.
     """
 
-    color: colors.Color = attr.ib(eq=False, hash=False, repr=True)
+    color: colors.Color = marshie.attrib("color", deserialize=colors.Color, eq=False, hash=False, repr=True)
     """The colour of this role.
 
     This will be applied to a member's name in chat if it's their top coloured role.
     """
 
-    is_hoisted: bool = attr.ib(eq=False, hash=False, repr=True)
+    is_hoisted: bool = marshie.attrib("hoist", eq=False, hash=False, repr=True)
     """Whether this role is hoisting the members it's attached to in the member list.
 
     members will be hoisted under their highest role where this is set to `builtins.True`.
     """
 
-    is_mentionable: bool = attr.ib(eq=False, hash=False, repr=False)
+    is_mentionable: bool = marshie.attrib("mentionable", eq=False, hash=False, repr=False)
     """Whether this role can be mentioned by all regardless of permissions."""
 
 
@@ -74,40 +79,61 @@ class TemplateRole(guilds.PartialRole):
 class TemplateGuild(guilds.PartialGuild):
     """The partial guild object attached to `Template`."""
 
-    description: typing.Optional[str] = attr.ib(eq=False, hash=False, repr=False)
+    # This special case ID field isn't included in the template guild's payload.
+    id: snowflakes.Snowflake = marshie.attrib(from_kwarg=True, eq=True, hash=True, repr=True)
+
+    # For some reason in this case they use the key "icon_hash" rather than "icon".
+    # Cause Discord:TM:
+    icon_hash: typing.Optional[str] = marshie.attrib("icon_hash", eq=False, hash=False, repr=False)
+
+    description: typing.Optional[str] = marshie.attrib("description", eq=False, hash=False, repr=False)
     """The guild's description, if set."""
 
-    region: str = attr.ib(eq=False, hash=False, repr=False)
+    region: str = marshie.attrib("region", eq=False, hash=False, repr=False)
     """The voice region for the guild."""
 
-    verification_level: typing.Union[guilds.GuildVerificationLevel, int] = attr.ib(eq=False, hash=False, repr=False)
+    verification_level: typing.Union[guilds.GuildVerificationLevel, int] = marshie.attrib(
+        "verification_level", deserialize=guilds.GuildVerificationLevel, eq=False, hash=False, repr=False
+    )
     """The verification level needed for a user to participate in this guild."""
 
-    default_message_notifications: typing.Union[guilds.GuildMessageNotificationsLevel, int] = attr.ib(
-        eq=False, hash=False, repr=False
+    default_message_notifications: typing.Union[guilds.GuildMessageNotificationsLevel, int] = marshie.attrib(
+        "default_message_notifications",
+        deserialize=guilds.GuildMessageNotificationsLevel,
+        eq=False,
+        hash=False,
+        repr=False,
     )
     """The default setting for message notifications in this guild."""
 
-    explicit_content_filter: typing.Union[guilds.GuildExplicitContentFilterLevel, int] = attr.ib(
-        eq=False, hash=False, repr=False
+    explicit_content_filter: typing.Union[guilds.GuildExplicitContentFilterLevel, int] = marshie.attrib(
+        "explicit_content_filter", deserialize=guilds.GuildExplicitContentFilterLevel, eq=False, hash=False, repr=False
     )
     """The setting for the explicit content filter in this guild."""
 
-    preferred_locale: str = attr.ib(eq=False, hash=False, repr=False)
+    preferred_locale: str = marshie.attrib("preferred_locale", eq=False, hash=False, repr=False)
     """The preferred locale to use for this guild.
 
     This can only be change if `GuildFeature.COMMUNITY` is in `Guild.features`
     for this guild and will otherwise default to `en-US`.
     """
 
-    afk_timeout: datetime.timedelta = attr.ib(eq=False, hash=False, repr=False)
+    afk_timeout: datetime.timedelta = marshie.attrib(
+        "afk_timeout", deserialize=lambda value: datetime.timedelta(seconds=value), eq=False, hash=False, repr=False
+    )
     """Timeout for activity before a member is classed as AFK.
 
     How long a voice user has to be AFK for before they are classed as being
     AFK and are moved to the AFK channel (`Guild.afk_channel_id`).
     """
 
-    roles: typing.Mapping[snowflakes.Snowflake, TemplateRole] = attr.ib(eq=False, hash=False, repr=False)
+    roles: typing.Mapping[snowflakes.Snowflake, TemplateRole] = marshie.attrib(
+        "roles",
+        deserialize=marshie.Ref(TemplateRole, lambda cast: data_binding.seq_to_map(lambda r: r.id, cast)),
+        eq=False,
+        hash=False,
+        repr=False,
+    )
     """The roles in the guild.
 
     !!! note
@@ -115,7 +141,9 @@ class TemplateGuild(guilds.PartialGuild):
         objects found attached this template guild.
     """
 
-    channels: typing.Mapping[snowflakes.Snowflake, channels_.GuildChannel] = attr.ib(eq=False, hash=False, repr=False)
+    channels: typing.Mapping[snowflakes.Snowflake, channels_.GuildChannel] = marshie.attrib(
+        from_kwarg=True, eq=False, hash=False, repr=False
+    )
     """The channels for the guild.
 
     !!! note
@@ -123,19 +151,29 @@ class TemplateGuild(guilds.PartialGuild):
         the channel objects found attached this template guild.
     """
 
-    afk_channel_id: typing.Optional[snowflakes.Snowflake] = attr.ib(eq=False, hash=False, repr=False)
+    afk_channel_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
+        "afk_channel_id", deserialize=data_binding.optional_cast(snowflakes.Snowflake), eq=False, hash=False, repr=False
+    )
     """The ID for the channel that AFK voice users get sent to.
 
     If `builtins.None`, then no AFK channel is set up for this guild.
     """
 
-    system_channel_id: typing.Optional[snowflakes.Snowflake] = attr.ib(eq=False, hash=False, repr=False)
+    system_channel_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
+        "system_channel_id",
+        deserialize=data_binding.optional_cast(snowflakes.Snowflake),
+        eq=False,
+        hash=False,
+        repr=False,
+    )
     """The ID of the system channel or `builtins.None` if it is not enabled.
 
     Welcome messages and Nitro boost messages may be sent to this channel.
     """
 
-    system_channel_flags: guilds.GuildSystemChannelFlag = attr.ib(eq=False, hash=False, repr=False)
+    system_channel_flags: guilds.GuildSystemChannelFlag = marshie.attrib(
+        "system_channel_flags", deserialize=guilds.GuildSystemChannelFlag, eq=False, hash=False, repr=False
+    )
     """Return flags for the guild system channel.
 
     These are used to describe which notifications are suppressed.
@@ -147,31 +185,44 @@ class TemplateGuild(guilds.PartialGuild):
 class Template:
     """Represents a template used for creating guilds."""
 
-    code: str = attr.ib(eq=True, hash=True, repr=True)
+    code: str = marshie.attrib("code", eq=True, hash=True, repr=True)
     """The template's unique ID."""
 
-    name: str = attr.ib(eq=False, hash=False, repr=True)
+    name: str = marshie.attrib("name", eq=False, hash=False, repr=True)
     """The template's name."""
 
-    description: typing.Optional[str] = attr.ib(eq=False, hash=False, repr=False)
+    description: typing.Optional[str] = marshie.attrib("description", eq=False, hash=False, repr=False)
     """The template's description."""
 
-    usage_count: int = attr.ib(eq=False, hash=False, repr=True)
+    usage_count: int = marshie.attrib("usage_count", eq=False, hash=False, repr=True)
     """The number of times the template has been used to create a guild."""
 
-    creator: users.User = attr.ib(eq=False, hash=False, repr=False)
+    creator: users.User = marshie.attrib(
+        "creator", deserialize=marshie.Ref("UserImpl"), eq=False, hash=False, repr=False
+    )
     """The user who created the template."""
 
-    created_at: datetime.datetime = attr.ib(eq=False, hash=False, repr=True)
+    created_at: datetime.datetime = marshie.attrib(
+        "created_at", deserialize=time.iso8601_datetime_string_to_datetime, eq=False, hash=False, repr=True
+    )
     """When the template was created."""
 
-    updated_at: datetime.datetime = attr.ib(eq=False, hash=False, repr=True)
+    updated_at: datetime.datetime = marshie.attrib(
+        "updated_at", deserialize=time.iso8601_datetime_string_to_datetime, eq=False, hash=False, repr=True
+    )
     """When the template was last synced with the source guild."""
 
-    source_guild: TemplateGuild = attr.ib(eq=False, hash=False, repr=True)
+    source_guild: TemplateGuild = marshie.attrib(
+        "serialized_source_guild",
+        deserialize=marshie.Ref(TemplateGuild),
+        pass_kwargs=("channels", "id"),
+        eq=False,
+        hash=False,
+        repr=True,
+    )
     """The partial object of the guild this template is based on."""
 
-    is_unsynced: bool = attr.ib(eq=False, hash=False, repr=False)
+    is_unsynced: bool = marshie.attrib("is_dirty", deserialize=bool, eq=False, hash=False, repr=False)
     """Whether this template is missing changes from it's source guild."""
 
     def __str__(self) -> str:

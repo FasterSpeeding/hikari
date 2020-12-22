@@ -28,12 +28,14 @@ __all__: typing.List[str] = ["VoiceRegion", "VoiceState", "VoiceRegionish"]
 import typing
 
 import attr
+import marshie
 
+from hikari import snowflakes
 from hikari.internal import attr_extensions
+from hikari.internal import data_binding
 
 if typing.TYPE_CHECKING:
     from hikari import guilds
-    from hikari import snowflakes
     from hikari import traits
 
 
@@ -42,46 +44,52 @@ if typing.TYPE_CHECKING:
 class VoiceState:
     """Represents a user's voice connection status."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = marshie.attrib(
+        constant=marshie.Ref("app"), repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """The client application that models may use for procedures."""
 
-    channel_id: typing.Optional[snowflakes.Snowflake] = attr.ib(eq=False, hash=False, repr=True)
+    channel_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
+        "channel_id", deserialize=data_binding.optional_cast(snowflakes.Snowflake), eq=False, hash=False, repr=True
+    )
     """The ID of the channel this user is connected to.
 
     This will be `builtins.None` if they are leaving voice.
     """
 
-    guild_id: snowflakes.Snowflake = attr.ib(eq=False, hash=False, repr=True)
+    guild_id: snowflakes.Snowflake = marshie.attrib(from_kwarg=True, eq=False, hash=False, repr=True)
     """The ID of the guild this voice state is in."""
 
-    is_guild_deafened: bool = attr.ib(eq=False, hash=False, repr=False)
+    is_guild_deafened: bool = marshie.attrib("deaf", eq=False, hash=False, repr=False)
     """Whether this user is deafened by the guild."""
 
-    is_guild_muted: bool = attr.ib(eq=False, hash=False, repr=False)
+    is_guild_muted: bool = marshie.attrib("mute", eq=False, hash=False, repr=False)
     """Whether this user is muted by the guild."""
 
-    is_self_deafened: bool = attr.ib(eq=False, hash=False, repr=False)
+    is_self_deafened: bool = marshie.attrib("self_deaf", eq=False, hash=False, repr=False)
     """Whether this user is deafened by their client."""
 
-    is_self_muted: bool = attr.ib(eq=False, hash=False, repr=False)
+    is_self_muted: bool = marshie.attrib("self_mute", eq=False, hash=False, repr=False)
     """Whether this user is muted by their client."""
 
-    is_streaming: bool = attr.ib(eq=False, hash=False, repr=False)
+    is_streaming: bool = marshie.attrib("self_stream", mdefault=False, eq=False, hash=False, repr=False)
     """Whether this user is streaming using "Go Live"."""
 
-    is_suppressed: bool = attr.ib(eq=False, hash=False, repr=False)
+    is_suppressed: bool = marshie.attrib("suppress", eq=False, hash=False, repr=False)
     """Whether this user is muted by the current user."""
 
-    is_video_enabled: bool = attr.ib(eq=False, hash=False, repr=False)
+    is_video_enabled: bool = marshie.attrib("self_video", eq=False, hash=False, repr=False)
     """Whether this user's camera is enabled."""
 
-    user_id: snowflakes.Snowflake = attr.ib(eq=False, hash=False, repr=True)
+    user_id: snowflakes.Snowflake = marshie.attrib(
+        "user_id", deserialize=snowflakes.Snowflake, eq=False, hash=False, repr=True
+    )
     """The ID of the user this voice state is for."""
 
-    member: guilds.Member = attr.ib(eq=False, hash=False, repr=False)
+    member: guilds.Member = marshie.attrib(from_kwarg=True, eq=False, hash=False, repr=False)
     """The guild member this voice state is for."""
 
-    session_id: str = attr.ib(eq=True, hash=True, repr=True)
+    session_id: str = marshie.attrib("session_id", eq=True, hash=True, repr=True)
     """The string ID of this voice state's session."""
 
 
@@ -90,7 +98,7 @@ class VoiceState:
 class VoiceRegion:
     """Represents a voice region server."""
 
-    id: str = attr.ib(eq=True, hash=True, repr=True)
+    id: str = marshie.attrib("id", eq=True, hash=True, repr=True)
     """The string ID of this region.
 
     !!! note
@@ -98,19 +106,19 @@ class VoiceRegion:
         This is intentional.
     """
 
-    name: str = attr.ib(eq=False, hash=False, repr=True)
+    name: str = marshie.attrib("name", eq=False, hash=False, repr=True)
     """The name of this region."""
 
-    is_vip: bool = attr.ib(eq=False, hash=False, repr=False)
+    is_vip: bool = marshie.attrib("vip", eq=False, hash=False, repr=False)
     """Whether this region is vip-only."""
 
-    is_optimal_location: bool = attr.ib(eq=False, hash=False, repr=False)
+    is_optimal_location: bool = marshie.attrib("optimal", eq=False, hash=False, repr=False)
     """Whether this region's server is closest to the current user's client."""
 
-    is_deprecated: bool = attr.ib(eq=False, hash=False, repr=False)
+    is_deprecated: bool = marshie.attrib("deprecated", eq=False, hash=False, repr=False)
     """Whether this region is deprecated."""
 
-    is_custom: bool = attr.ib(eq=False, hash=False, repr=False)
+    is_custom: bool = marshie.attrib("custom", eq=False, hash=False, repr=False)
     """Whether this region is custom (e.g. used for events)."""
 
     def __str__(self) -> str:

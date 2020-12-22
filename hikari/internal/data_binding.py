@@ -44,6 +44,8 @@ from hikari import snowflakes
 from hikari import undefined
 
 T = typing.TypeVar("T", covariant=True)
+ValueT = typing.TypeVar("ValueT")
+OtherValueT = typing.TypeVar("OtherValueT")
 
 Headers = typing.Mapping[str, str]
 """Type hint for HTTP headers."""
@@ -326,3 +328,38 @@ def cast_json_array(array: JSONArray, /, cast: typing.Callable[..., T], **kwargs
     ```
     """
     return [cast(item, **kwargs) for item in array]
+
+
+class CastT(typing.Protocol[ValueT, OtherValueT]):
+    def __call__(self, value: ValueT, /, **kwargs: typing.Any) -> OtherValueT:
+        raise NotImplemented
+
+
+def optional_cast(
+    cast: CastT[ValueT, OtherValueT],
+) -> CastT[typing.Optional[ValueT], typing.Optional[OtherValueT]]:
+    return lambda value, **kwargs: cast(value, **kwargs) if value is not None else None
+
+
+def seq_cast(cast: CastT[ValueT, OtherValueT]) -> CastT[typing.Iterable[ValueT], typing.List[OtherValueT]]:
+    return lambda values, **kwargs: [cast(value, **kwargs) for value in values]
+
+
+KeyT = typing.TypeVar("KeyT")
+OtherKeyT = typing.TypeVar("OtherKeyT")
+
+
+def no_cast(value: ValueT) -> ValueT:
+    return value
+
+
+def seq_to_map(
+    key_cast: typing.Callable[[OtherValueT], KeyT], value_cast: CastT[ValueT, OtherValueT]
+) -> typing.Callable[[typing.Iterable[ValueT]], typing.Dict[KeyT, OtherValueT]]:
+    return lambda values, **kwargs: {key_cast(value): value for value in (value_cast(v, **kwargs) for v in values)}
+
+
+def map_cast(
+    key_cast: typing.Callable[[KeyT], OtherKeyT], value_cast: typing.Optional[CastT[ValueT, OtherValueT]]
+) -> typing.Callable[[typing.Mapping[KeyT, ValueT]], typing.MutableMapping[OtherKeyT, OtherValueT]]:
+    return lambda data, **kwargs: {key_cast(key): value_cast(value, **kwargs) for key, value in data.items()}

@@ -28,6 +28,7 @@ import abc
 import typing
 
 import attr
+import marshie
 
 from hikari import undefined
 from hikari.internal import attr_extensions
@@ -53,21 +54,26 @@ if typing.TYPE_CHECKING:
 
 
 @attr_extensions.with_copy
-@attr.s(slots=True, weakref_slot=False)
+@attr.s(kw_only=True, slots=True, weakref_slot=False)
 class GatewayGuildDefinition:
     """A structure for handling entities within guild create and update events."""
 
-    guild: guild_models.GatewayGuild = attr.ib()
+    # TODO: handling this
+    guild: guild_models.GatewayGuild = marshie.attrib("", deserialize=marshie.Ref("GatewayGuild"))
     """Object of the guild the definition is for."""
 
-    channels: typing.Optional[typing.Mapping[snowflakes.Snowflake, channel_models.GuildChannel]] = attr.ib()
+    channels: typing.Optional[typing.Mapping[snowflakes.Snowflake, channel_models.GuildChannel]] = marshie.attrib(
+        from_kwarg=True
+    )
     """Mapping of channel IDs to the channels that belong to the guild.
 
     Will be `builtins.None` when returned by guild update gateway events rather
     than create.
     """
 
-    members: typing.Optional[typing.Mapping[snowflakes.Snowflake, guild_models.Member]] = attr.ib()
+    members: typing.Optional[typing.Mapping[snowflakes.Snowflake, guild_models.Member]] = marshie.attrib(
+        from_kwarg=True
+    )
     """Mapping of user IDs to the members that belong to the guild.
 
     Will be `builtins.None` when returned by guild update gateway events rather
@@ -77,7 +83,12 @@ class GatewayGuildDefinition:
         This may be a partial mapping of members in the guild.
     """
 
-    presences: typing.Optional[typing.Mapping[snowflakes.Snowflake, presence_models.MemberPresence]] = attr.ib()
+    presences: typing.Optional[typing.Mapping[snowflakes.Snowflake, presence_models.MemberPresence]] = marshie.attrib(
+        "presences",
+        deserialize=marshie.Ref("MemberPresence", lambda cast: data_binding.seq_to_map(lambda mp: mp.user_id, cast)),
+        mdefault=None,
+        pass_kwargs="guild_id",
+    )
     """Mapping of user IDs to the presences that are active in the guild.
 
     Will be `builtins.None` when returned by guild update gateway events rather
@@ -87,13 +98,23 @@ class GatewayGuildDefinition:
         This may be a partial mapping of presences active in the guild.
     """
 
-    roles: typing.Mapping[snowflakes.Snowflake, guild_models.Role] = attr.ib()
+    roles: typing.Mapping[snowflakes.Snowflake, guild_models.Role] = marshie.attrib(
+        "roles",
+        deserialize=marshie.Ref("Role", lambda cast: data_binding.seq_to_map(lambda r: r.id, cast)),
+        pass_kwargs="guild_id",
+    )
     """Mapping of role IDs to the roles that belong to the guild."""
 
-    emojis: typing.Mapping[snowflakes.Snowflake, emoji_models.KnownCustomEmoji] = attr.ib()
+    emojis: typing.Mapping[snowflakes.Snowflake, emoji_models.KnownCustomEmoji] = marshie.attrib(
+        "emojis",
+        deserialize=marshie.Ref("KnownCustomEmoji", lambda cast: data_binding.seq_to_map(lambda e: e.id, cast)),
+        pass_kwargs="guild_id",
+    )
     """Mapping of emoji IDs to the emojis that belong to the guild."""
 
-    voice_states: typing.Optional[typing.Mapping[snowflakes.Snowflake, voice_models.VoiceState]] = attr.ib()
+    voice_states: typing.Optional[typing.Mapping[snowflakes.Snowflake, voice_models.VoiceState]] = marshie.attrib(
+        from_kwarg=True
+    )
     """Mapping of user IDs to the voice states that are active in the guild.
 
     !!! note

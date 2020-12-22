@@ -36,14 +36,17 @@ import abc
 import typing
 
 import attr
+import marshie
 
 from hikari import files
 from hikari import guilds
 from hikari import snowflakes
 from hikari import urls
 from hikari.internal import attr_extensions
+from hikari.internal import data_binding
 from hikari.internal import enums
 from hikari.internal import routes
+from hikari.internal import time
 
 if typing.TYPE_CHECKING:
     import datetime
@@ -83,13 +86,15 @@ class InviteCode(abc.ABC):
 class VanityURL(InviteCode):
     """A special case invite object, that represents a guild's vanity url."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = marshie.attrib(
+        constant=marshie.Ref("app"), repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """The client application that models may use for procedures."""
 
-    code: str = attr.ib(eq=True, hash=True, repr=True)
+    code: str = marshie.attrib("code", eq=True, hash=True, repr=True)
     """The code for this invite."""
 
-    uses: int = attr.ib(eq=False, hash=False, repr=True)
+    uses: int = marshie.attrib("uses", eq=False, hash=False, repr=True)
     """The amount of times this invite has been used."""
 
     def __str__(self) -> str:
@@ -100,30 +105,34 @@ class VanityURL(InviteCode):
 class InviteGuild(guilds.PartialGuild):
     """Represents the partial data of a guild that is attached to invites."""
 
-    features: typing.Sequence[guilds.GuildFeatureish] = attr.ib(eq=False, hash=False, repr=False)
+    features: typing.Sequence[guilds.GuildFeatureish] = marshie.attrib(
+        "features", deserialize=data_binding.seq_cast(guilds.GuildFeature), eq=False, hash=False, repr=False
+    )
     """A list of the features in this guild."""
 
-    splash_hash: typing.Optional[str] = attr.ib(eq=False, hash=False, repr=False)
+    splash_hash: typing.Optional[str] = marshie.attrib("splash", eq=False, hash=False, repr=False)
     """The hash of the splash for the guild, if there is one."""
 
-    banner_hash: typing.Optional[str] = attr.ib(eq=False, hash=False, repr=False)
+    banner_hash: typing.Optional[str] = marshie.attrib("banner", eq=False, hash=False, repr=False)
     """The hash for the guild's banner.
 
     This is only present if `hikari.guilds.GuildFeature.BANNER` is in the
     `features` for this guild. For all other purposes, it is `builtins.None`.
     """
 
-    description: typing.Optional[str] = attr.ib(eq=False, hash=False, repr=False)
+    description: typing.Optional[str] = marshie.attrib("description", eq=False, hash=False, repr=False)
     """The guild's description.
 
     This is only present if certain `features` are set in this guild.
     Otherwise, this will always be `builtins.None`. For all other purposes, it is `builtins.None`.
     """
 
-    verification_level: typing.Union[guilds.GuildVerificationLevel, int] = attr.ib(eq=False, hash=False, repr=False)
+    verification_level: typing.Union[guilds.GuildVerificationLevel, int] = marshie.attrib(
+        "verification_level", deserialize=guilds.GuildVerificationLevel, eq=False, hash=False, repr=False
+    )
     """The verification level required for a user to participate in this guild."""
 
-    vanity_url_code: typing.Optional[str] = attr.ib(eq=False, hash=False, repr=True)
+    vanity_url_code: typing.Optional[str] = marshie.attrib("vanity_url_code", eq=False, hash=False, repr=True)
     """The vanity URL code for the guild's vanity URL.
 
     This is only present if `hikari.guilds.GuildFeature.VANITY_URL` is in the
@@ -212,52 +221,95 @@ class InviteGuild(guilds.PartialGuild):
 class Invite(InviteCode):
     """Represents an invite that's used to add users to a guild or group dm."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = marshie.attrib(
+        constant=marshie.Ref("app"), repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """The client application that models may use for procedures."""
 
-    code: str = attr.ib(eq=True, hash=True, repr=True)
+    code: str = marshie.attrib("code", eq=True, hash=True, repr=True)
     """The code for this invite."""
 
-    guild: typing.Optional[InviteGuild] = attr.ib(eq=False, hash=False, repr=False)
+    guild: typing.Optional[InviteGuild] = marshie.attrib(
+        "guild",
+        deserialize=marshie.Ref(InviteGuild),
+        mdefault=None,
+        eq=False,
+        hash=False,
+        repr=False,
+    )
     """The partial object of the guild this invite belongs to.
 
     Will be `builtins.None` for group DM invites and when attached to a gateway event;
     for invites received over the gateway you should refer to `Invite.guild_id`.
     """
 
-    guild_id: typing.Optional[snowflakes.Snowflake] = attr.ib(eq=False, hash=False, repr=True)
+    guild_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
+        "guild_id", deserialize=snowflakes.Snowflake, mdefault=None, eq=False, hash=False, repr=True
+    )
     """The ID of the guild this invite belongs to.
 
     Will be `builtins.None` for group DM invites.
     """
 
-    channel: typing.Optional[channels.PartialChannel] = attr.ib(eq=False, hash=False, repr=False)
+    channel: typing.Optional[channels.PartialChannel] = marshie.attrib(
+        "channel",
+        deserialize=marshie.Ref("PartialChannel"),
+        mdefault=None,
+        eq=False,
+        hash=False,
+        repr=False,
+    )
     """The partial object of the channel this invite targets.
 
     Will be `builtins.None` for invite objects that are attached to gateway events,
     in which case you should refer to `Invite.channel_id`.
     """
 
-    channel_id: snowflakes.Snowflake = attr.ib(eq=False, hash=False, repr=True)
+    channel_id: snowflakes.Snowflake = marshie.attrib(from_kwarg=True, eq=False, hash=False, repr=True)
     """The ID of the channel this invite targets."""
 
-    inviter: typing.Optional[users.User] = attr.ib(eq=False, hash=False, repr=False)
+    inviter: typing.Optional[users.User] = marshie.attrib(
+        "inviter",
+        deserialize=marshie.Ref("UserImpl"),
+        mdefault=None,
+        eq=False,
+        hash=False,
+        repr=False,
+    )
     """The object of the user who created this invite."""
 
-    target_user: typing.Optional[users.User] = attr.ib(eq=False, hash=False, repr=False)
+    target_user: typing.Optional[users.User] = marshie.attrib(
+        "target_user",
+        deserialize=marshie.Ref("UserImpl"),
+        mdefault=None,
+        eq=False,
+        hash=False,
+        repr=False,
+    )
     """The object of the user who this invite targets, if set."""
 
-    target_user_type: typing.Union[TargetUserType, int, None] = attr.ib(eq=False, hash=False, repr=False)
+    target_user_type: typing.Union[TargetUserType, int, None] = marshie.attrib(
+        "target_user_type", deserialize=TargetUserType, mdefault=None, eq=False, hash=False, repr=False
+    )
     """The type of user target this invite is, if applicable."""
 
-    approximate_active_member_count: typing.Optional[int] = attr.ib(eq=False, hash=False, repr=False)
+    approximate_active_member_count: typing.Optional[int] = marshie.attrib(
+        "approximate_presence_count", mdefault=None, eq=False, hash=False, repr=False
+    )
     """The approximate amount of presences in this invite's guild.
 
     This is only present when `with_counts` is passed as `builtins.True` to the GET
     Invites endpoint.
     """
 
-    approximate_member_count: typing.Optional[int] = attr.ib(eq=False, hash=False, repr=False)
+    approximate_member_count: typing.Optional[int] = marshie.attrib(
+        "approximate_member_count",
+        deserialize=time.iso8601_datetime_string_to_datetime,
+        mdefault=None,
+        eq=False,
+        hash=False,
+        repr=False,
+    )
     """The approximate amount of members in this invite's guild.
 
     This is only present when `with_counts` is passed as `builtins.True` to the GET
@@ -268,6 +320,10 @@ class Invite(InviteCode):
         return f"https://discord.gg/{self.code}"
 
 
+def max_age_converter(value: int) -> typing.Optional[datetime.timedelta]:
+    return datetime.timedelta(seconds=value) if value > 0 else None
+
+
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class InviteWithMetadata(Invite):
     """Extends the base `Invite` object with metadata.
@@ -276,10 +332,10 @@ class InviteWithMetadata(Invite):
     guild permissions, rather than it's code.
     """
 
-    uses: int = attr.ib(eq=False, hash=False, repr=True)
+    uses: int = marshie.attrib("uses", eq=False, hash=False, repr=True)
     """The amount of times this invite has been used."""
 
-    max_uses: typing.Optional[int] = attr.ib(eq=False, hash=False, repr=True)
+    max_uses: typing.Optional[int] = marshie.attrib("max_uses", eq=False, hash=False, repr=True)
     """The limit for how many times this invite can be used before it expires.
 
     If set to `builtins.None` then this is unlimited.
@@ -287,13 +343,15 @@ class InviteWithMetadata(Invite):
 
     # TODO: can we use a non-None value to represent infinity here somehow, or
     # make a timedelta that is infinite for comparisons?
-    max_age: typing.Optional[datetime.timedelta] = attr.ib(eq=False, hash=False, repr=False)
+    max_age: typing.Optional[datetime.timedelta] = marshie.attrib(
+        "max_age", deserialize=max_age_converter, eq=False, hash=False, repr=False
+    )
     """The timedelta of how long this invite will be valid for.
 
     If set to `builtins.None` then this is unlimited.
     """
 
-    is_temporary: bool = attr.ib(eq=False, hash=False, repr=True)
+    is_temporary: bool = marshie.attrib("temporary", eq=False, hash=False, repr=True)
     """Whether this invite grants temporary membership."""
 
     created_at: datetime.datetime = attr.ib(eq=False, hash=False, repr=False)

@@ -29,6 +29,7 @@ import abc
 import typing
 
 import attr
+import marshie
 
 from hikari import files
 from hikari import snowflakes
@@ -516,6 +517,7 @@ class User(PartialUser, abc.ABC):
         )
 
 
+@marshie.register_class("PartialUserImpl")
 @attr_extensions.with_copy
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class PartialUserImpl(PartialUser):
@@ -525,28 +527,42 @@ class PartialUserImpl(PartialUser):
     present.
     """
 
-    id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this user."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = marshie.attrib(
+        constant=marshie.Ref("app"), repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """Reference to the client application that models may use for procedures."""
 
-    discriminator: undefined.UndefinedOr[str] = attr.ib(eq=False, hash=False, repr=True)
+    discriminator: undefined.UndefinedOr[str] = marshie.attrib(
+        "discriminator", mdefault=undefined.UNDEFINED, eq=False, hash=False, repr=True
+    )
     """Four-digit discriminator for the user."""
 
-    username: undefined.UndefinedOr[str] = attr.ib(eq=False, hash=False, repr=True)
+    username: undefined.UndefinedOr[str] = marshie.attrib(
+        "username", mdefault=undefined.UNDEFINED, eq=False, hash=False, repr=True
+    )
     """Username of the user."""
 
-    avatar_hash: undefined.UndefinedNoneOr[str] = attr.ib(eq=False, hash=False, repr=False)
+    avatar_hash: undefined.UndefinedNoneOr[str] = marshie.attrib(
+        "avatar", mdefault=undefined.UNDEFINED, eq=False, hash=False, repr=False
+    )
     """Avatar hash of the user, if a custom avatar is set."""
 
-    is_bot: undefined.UndefinedOr[bool] = attr.ib(eq=False, hash=False, repr=True)
+    is_bot: undefined.UndefinedOr[bool] = marshie.attrib(
+        "bot", mdefault=undefined.UNDEFINED, eq=False, hash=False, repr=True
+    )
     """Whether this user is a bot account."""
 
-    is_system: undefined.UndefinedOr[bool] = attr.ib(eq=False, hash=False, repr=False)
+    is_system: undefined.UndefinedOr[bool] = marshie.attrib(
+        "system", mdefault=undefined.UNDEFINED, eq=False, hash=False, repr=False
+    )
     """Whether this user is a system account."""
 
-    flags: undefined.UndefinedOr[UserFlag] = attr.ib(eq=False, hash=False)
+    flags: undefined.UndefinedOr[UserFlag] = marshie.attrib(
+        "public_flags", deserialize=UserFlag, mdefault=undefined.UNDEFINED, eq=False, hash=False
+    )
     """Public flags for this user."""
 
     _dm_channel: typing.Optional[channels.DMChannel] = attr.ib(
@@ -584,6 +600,7 @@ class PartialUserImpl(PartialUser):
         return f"{self.username}#{self.discriminator}"
 
 
+@marshie.register_class("UserImpl")
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class UserImpl(PartialUserImpl, User):
     """Concrete implementation of user information."""
@@ -592,22 +609,22 @@ class UserImpl(PartialUserImpl, User):
     # these fields without redefining them twice in the slots. This is
     # compatible with MYPY, hence why I have done it like this...
 
-    discriminator: str
+    discriminator: str = marshie.attrib("discriminator", eq=False, hash=False, repr=True)
     """The user's discriminator."""
 
-    username: str
+    username: str = marshie.attrib("username", eq=False, hash=False, repr=True)
     """The user's username."""
 
-    avatar_hash: typing.Optional[str]
+    avatar_hash: typing.Optional[str] = marshie.attrib("avatar", eq=False, hash=False, repr=False)
     """The user's avatar hash, if they have one, otherwise `builtins.None`."""
 
-    is_bot: bool
+    is_bot: bool = marshie.attrib("bot", mdefault=False, eq=False, hash=False, repr=True)
     """`builtins.True` if this user is a bot account, `builtins.False` otherwise."""
 
-    is_system: bool
+    is_system: bool = marshie.attrib("system", mdefault=False, eq=False, hash=False, repr=False)
     """`builtins.True` if this user is a system account, `builtins.False` otherwise."""
 
-    flags: UserFlag
+    flags: UserFlag = marshie.attrib("public_flags", deserialize=UserFlag, mdefault=UserFlag.NONE, eq=False, hash=False)
     """The public flags for this user."""
 
 
@@ -615,27 +632,31 @@ class UserImpl(PartialUserImpl, User):
 class OwnUser(UserImpl):
     """Represents a user with extended OAuth2 information."""
 
-    is_mfa_enabled: bool = attr.ib(eq=False, hash=False, repr=False)
+    flags: UserFlag = marshie.attrib("flags", deserialize=UserFlag, eq=False, hash=False)
+
+    is_mfa_enabled: bool = marshie.attrib("mfa_enabled", eq=False, hash=False, repr=False)
     """Whether the user's account has multi-factor authentication enabled."""
 
-    locale: typing.Optional[str] = attr.ib(eq=False, hash=False, repr=False)
+    locale: typing.Optional[str] = marshie.attrib("locale", mdefault=None, eq=False, hash=False, repr=False)
     """The user's set language. This is not provided by the `READY` event."""
 
-    is_verified: typing.Optional[bool] = attr.ib(eq=False, hash=False, repr=False)
+    is_verified: typing.Optional[bool] = marshie.attrib("verified", mdefault=None, eq=False, hash=False, repr=False)
     """Whether the email for this user's account has been verified.
 
     Will be `builtins.None` if retrieved through the OAuth2 flow without the `email`
     scope.
     """
 
-    email: typing.Optional[str] = attr.ib(eq=False, hash=False, repr=False)
+    email: typing.Optional[str] = marshie.attrib("email", mdefault=None, eq=False, hash=False, repr=False)
     """The user's set email.
 
     Will be `builtins.None` if retrieved through OAuth2 flow without the `email`
     scope. Will always be `builtins.None` for bot users.
     """
 
-    premium_type: typing.Union[PremiumType, int, None] = attr.ib(eq=False, hash=False, repr=False)
+    premium_type: typing.Union[PremiumType, int, None] = marshie.attrib(
+        "premium_type", deserialize=PremiumType, mdefault=None, eq=False, hash=False, repr=False
+    )
     """The type of Nitro Subscription this user account had.
 
     This will always be `builtins.None` for bots.

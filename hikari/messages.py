@@ -39,6 +39,7 @@ __all__: typing.List[str] = [
 import typing
 
 import attr
+import marshie
 
 from hikari import files
 from hikari import guilds
@@ -48,8 +49,10 @@ from hikari import traits
 from hikari import undefined
 from hikari import urls
 from hikari.internal import attr_extensions
+from hikari.internal import data_binding
 from hikari.internal import enums
 from hikari.internal import routes
+from hikari.internal import time
 
 if typing.TYPE_CHECKING:
     import datetime
@@ -161,25 +164,25 @@ class Attachment(snowflakes.Unique, files.WebResource):
     by passing it as an attached file when creating a message, etc.
     """
 
-    id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this entity."""
 
-    url: str = attr.ib(repr=True)
+    url: str = marshie.attrib("url", repr=True)
     """The source URL of file."""
 
-    filename: str = attr.ib(repr=True)
+    filename: str = marshie.attrib("filename", repr=True)
     """The name of the file."""
 
-    size: int = attr.ib(repr=True)
+    size: int = marshie.attrib("size", deserialize=int, repr=True)
     """The size of the file in bytes."""
 
-    proxy_url: str = attr.ib(repr=False)
+    proxy_url: str = marshie.attrib("proxy_url", repr=False)
     """The proxied URL of file."""
 
-    height: typing.Optional[int] = attr.ib(repr=False)
+    height: typing.Optional[int] = marshie.attrib("height", mdefault=None, repr=False)
     """The height of the image (if the file is an image)."""
 
-    width: typing.Optional[int] = attr.ib(repr=False)
+    width: typing.Optional[int] = marshie.attrib("width", mdefault=None, repr=False)
     """The width of the image (if the file is an image)."""
 
     def __str__(self) -> str:
@@ -191,13 +194,15 @@ class Attachment(snowflakes.Unique, files.WebResource):
 class Reaction:
     """Represents a reaction in a message."""
 
-    count: int = attr.ib(eq=False, hash=False, repr=True)
+    count: int = marshie.attrib("count", deserialize=int, eq=False, hash=False, repr=True)
     """The number of times the emoji has been used to react."""
 
-    emoji: typing.Union[emojis_.UnicodeEmoji, emojis_.CustomEmoji] = attr.ib(eq=True, hash=True, repr=True)
+    emoji: typing.Union[emojis_.UnicodeEmoji, emojis_.CustomEmoji] = marshie.attrib(
+        from_kwarg=True, eq=True, hash=True, repr=True
+    )
     """The emoji used to react."""
 
-    is_me: bool = attr.ib(eq=False, hash=False, repr=False)
+    is_me: bool = marshie.attrib("me", eq=False, hash=False, repr=False)
     """Whether the current user reacted using this emoji."""
 
     def __str__(self) -> str:
@@ -209,13 +214,14 @@ class Reaction:
 class MessageActivity:
     """Represents the activity of a rich presence-enabled message."""
 
-    type: typing.Union[MessageActivityType, int] = attr.ib(repr=True)
+    type: typing.Union[MessageActivityType, int] = marshie.attrib("type", deserialize=MessageActivityType, repr=True)
     """The type of message activity."""
 
-    party_id: typing.Optional[str] = attr.ib(repr=True)
+    party_id: typing.Optional[str] = marshie.attrib("party_id", mdefault=None, repr=True)
     """The party ID of the message activity."""
 
 
+# Seeing as this is a purely artificial data-structure, we do not include any marshalling rules on it.
 @attr_extensions.with_copy
 @attr.s(eq=True, hash=False, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Mentions:
@@ -355,20 +361,26 @@ class MessageReference:
     message, pin add messages and replies.
     """
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = marshie.attrib(
+        constant=marshie.Ref("app"), repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """The client application that models may use for procedures."""
 
-    id: typing.Optional[snowflakes.Snowflake] = attr.ib(repr=True)
+    id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
+        "message_id", deserialize=snowflakes.Snowflake, mdefault=None, repr=True
+    )
     """The ID of the original message.
 
     This will be `builtins.None` for channel follow add messages. This may
     point to a deleted message.
     """
 
-    channel_id: snowflakes.Snowflake = attr.ib(repr=True)
+    channel_id: snowflakes.Snowflake = marshie.attrib("channel_id", deserialize=snowflakes.Snowflake, repr=True)
     """The ID of the channel that the original message originated from."""
 
-    guild_id: typing.Optional[snowflakes.Snowflake] = attr.ib(repr=True)
+    guild_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
+        "guild_id", deserialize=snowflakes.Snowflake, mdefault=None, repr=True
+    )
     """The ID of the guild that the message originated from.
 
     This will be `builtins.None` when the original message is not from
@@ -381,10 +393,17 @@ class MessageReference:
 class MessageApplication(guilds.PartialApplication):
     """The representation of an application used in messages."""
 
-    cover_image_hash: typing.Optional[str] = attr.ib(eq=False, hash=False, repr=False)
+    cover_image_hash: typing.Optional[str] = marshie.attrib("cover_image", eq=False, hash=False, repr=False)
     """The CDN's hash of this application's cover image, used on the store."""
 
-    primary_sku_id: typing.Optional[snowflakes.Snowflake] = attr.ib(eq=False, hash=False, repr=False)
+    primary_sku_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
+        "primary_sku_id",
+        deserialize=data_binding.optional_cast(snowflakes.Snowflake),
+        mdefault=None,
+        eq=False,
+        hash=False,
+        repr=False,
+    )
     """The ID of the primary "Game SKU" of a game that's sold on Discord."""
 
     @property
@@ -449,27 +468,32 @@ class PartialMessage(snowflakes.Unique):
         nullability.
     """
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = marshie.attrib(
+        constant=marshie.Ref("app"), repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """The client application that models may use for procedures."""
 
-    id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this entity."""
 
-    channel_id: snowflakes.Snowflake = attr.ib(repr=True)
+    channel_id: snowflakes.Snowflake = marshie.attrib("channel_id", deserialize=snowflakes.Snowflake, repr=True)
     """The ID of the channel that the message was sent in."""
 
-    _guild_id: typing.Optional[snowflakes.Snowflake] = attr.ib(repr=True)
+    _guild_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
+        "guild_id", deserialize=snowflakes.Snowflake, mdefault=None, repr=True
+    )
     #: Try to determine this best-effort in the property defined further
     #: down.
 
-    author: typing.Optional[users_.User] = attr.ib(repr=True)
+    # As this is also needed for member, this will be deserialized else where.
+    author: typing.Optional[users_.User] = marshie.attrib(from_kwarg=True, repr=True)
     """The author of this message.
 
     This will be `builtins.None` in some cases such as when Discord
     updates a message with an embed URL preview.
     """
 
-    member: typing.Optional[guilds.Member] = attr.ib(repr=False)
+    member: typing.Optional[guilds.Member] = marshie.attrib(from_kwarg=True, repr=False)
     """The member for the author who created the message.
 
     If the message is not in a guild, this will be `builtins.None`.
@@ -479,23 +503,30 @@ class PartialMessage(snowflakes.Unique):
     REST API.
     """
 
-    content: undefined.UndefinedNoneOr[str] = attr.ib(repr=False)
+    content: undefined.UndefinedNoneOr[str] = marshie.attrib("content", mdefault=undefined.UNDEFINED, repr=False)
     """The content of the message."""
 
-    timestamp: undefined.UndefinedOr[datetime.datetime] = attr.ib(repr=False)
+    timestamp: undefined.UndefinedOr[datetime.datetime] = marshie.attrib(
+        "timestamp", deserialize=time.iso8601_datetime_string_to_datetime, mdefault=undefined.UNDEFINED, repr=False
+    )
     """The timestamp that the message was sent at."""
 
-    edited_timestamp: undefined.UndefinedNoneOr[datetime.datetime] = attr.ib(repr=False)
+    edited_timestamp: undefined.UndefinedNoneOr[datetime.datetime] = marshie.attrib(
+        "edited_timestamp",
+        deserialize=data_binding.optional_cast(time.iso8601_datetime_string_to_datetime),
+        mdefault=undefined.UNDEFINED,
+        repr=False,
+    )
     """The timestamp that the message was last edited at.
 
     Will be `builtins.None` if the message wasn't ever edited, or `undefined`
     if the info is not available.
     """
 
-    is_tts: undefined.UndefinedOr[bool] = attr.ib(repr=False)
+    is_tts: undefined.UndefinedOr[bool] = marshie.attrib("tts", mdefault=undefined.UNDEFINED, repr=False)
     """Whether the message is a TTS message."""
 
-    mentions: Mentions = attr.ib(repr=True)
+    mentions: Mentions = marshie.attrib(constant=NotImplemented, repr=True)
     """Description of who is mentioned in a message.
 
     !!! warning
@@ -505,43 +536,68 @@ class PartialMessage(snowflakes.Unique):
         This is a Discord limitation.
     """
 
-    attachments: undefined.UndefinedOr[typing.Sequence[Attachment]] = attr.ib(repr=False)
+    attachments: undefined.UndefinedOr[typing.Sequence[Attachment]] = marshie.attrib(
+        "attachments",
+        deserialize=marshie.Ref(Attachment, data_binding.seq_cast),
+        mdefault=undefined.UNDEFINED,
+        repr=False,
+    )
     """The message attachments."""
 
-    embeds: undefined.UndefinedOr[typing.Sequence[embeds_.Embed]] = attr.ib(repr=False)
+    embeds: undefined.UndefinedOr[typing.Sequence[embeds_.Embed]] = marshie.attrib(from_kwarg=True, repr=False)
     """The message embeds."""
 
-    reactions: undefined.UndefinedOr[typing.Sequence[Reaction]] = attr.ib(repr=False)
+    reactions: undefined.UndefinedOr[typing.Sequence[Reaction]] = marshie.attrib(from_kwarg=True, repr=False)
     """The message reactions."""
 
-    is_pinned: undefined.UndefinedOr[bool] = attr.ib(repr=False)
+    is_pinned: undefined.UndefinedOr[bool] = marshie.attrib("pinned", mdefault=undefined.UNDEFINED, repr=False)
     """Whether the message is pinned."""
 
-    webhook_id: undefined.UndefinedNoneOr[snowflakes.Snowflake] = attr.ib(repr=False)
+    webhook_id: undefined.UndefinedNoneOr[snowflakes.Snowflake] = marshie.attrib(
+        "webhook_id", deserialize=snowflakes.Snowflake, mdefault=undefined.UNDEFINED, repr=False
+    )
     """If the message was generated by a webhook, the webhook's ID."""
 
-    type: undefined.UndefinedOr[typing.Union[MessageType, int]] = attr.ib(repr=False)
+    type: undefined.UndefinedOr[typing.Union[MessageType, int]] = marshie.attrib(
+        "type", deserialize=MessageType, mdefault=undefined.UNDEFINED, repr=False
+    )
     """The message type."""
 
-    activity: undefined.UndefinedNoneOr[MessageActivity] = attr.ib(repr=False)
+    activity: undefined.UndefinedNoneOr[MessageActivity] = marshie.attrib(
+        "activity", deserialize=marshie.Ref(MessageActivity), mdefault=undefined.UNDEFINED, repr=False
+    )
     """The message activity."""
 
-    application: undefined.UndefinedNoneOr[MessageApplication] = attr.ib(repr=False)
+    application: undefined.UndefinedNoneOr[MessageApplication] = marshie.attrib(
+        "application", deserialize=marshie.Ref(MessageApplication), mdefault=undefined.UNDEFINED, repr=False
+    )
     """The message application."""
 
-    message_reference: undefined.UndefinedNoneOr[MessageReference] = attr.ib(repr=False)
+    message_reference: undefined.UndefinedNoneOr[MessageReference] = marshie.attrib(
+        "message_reference",
+        deserialize=marshie.Ref(MessageReference),
+        mdefault=undefined.UNDEFINED,
+        repr=False,
+    )
     """The message reference data."""
 
-    flags: undefined.UndefinedNoneOr[MessageFlag] = attr.ib(repr=False)
+    flags: undefined.UndefinedNoneOr[MessageFlag] = marshie.attrib(
+        "flags", deserialize=MessageFlag, mdefault=undefined.UNDEFINED, repr=False
+    )
     """The message flags."""
 
-    nonce: undefined.UndefinedNoneOr[str] = attr.ib(repr=False)
+    nonce: undefined.UndefinedNoneOr[str] = marshie.attrib("nonce", mdefault=undefined.UNDEFINED, repr=False)
     """The message nonce.
 
     This is a string used for validating a message was sent.
     """
 
-    referenced_message: undefined.UndefinedNoneOr[Message] = attr.ib(repr=False)
+    referenced_message: undefined.UndefinedNoneOr[Message] = marshie.attrib(
+        "referenced_message",
+        deserialize=marshie.Ref("Message", data_binding.optional_cast),
+        mdefault=undefined.UNDEFINED,
+        repr=False,
+    )
     """The message that was replied to.
 
     If `type` is `MessageType.REPLY` and `hikari.undefined.UNDEFINED`, Discord's
@@ -1040,6 +1096,7 @@ class PartialMessage(snowflakes.Unique):
             await self.app.rest.delete_all_reactions_for_emoji(channel=self.channel_id, message=self.id, emoji=emoji)
 
 
+@marshie.register_class("Message")
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Message(PartialMessage):
     """Represents a message with all known details."""
@@ -1052,31 +1109,38 @@ class Message(PartialMessage):
     # and possibly result in large amounts of unwasted memory if you get that
     # far.
 
-    author: users_.User
+    # As this is also needed for member, this will be deserialized else where.
+    author: users_.User = marshie.attrib(from_kwarg=True, repr=True)
     """The author of this message."""
 
-    member: typing.Optional[guilds.Member]
+    member: typing.Optional[guilds.Member] = marshie.attrib(from_kwarg=True, repr=False)
     """The member properties for the message's author."""
 
-    content: typing.Optional[str]
+    content: typing.Optional[str] = marshie.attrib("content", repr=False)
     """The content of the message."""
 
-    timestamp: datetime.datetime
+    timestamp: datetime.datetime = marshie.attrib(
+        "timestamp", deserialize=time.iso8601_datetime_string_to_datetime, repr=False
+    )
     """The timestamp that the message was sent at."""
 
-    edited_timestamp: typing.Optional[datetime.datetime]
+    edited_timestamp: typing.Optional[datetime.datetime] = marshie.attrib(
+        "edited_timestamp", deserialize=data_binding.optional_cast(time.iso8601_datetime_string_to_datetime), repr=False
+    )
     """The timestamp that the message was last edited at.
 
     Will be `builtins.None` if it wasn't ever edited.
     """
 
-    is_tts: bool
+    is_tts: bool = marshie.attrib("tts", repr=False)
     """Whether the message is a TTS message."""
 
     mentions: Mentions
     """Who is mentioned in a message."""
 
-    attachments: typing.Sequence[Attachment]
+    attachments: typing.Sequence[Attachment] = marshie.attrib(
+        "attachments", deserialize=marshie.Ref(Attachment, data_binding.seq_cast), repr=False
+    )
     """The message attachments."""
 
     embeds: typing.Sequence[embeds_.Embed]
@@ -1085,26 +1149,37 @@ class Message(PartialMessage):
     reactions: typing.Sequence[Reaction]
     """The message reactions."""
 
-    is_pinned: bool
+    is_pinned: bool = marshie.attrib("pinned", repr=False)
     """Whether the message is pinned."""
 
-    webhook_id: typing.Optional[snowflakes.Snowflake]
+    webhook_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
+        "webhook_id", deserialize=snowflakes.Snowflake, mdefault=None, repr=False
+    )
     """If the message was generated by a webhook, the webhook's id."""
 
-    type: typing.Union[MessageType, int]
+    type: typing.Union[MessageType, int] = marshie.attrib("type", deserialize=MessageType, repr=False)
     """The message type."""
 
-    activity: typing.Optional[MessageActivity]
+    activity: typing.Optional[MessageActivity] = marshie.attrib(
+        "activity", deserialize=marshie.Ref(MessageActivity), mdefault=None, repr=False
+    )
     """The message activity."""
 
-    application: typing.Optional[MessageApplication]
+    application: typing.Optional[MessageApplication] = marshie.attrib(
+        "application", deserialize=marshie.Ref(MessageApplication), mdefault=None, repr=False
+    )
     """The message application."""
 
-    message_reference: typing.Optional[MessageReference]
+    message_reference: typing.Optional[MessageReference] = marshie.attrib(
+        "message_reference",
+        deserialize=marshie.Ref(MessageReference),
+        mdefault=None,
+        repr=False,
+    )
     """The message reference data."""
 
-    flags: typing.Optional[MessageFlag]
+    flags: typing.Optional[MessageFlag] = marshie.attrib("flags", deserialize=MessageFlag, mdefault=None, repr=False)
     """The message flags."""
 
-    nonce: typing.Optional[str]
+    nonce: typing.Optional[str] = marshie.attrib("nonce", mdefault=None, repr=False)
     """The message nonce. This is a string used for validating a message was sent."""

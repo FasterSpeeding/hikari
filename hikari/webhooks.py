@@ -28,12 +28,14 @@ __all__: typing.List[str] = ["WebhookType", "Webhook"]
 import typing
 
 import attr
+import marshie
 
 from hikari import files as files_
 from hikari import snowflakes
 from hikari import undefined
 from hikari import urls
 from hikari.internal import attr_extensions
+from hikari.internal import data_binding
 from hikari.internal import enums
 from hikari.internal import routes
 
@@ -67,22 +69,37 @@ class Webhook(snowflakes.Unique):
     send informational messages to specific channels.
     """
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    app: traits.RESTAware = marshie.attrib(
+        constant=marshie.Ref("app"), repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """The client application that models may use for procedures."""
 
-    id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this entity."""
 
-    type: typing.Union[WebhookType, int] = attr.ib(eq=False, hash=False, repr=True)
+    type: typing.Union[WebhookType, int] = marshie.attrib(
+        "type", deserialize=WebhookType, eq=False, hash=False, repr=True
+    )
     """The type of the webhook."""
 
-    guild_id: typing.Optional[snowflakes.Snowflake] = attr.ib(eq=False, hash=False, repr=True)
+    guild_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
+        "guild_id", deserialize=snowflakes.Snowflake, mdefault=None, eq=False, hash=False, repr=True
+    )
     """The guild ID of the webhook."""
 
-    channel_id: snowflakes.Snowflake = attr.ib(eq=False, hash=False, repr=True)
+    channel_id: snowflakes.Snowflake = marshie.attrib(
+        "channel_id", deserialize=snowflakes.Snowflake, eq=False, hash=False, repr=True
+    )
     """The channel ID this webhook is for."""
 
-    author: typing.Optional[users_.User] = attr.ib(eq=False, hash=False, repr=True)
+    author: typing.Optional[users_.User] = marshie.attrib(
+        "user",
+        deserialize=marshie.Ref("UserImpl"),
+        mdefault=None,
+        eq=False,
+        hash=False,
+        repr=True,
+    )
     """The user that created the webhook
 
     !!! info
@@ -90,13 +107,13 @@ class Webhook(snowflakes.Unique):
         than the webhook's token.
     """
 
-    name: typing.Optional[str] = attr.ib(eq=False, hash=False, repr=True)
+    name: typing.Optional[str] = marshie.attrib("name", eq=False, hash=False, repr=True)
     """The name of the webhook."""
 
-    avatar_hash: typing.Optional[str] = attr.ib(eq=False, hash=False, repr=False)
+    avatar_hash: typing.Optional[str] = marshie.attrib("avatar", eq=False, hash=False, repr=False)
     """The avatar hash of the webhook."""
 
-    token: typing.Optional[str] = attr.ib(eq=False, hash=False, repr=False)
+    token: typing.Optional[str] = marshie.attrib("token", mdefault=None, eq=False, hash=False, repr=False)
     """The token for the webhook.
 
     !!! info
@@ -104,16 +121,36 @@ class Webhook(snowflakes.Unique):
         channel settings.
     """
 
-    application_id: typing.Optional[snowflakes.Snowflake] = attr.ib(eq=False, hash=False, repr=False)
+    application_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
+        "application_id",
+        deserialize=data_binding.optional_cast(snowflakes.Snowflake),
+        mdefault=None,
+        eq=False,
+        hash=False,
+        repr=False,
+    )
     """The ID of the application that created this webhook."""
 
-    source_channel: typing.Optional[channels_.PartialChannel] = attr.ib(eq=False, hash=False, repr=True)
+    source_channel: typing.Optional[channels_.PartialChannel] = marshie.attrib(
+        "source_channel",
+        deserialize=marshie.Ref("PartialChannel"),
+        mdefault=None,
+        eq=False,
+        hash=False,
+        repr=True,
+    )
     """The partial object of the channel a `CHANNEL_FOLLOWER` webhook is following.
 
     Will be `builtins.None` for other webhook types.
     """
 
-    source_guild: typing.Optional[guilds_.PartialGuild] = attr.ib(eq=False, hash=False, repr=True)
+    source_guild: typing.Optional[guilds_.PartialGuild] = marshie.attrib(
+        deserialize=marshie.Ref("PartialGuild"),
+        mdefault=None,
+        eq=False,
+        hash=False,
+        repr=True,
+    )
     """The partial object of the guild a `CHANNEL_FOLLOWER` webhook is following.
 
     Will be `builtins.None` for other webhook types.

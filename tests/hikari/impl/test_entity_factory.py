@@ -1452,7 +1452,7 @@ class TestEntityFactoryImpl:
         # While this isn't a legitimate case based on the current behaviour of the API, we still want to cover this
         # to ensure no duplication occurs.
         member_payload = {**member_payload, "guild_id": "76543325"}
-        member_payload["roles"] = [11111, 22222, 76543325, 33333, 44444]
+        member_payload["roles"] = ["11111", "22222", "76543325", "33333", "44444"]
         member = entity_factory_impl.deserialize_member(member_payload)
         assert member.app is mock_app
         assert member.guild_id == 76543325
@@ -1961,7 +1961,7 @@ class TestEntityFactoryImpl:
         assert guild.widget_channel_id is None
         assert guild.system_channel_id is None
         assert guild.rules_channel_id is None
-        assert guild.max_presences is entity_factory._DEFAULT_MAX_PRESENCES
+        assert guild.max_presences == 25_000
         assert guild.vanity_url_code is None
         assert guild.description is None
         assert guild.banner_hash is None
