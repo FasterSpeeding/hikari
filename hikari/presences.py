@@ -123,12 +123,12 @@ class ActivityParty:
 
     # TODO: indexes
     current_size: typing.Optional[int] = marshie.attrib(
-        marshie.path("size.0"), deserialize=int, mdefault=None, eq=False, hash=False, repr=False
+        marshie.path("size[0]"), deserialize=int, mdefault=None, eq=False, hash=False, repr=False
     )
     """Current size of this party, if applicable."""
 
     max_size: typing.Optional[int] = marshie.attrib(
-        marshie.path("size.1"), deserialize=int, eq=False, hash=False, repr=False
+        marshie.path("size[1]"), deserialize=int, eq=False, hash=False, repr=False
     )
     """Maximum size of this party, if applicable."""
 
@@ -298,7 +298,7 @@ class ClientStatus:
     """The status of the target user's web session."""
 
 
-@marshie.register_class("MemberPresence")
+@marshie.register.with_cls("MemberPresence")
 @attr_extensions.with_copy
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class MemberPresence:

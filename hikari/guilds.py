@@ -558,7 +558,7 @@ class PartialRole(snowflakes.Unique):
         return self.name
 
 
-@marshie.register_class("Role")
+@marshie.register.with_cls("Role")
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Role(PartialRole):
     """Represents a guild bound Role object."""
@@ -762,7 +762,7 @@ class IntegrationApplication(PartialApplication):
     """The bot associated with this application."""
 
 
-@marshie.register_class("PartialIntegration")
+@marshie.register.with_cls("PartialIntegration")
 @attr_extensions.with_copy
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class PartialIntegration(snowflakes.Unique):
@@ -903,7 +903,7 @@ class GuildMemberBan:
     """The object of the user this ban targets."""
 
 
-@marshie.register_class("PartialGuild")
+@marshie.register.with_cls("PartialGuild")
 @attr_extensions.with_copy
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class PartialGuild(snowflakes.Unique):
@@ -1527,7 +1527,7 @@ class RESTGuild(Guild):
         return self._roles.get(snowflakes.Snowflake(role))
 
 
-@marshie.register_class("GatewayGuild")
+@marshie.register.with_cls("GatewayGuild")
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class GatewayGuild(Guild):
     """Guild specialization that is sent via the gateway only."""

@@ -1096,7 +1096,7 @@ class PartialMessage(snowflakes.Unique):
             await self.app.rest.delete_all_reactions_for_emoji(channel=self.channel_id, message=self.id, emoji=emoji)
 
 
-@marshie.register_class("Message")
+@marshie.register.with_cls("Message")
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Message(PartialMessage):
     """Represents a message with all known details."""

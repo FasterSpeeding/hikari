@@ -108,7 +108,7 @@ class Emoji(files.WebResource, abc.ABC):
         return UnicodeEmoji.parse(string)
 
 
-@marshie.register_class("UnicodeEmoji")
+@marshie.register.with_cls("UnicodeEmoji")
 @attr_extensions.with_copy
 @attr.s(hash=True, init=True, kw_only=False, slots=True, eq=False, weakref_slot=False)
 class UnicodeEmoji(Emoji):
@@ -244,7 +244,7 @@ class UnicodeEmoji(Emoji):
         return cls(name=string)
 
 
-@marshie.register_class("CustomEmoji")
+@marshie.register.with_cls("CustomEmoji")
 @attr_extensions.with_copy
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class CustomEmoji(snowflakes.Unique, Emoji):
@@ -330,7 +330,7 @@ class CustomEmoji(snowflakes.Unique, Emoji):
         raise ValueError("Expected an emoji ID or emoji mention")
 
 
-@marshie.register_class("KnownCustomEmoji")
+@marshie.register.with_cls("KnownCustomEmoji")
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class KnownCustomEmoji(CustomEmoji):
     """Represents an emoji that is known from a guild the bot is in.

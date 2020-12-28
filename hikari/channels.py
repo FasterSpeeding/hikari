@@ -291,7 +291,7 @@ class PermissionOverwrite(snowflakes.Unique):
         return ~(self.allow | self.deny)
 
 
-@marshie.register_class("PartialChannel")
+@marshie.register.with_cls("PartialChannel")
 @attr_extensions.with_copy
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class PartialChannel(snowflakes.Unique):
@@ -588,7 +588,7 @@ class DMChannel(PrivateChannel, TextChannel):
 
     # TODO: path indexing
     recipient: users.User = marshie.attrib(
-        marshie.path("recipients.0"), deserialize=marshie.Ref("UserImpl"), eq=False, hash=False, repr=False
+        marshie.path("recipients[0]"), deserialize=marshie.Ref("UserImpl"), eq=False, hash=False, repr=False
     )
     """The user recipient of this DM."""
 

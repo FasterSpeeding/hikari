@@ -517,7 +517,7 @@ class User(PartialUser, abc.ABC):
         )
 
 
-@marshie.register_class("PartialUserImpl")
+@marshie.register.with_cls("PartialUserImpl")
 @attr_extensions.with_copy
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class PartialUserImpl(PartialUser):
@@ -600,7 +600,7 @@ class PartialUserImpl(PartialUser):
         return f"{self.username}#{self.discriminator}"
 
 
-@marshie.register_class("UserImpl")
+@marshie.register.with_cls("UserImpl")
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class UserImpl(PartialUserImpl, User):
     """Concrete implementation of user information."""
