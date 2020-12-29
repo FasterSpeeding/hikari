@@ -103,12 +103,12 @@ class ActivityTimestamps:
     """The datetimes for the start and/or end of an activity session."""
 
     start: typing.Optional[datetime.datetime] = marshie.attrib(
-        "start", deserialize=time.unix_epoch_to_datetime, mdefault=None, repr=True
+        deserialize=time.unix_epoch_to_datetime, mdefault=None, repr=True
     )
     """When this activity's session was started, if applicable."""
 
     end: typing.Optional[datetime.datetime] = marshie.attrib(
-        "end", deserialize=time.unix_epoch_to_datetime, mdefault=None, repr=True
+        deserialize=time.unix_epoch_to_datetime, mdefault=None, repr=True
     )
     """When this activity's session will end, if applicable."""
 
@@ -118,17 +118,17 @@ class ActivityTimestamps:
 class ActivityParty:
     """Used to represent activity groups of users."""
 
-    id: typing.Optional[str] = marshie.attrib("id", mdefault=None, eq=True, hash=True, repr=True)
+    id: typing.Optional[str] = marshie.attrib(mdefault=None, eq=True, hash=True, repr=True)
     """The string id of this party instance, if set."""
 
     # TODO: indexes
     current_size: typing.Optional[int] = marshie.attrib(
-        marshie.path("size[0]"), deserialize=int, mdefault=None, eq=False, hash=False, repr=False
+        marshie.path("$.size[0]"), deserialize=int, mdefault=None, eq=False, hash=False, repr=False
     )
     """Current size of this party, if applicable."""
 
     max_size: typing.Optional[int] = marshie.attrib(
-        marshie.path("size[1]"), deserialize=int, eq=False, hash=False, repr=False
+        marshie.path("$.size[1]"), deserialize=int, mdefault=None, eq=False, hash=False, repr=False
     )
     """Maximum size of this party, if applicable."""
 
@@ -138,16 +138,16 @@ class ActivityParty:
 class ActivityAssets:
     """Used to represent possible assets for an activity."""
 
-    large_image: typing.Optional[str] = marshie.attrib("large_image", mdefault=None, repr=False)
+    large_image: typing.Optional[str] = marshie.attrib(mdefault=None, repr=False)
     """The ID of the asset's large image, if set."""
 
-    large_text: typing.Optional[str] = marshie.attrib("large_text", mdefault=None, repr=False)
+    large_text: typing.Optional[str] = marshie.attrib(mdefault=None, repr=False)
     """The text that'll appear when hovering over the large image, if set."""
 
-    small_image: typing.Optional[str] = marshie.attrib("small_image", mdefault=None, repr=False)
+    small_image: typing.Optional[str] = marshie.attrib(mdefault=None, repr=False)
     """The ID of the asset's small image, if set."""
 
-    small_text: typing.Optional[str] = marshie.attrib("small_text", mdefault=None, repr=False)
+    small_text: typing.Optional[str] = marshie.attrib(mdefault=None, repr=False)
     """The text that'll appear when hovering over the small image, if set."""
 
 
@@ -156,13 +156,13 @@ class ActivityAssets:
 class ActivitySecret:
     """The secrets used for interacting with an activity party."""
 
-    join: typing.Optional[str] = marshie.attrib("join", mdefault=None, repr=False)
+    join: typing.Optional[str] = marshie.attrib(mdefault=None, repr=False)
     """The secret used for joining a party, if applicable."""
 
-    spectate: typing.Optional[str] = marshie.attrib("spectate", mdefault=None, repr=False)
+    spectate: typing.Optional[str] = marshie.attrib(mdefault=None, repr=False)
     """The secret used for spectating a party, if applicable."""
 
-    match: typing.Optional[str] = marshie.attrib("match", mdefault=None, repr=False)
+    match: typing.Optional[str] = marshie.attrib(mdefault=None, repr=False)
     """The secret used for matching a party, if applicable."""
 
 
@@ -198,14 +198,14 @@ class ActivityFlag(enums.Flag):
 class Activity:
     """Represents a regular activity that can be associated with a presence."""
 
-    name: str = marshie.attrib("name")
+    name: str = marshie.attrib()
     """The activity name."""
 
-    url: typing.Optional[str] = marshie.attrib("url", mdefault=None, default=None, repr=False)
+    url: typing.Optional[str] = marshie.attrib(mdefault=None, default=None, repr=False)
     """The activity URL. Only valid for `STREAMING` activities."""
 
     type: typing.Union[ActivityType, int] = marshie.attrib(
-        "type", deserialize=ActivityType, converter=ActivityType, default=ActivityType.PLAYING
+        deserialize=ActivityType, converter=ActivityType, default=ActivityType.PLAYING
     )
     """The activity type."""
 
@@ -217,42 +217,42 @@ class Activity:
 class RichActivity(Activity):
     """Represents a rich activity that can be associated with a presence."""
 
-    created_at: datetime.datetime = marshie.attrib("created_at", deserialize=time.unix_epoch_to_datetime, repr=False)
+    created_at: datetime.datetime = marshie.attrib(deserialize=time.unix_epoch_to_datetime, repr=False)
     """When this activity was added to the user's session."""
 
     timestamps: typing.Optional[ActivityTimestamps] = marshie.attrib(
-        "timestamps", deserialize=marshie.Ref(ActivityTimestamps), mdefault=None, repr=False
+        deserialize=marshie.Ref(ActivityTimestamps), mdefault=None, repr=False
     )
     """The timestamps for when this activity's current state will start and
     end, if applicable.
     """
 
     application_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "application_id", deserialize=snowflakes.Snowflake, mdefault=None, repr=False
+        deserialize=snowflakes.Snowflake, mdefault=None, repr=False
     )
     """The ID of the application this activity is for, if applicable."""
 
-    details: typing.Optional[str] = marshie.attrib("details", mdefault=None, repr=False)
+    details: typing.Optional[str] = marshie.attrib(mdefault=None, repr=False)
     """The text that describes what the activity's target is doing, if set."""
 
-    state: typing.Optional[str] = marshie.attrib("state", mdefault=None, repr=False)
+    state: typing.Optional[str] = marshie.attrib(mdefault=None, repr=False)
     """The current status of this activity's target, if set."""
 
     emoji: typing.Optional[emojis_.Emoji] = marshie.attrib(from_kwarg=True, repr=False)
     """The emoji of this activity, if it is a custom status and set."""
 
     party: typing.Optional[ActivityParty] = marshie.attrib(
-        "party", deserialize=marshie.Ref(ActivityParty), mdefault=None, repr=False
+        deserialize=marshie.Ref(ActivityParty), mdefault=None, repr=False
     )
     """Information about the party associated with this activity, if set."""
 
     assets: typing.Optional[ActivityAssets] = marshie.attrib(
-        "assets", deserialize=marshie.Ref(ActivityAssets), mdefault=None, repr=False
+        deserialize=marshie.Ref(ActivityAssets), mdefault=None, repr=False
     )
     """Images and their hover over text for the activity."""
 
     secrets: typing.Optional[ActivitySecret] = marshie.attrib(
-        "secrets", deserialize=marshie.Ref(ActivitySecret), mdefault=None, repr=False
+        deserialize=marshie.Ref(ActivitySecret), mdefault=None, repr=False
     )
     """Secrets for Rich Presence joining and spectating."""
 
@@ -260,7 +260,7 @@ class RichActivity(Activity):
     is_instance: typing.Optional[bool] = marshie.attrib("instance", mdefault=None, repr=False)
     """Whether this activity is an instanced game session."""
 
-    flags: typing.Optional[ActivityFlag] = marshie.attrib("flags", deserialize=ActivityFlag, mdefault=None, repr=False)
+    flags: typing.Optional[ActivityFlag] = marshie.attrib(deserialize=ActivityFlag, mdefault=None, repr=False)
     """Flags that describe what the activity includes, if present."""
 
 
@@ -286,15 +286,13 @@ class Status(str, enums.Enum):
 class ClientStatus:
     """The client statuses for this member."""
 
-    desktop: typing.Union[Status, str] = marshie.attrib(
-        "desktop", deserialize=Status, mdefault=Status.OFFLINE, repr=True
-    )
+    desktop: typing.Union[Status, str] = marshie.attrib(deserialize=Status, mdefault=Status.OFFLINE, repr=True)
     """The status of the target user's desktop session."""
 
-    mobile: typing.Union[Status, str] = marshie.attrib("mobile", deserialize=Status, mdefault=Status.OFFLINE, repr=True)
+    mobile: typing.Union[Status, str] = marshie.attrib(deserialize=Status, mdefault=Status.OFFLINE, repr=True)
     """The status of the target user's mobile session."""
 
-    web: typing.Union[Status, str] = marshie.attrib("web", deserialize=Status, mdefault=Status.OFFLINE, repr=True)
+    web: typing.Union[Status, str] = marshie.attrib(deserialize=Status, mdefault=Status.OFFLINE, repr=True)
     """The status of the target user's web session."""
 
 
@@ -310,7 +308,7 @@ class MemberPresence:
     """The client application that models may use for procedures."""
 
     user_id: snowflakes.Snowflake = marshie.attrib(
-        marshie.path("user.id"), deserialize=snowflakes.Snowflake, repr=True, eq=False, hash=True
+        marshie.path("$.user.id"), deserialize=snowflakes.Snowflake, repr=True, eq=False, hash=True
     )
     """The ID of the user this presence belongs to."""
 
@@ -335,6 +333,6 @@ class MemberPresence:
     """
 
     client_status: ClientStatus = marshie.attrib(
-        "client_status", deserialize=marshie.Ref(ClientStatus), eq=False, hash=False, repr=False
+        deserialize=marshie.Ref(ClientStatus), eq=False, hash=False, repr=False
     )
     """Platform-specific user-statuses."""

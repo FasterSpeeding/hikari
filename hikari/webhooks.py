@@ -74,27 +74,23 @@ class Webhook(snowflakes.Unique):
     )
     """The client application that models may use for procedures."""
 
-    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this entity."""
 
-    type: typing.Union[WebhookType, int] = marshie.attrib(
-        "type", deserialize=WebhookType, eq=False, hash=False, repr=True
-    )
+    type: typing.Union[WebhookType, int] = marshie.attrib(deserialize=WebhookType, eq=False, hash=False, repr=True)
     """The type of the webhook."""
 
     guild_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "guild_id", deserialize=snowflakes.Snowflake, mdefault=None, eq=False, hash=False, repr=True
+        deserialize=snowflakes.Snowflake, mdefault=None, eq=False, hash=False, repr=True
     )
     """The guild ID of the webhook."""
 
-    channel_id: snowflakes.Snowflake = marshie.attrib(
-        "channel_id", deserialize=snowflakes.Snowflake, eq=False, hash=False, repr=True
-    )
+    channel_id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=False, hash=False, repr=True)
     """The channel ID this webhook is for."""
 
     author: typing.Optional[users_.User] = marshie.attrib(
         "user",
-        deserialize=marshie.Ref("UserImpl"),
+        deserialize="UserImpl",
         mdefault=None,
         eq=False,
         hash=False,
@@ -107,13 +103,13 @@ class Webhook(snowflakes.Unique):
         than the webhook's token.
     """
 
-    name: typing.Optional[str] = marshie.attrib("name", eq=False, hash=False, repr=True)
+    name: typing.Optional[str] = marshie.attrib(eq=False, hash=False, repr=True)
     """The name of the webhook."""
 
     avatar_hash: typing.Optional[str] = marshie.attrib("avatar", eq=False, hash=False, repr=False)
     """The avatar hash of the webhook."""
 
-    token: typing.Optional[str] = marshie.attrib("token", mdefault=None, eq=False, hash=False, repr=False)
+    token: typing.Optional[str] = marshie.attrib(mdefault=None, eq=False, hash=False, repr=False)
     """The token for the webhook.
 
     !!! info
@@ -122,7 +118,6 @@ class Webhook(snowflakes.Unique):
     """
 
     application_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "application_id",
         deserialize=data_binding.optional_cast(snowflakes.Snowflake),
         mdefault=None,
         eq=False,
@@ -132,8 +127,7 @@ class Webhook(snowflakes.Unique):
     """The ID of the application that created this webhook."""
 
     source_channel: typing.Optional[channels_.PartialChannel] = marshie.attrib(
-        "source_channel",
-        deserialize=marshie.Ref("PartialChannel"),
+        deserialize="PartialChannel",
         mdefault=None,
         eq=False,
         hash=False,
@@ -145,7 +139,7 @@ class Webhook(snowflakes.Unique):
     """
 
     source_guild: typing.Optional[guilds_.PartialGuild] = marshie.attrib(
-        deserialize=marshie.Ref("PartialGuild"),
+        deserialize="PartialGuild",
         mdefault=None,
         eq=False,
         hash=False,

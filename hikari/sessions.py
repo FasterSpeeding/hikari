@@ -40,14 +40,14 @@ from hikari.internal import time
 class SessionStartLimit:
     """Used to represent information about the current session start limits."""
 
-    total: int = marshie.attrib("total", deserialize=int, repr=True)
+    total: int = marshie.attrib(deserialize=int, repr=True)
     """The total number of session starts the current bot is allowed."""
 
-    remaining: int = marshie.attrib("remaining", deserialize=int, repr=True)
+    remaining: int = marshie.attrib(deserialize=int, repr=True)
     """The remaining number of session starts this bot has."""
 
     reset_after: datetime.timedelta = marshie.attrib(
-        "reset_after", deserialize=lambda value: datetime.timedelta(minutes=value), repr=True
+        deserialize=lambda value: datetime.timedelta(milliseconds=value), repr=True
     )
     """When `SessionStartLimit.remaining` will reset for the current bot.
 
@@ -56,7 +56,7 @@ class SessionStartLimit:
 
     # I do not trust that this may never be zero for some unknown reason. If it was 0, it
     # would hang the application on start up, so I enforce it is at least 1.
-    max_concurrency: int = marshie.attrib("max_concurrency", deserialize=lambda v: max(v, 1), mdefault=1, repr=True)
+    max_concurrency: int = marshie.attrib(deserialize=lambda v: max(v, 1), mdefault=1, repr=True)
     """Maximum connection concurrency.
 
     This defines how many shards can be started at once within a 5 second
@@ -83,13 +83,11 @@ class SessionStartLimit:
 class GatewayBot:
     """Used to represent gateway information for the connected bot."""
 
-    url: str = marshie.attrib("url", repr=True)
+    url: str = marshie.attrib(repr=True)
     """The WSS URL that can be used for connecting to the gateway."""
 
     shard_count: int = marshie.attrib("shards", deserialize=int, repr=True)
     """The recommended number of shards to use when connecting to the gateway."""
 
-    session_start_limit: SessionStartLimit = marshie.attrib(
-        "session_start_limit", deserialize=marshie.Ref(SessionStartLimit), repr=True
-    )
+    session_start_limit: SessionStartLimit = marshie.attrib(deserialize=marshie.Ref(SessionStartLimit), repr=True)
     """Information about the bot's current session start limit."""

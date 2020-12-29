@@ -33,6 +33,7 @@ __all__: typing.List[str] = [
 ]
 
 import abc
+import datetime
 import typing
 
 import attr
@@ -49,8 +50,6 @@ from hikari.internal import routes
 from hikari.internal import time
 
 if typing.TYPE_CHECKING:
-    import datetime
-
     from hikari import channels
     from hikari import traits
     from hikari import users
@@ -91,10 +90,10 @@ class VanityURL(InviteCode):
     )
     """The client application that models may use for procedures."""
 
-    code: str = marshie.attrib("code", eq=True, hash=True, repr=True)
+    code: str = marshie.attrib(eq=True, hash=True, repr=True)
     """The code for this invite."""
 
-    uses: int = marshie.attrib("uses", eq=False, hash=False, repr=True)
+    uses: int = marshie.attrib(eq=False, hash=False, repr=True)
     """The amount of times this invite has been used."""
 
     def __str__(self) -> str:
@@ -106,7 +105,7 @@ class InviteGuild(guilds.PartialGuild):
     """Represents the partial data of a guild that is attached to invites."""
 
     features: typing.Sequence[guilds.GuildFeatureish] = marshie.attrib(
-        "features", deserialize=data_binding.seq_cast(guilds.GuildFeature), eq=False, hash=False, repr=False
+        deserialize=data_binding.seq_cast(guilds.GuildFeature), eq=False, hash=False, repr=False
     )
     """A list of the features in this guild."""
 
@@ -120,7 +119,7 @@ class InviteGuild(guilds.PartialGuild):
     `features` for this guild. For all other purposes, it is `builtins.None`.
     """
 
-    description: typing.Optional[str] = marshie.attrib("description", eq=False, hash=False, repr=False)
+    description: typing.Optional[str] = marshie.attrib(eq=False, hash=False, repr=False)
     """The guild's description.
 
     This is only present if certain `features` are set in this guild.
@@ -128,11 +127,11 @@ class InviteGuild(guilds.PartialGuild):
     """
 
     verification_level: typing.Union[guilds.GuildVerificationLevel, int] = marshie.attrib(
-        "verification_level", deserialize=guilds.GuildVerificationLevel, eq=False, hash=False, repr=False
+        deserialize=guilds.GuildVerificationLevel, eq=False, hash=False, repr=False
     )
     """The verification level required for a user to participate in this guild."""
 
-    vanity_url_code: typing.Optional[str] = marshie.attrib("vanity_url_code", eq=False, hash=False, repr=True)
+    vanity_url_code: typing.Optional[str] = marshie.attrib(eq=False, hash=False, repr=True)
     """The vanity URL code for the guild's vanity URL.
 
     This is only present if `hikari.guilds.GuildFeature.VANITY_URL` is in the
@@ -226,11 +225,10 @@ class Invite(InviteCode):
     )
     """The client application that models may use for procedures."""
 
-    code: str = marshie.attrib("code", eq=True, hash=True, repr=True)
+    code: str = marshie.attrib(eq=True, hash=True, repr=True)
     """The code for this invite."""
 
     guild: typing.Optional[InviteGuild] = marshie.attrib(
-        "guild",
         deserialize=marshie.Ref(InviteGuild),
         mdefault=None,
         eq=False,
@@ -244,7 +242,7 @@ class Invite(InviteCode):
     """
 
     guild_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "guild_id", deserialize=snowflakes.Snowflake, mdefault=None, eq=False, hash=False, repr=True
+        deserialize=snowflakes.Snowflake, mdefault=None, eq=False, hash=False, repr=True
     )
     """The ID of the guild this invite belongs to.
 
@@ -252,8 +250,7 @@ class Invite(InviteCode):
     """
 
     channel: typing.Optional[channels.PartialChannel] = marshie.attrib(
-        "channel",
-        deserialize=marshie.Ref("PartialChannel"),
+        deserialize="PartialChannel",
         mdefault=None,
         eq=False,
         hash=False,
@@ -269,8 +266,7 @@ class Invite(InviteCode):
     """The ID of the channel this invite targets."""
 
     inviter: typing.Optional[users.User] = marshie.attrib(
-        "inviter",
-        deserialize=marshie.Ref("UserImpl"),
+        deserialize="UserImpl",
         mdefault=None,
         eq=False,
         hash=False,
@@ -279,8 +275,7 @@ class Invite(InviteCode):
     """The object of the user who created this invite."""
 
     target_user: typing.Optional[users.User] = marshie.attrib(
-        "target_user",
-        deserialize=marshie.Ref("UserImpl"),
+        deserialize="UserImpl",
         mdefault=None,
         eq=False,
         hash=False,
@@ -289,7 +284,7 @@ class Invite(InviteCode):
     """The object of the user who this invite targets, if set."""
 
     target_user_type: typing.Union[TargetUserType, int, None] = marshie.attrib(
-        "target_user_type", deserialize=TargetUserType, mdefault=None, eq=False, hash=False, repr=False
+        deserialize=TargetUserType, mdefault=None, eq=False, hash=False, repr=False
     )
     """The type of user target this invite is, if applicable."""
 
@@ -303,8 +298,6 @@ class Invite(InviteCode):
     """
 
     approximate_member_count: typing.Optional[int] = marshie.attrib(
-        "approximate_member_count",
-        deserialize=time.iso8601_datetime_string_to_datetime,
         mdefault=None,
         eq=False,
         hash=False,
@@ -332,10 +325,10 @@ class InviteWithMetadata(Invite):
     guild permissions, rather than it's code.
     """
 
-    uses: int = marshie.attrib("uses", eq=False, hash=False, repr=True)
+    uses: int = marshie.attrib(eq=False, hash=False, repr=True)
     """The amount of times this invite has been used."""
 
-    max_uses: typing.Optional[int] = marshie.attrib("max_uses", eq=False, hash=False, repr=True)
+    max_uses: typing.Optional[int] = marshie.attrib(eq=False, hash=False, repr=True)
     """The limit for how many times this invite can be used before it expires.
 
     If set to `builtins.None` then this is unlimited.
@@ -344,7 +337,7 @@ class InviteWithMetadata(Invite):
     # TODO: can we use a non-None value to represent infinity here somehow, or
     # make a timedelta that is infinite for comparisons?
     max_age: typing.Optional[datetime.timedelta] = marshie.attrib(
-        "max_age", deserialize=max_age_converter, eq=False, hash=False, repr=False
+        deserialize=max_age_converter, eq=False, hash=False, repr=False
     )
     """The timedelta of how long this invite will be valid for.
 
@@ -354,7 +347,9 @@ class InviteWithMetadata(Invite):
     is_temporary: bool = marshie.attrib("temporary", eq=False, hash=False, repr=True)
     """Whether this invite grants temporary membership."""
 
-    created_at: datetime.datetime = attr.ib(eq=False, hash=False, repr=False)
+    created_at: datetime.datetime = marshie.attrib(
+        deserialize=time.iso8601_datetime_string_to_datetime, eq=False, hash=False, repr=False
+    )
     """When this invite was created."""
 
     @property

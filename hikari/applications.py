@@ -52,7 +52,6 @@ from hikari.internal import routes
 
 if typing.TYPE_CHECKING:
     from hikari import channels
-    from hikari import channels
     from hikari import traits
 
 
@@ -203,28 +202,27 @@ class OwnConnection:
     Returned by the `GET Current User Connections` endpoint.
     """
 
-    id: str = marshie.attrib("id", eq=True, hash=True, repr=True)
+    id: str = marshie.attrib(eq=True, hash=True, repr=True)
     """The string ID of the third party connected account.
 
     !!! warning
         Seeing as this is a third party ID, it will not be a snowflakes.
     """
 
-    name: str = marshie.attrib("name", eq=False, hash=False, repr=True)
+    name: str = marshie.attrib(eq=False, hash=False, repr=True)
     """The username of the connected account."""
 
-    type: str = marshie.attrib("type", eq=False, hash=False, repr=True)
+    type: str = marshie.attrib(eq=False, hash=False, repr=True)
     """The type of service this connection is for."""
 
     is_revoked: bool = marshie.attrib("revoked", eq=False, hash=False, repr=False)
     """`builtins.True` if the connection has been revoked."""
 
     integrations: typing.Sequence[guilds.PartialIntegration] = marshie.attrib(
-        "integrations",
         deserialize=marshie.Ref(
             "PartialIntegration", lambda cast: data_binding.optional_cast(data_binding.seq_cast(cast))
         ),
-        mdefault=None,
+        mdefault_factory=list,
         eq=False,
         hash=False,
         repr=False,
@@ -241,7 +239,7 @@ class OwnConnection:
     """`builtins.True` if this connection's activities are shown in the user's presence."""
 
     visibility: typing.Union[ConnectionVisibility, int] = marshie.attrib(
-        "visibility", deserialize=ConnectionVisibility, eq=False, hash=False, repr=True
+        deserialize=ConnectionVisibility, eq=False, hash=False, repr=True
     )
     """The visibility of the connection."""
 
@@ -251,7 +249,7 @@ class OwnGuild(guilds.PartialGuild):
     """Represents a user bound partial guild object."""
 
     features: typing.Sequence[guilds.GuildFeatureish] = marshie.attrib(
-        "features", deserialize=data_binding.seq_cast(guilds.GuildFeature), eq=False, hash=False, repr=False
+        deserialize=data_binding.seq_cast(guilds.GuildFeature), eq=False, hash=False, repr=False
     )
     """A list of the features in this guild."""
 
@@ -281,21 +279,21 @@ class TeamMember(users.User):
     """Represents a member of a Team."""
 
     membership_state: typing.Union[TeamMembershipState, int] = marshie.attrib(
-        "membership_state", deserialize=TeamMembershipState, repr=False
+        deserialize=TeamMembershipState, repr=False
     )
     """The state of this user's membership."""
 
-    permissions: typing.Sequence[str] = marshie.attrib("permissions", repr=False)
+    permissions: typing.Sequence[str] = marshie.attrib(repr=False)
     """This member's permissions within a team.
 
     At the time of writing, this will always be a sequence of one `builtins.str`,
     which will always be `"*"`. This may change in the future, however.
     """
 
-    team_id: snowflakes.Snowflake = marshie.attrib("team_id", deserialize=snowflakes.Snowflake, repr=True)
+    team_id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, repr=True)
     """The ID of the team this member belongs to."""
 
-    user: users.User = marshie.attrib("user", deserialize=marshie.Ref("UserImpl"), repr=True)
+    user: users.User = marshie.attrib(deserialize="UserImpl", repr=True)
     """The user representation of this team member."""
 
     @property
@@ -370,7 +368,7 @@ class Team(snowflakes.Unique):
     )
     """The client application that models may use for procedures."""
 
-    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this entity."""
 
     icon_hash: typing.Optional[str] = marshie.attrib("icon", eq=False, hash=False, repr=False)
@@ -380,7 +378,6 @@ class Team(snowflakes.Unique):
     """
 
     members: typing.Mapping[snowflakes.Snowflake, TeamMember] = marshie.attrib(
-        "members",
         deserialize=marshie.Ref(TeamMember, lambda cast: data_binding.seq_to_map(lambda m: m.id, cast)),
         eq=False,
         hash=False,
@@ -471,26 +468,22 @@ class Application(guilds.PartialApplication):
     """
 
     owner: users.User = marshie.attrib(
-        "owner",
-        deserialize=marshie.Ref("UserImpl"),
+        deserialize="UserImpl",
         eq=False,
         hash=False,
         repr=True,
     )
     """The application's owner."""
 
-    rpc_origins: typing.Optional[typing.Sequence[str]] = marshie.attrib(
-        "rpc_origins", mdefault=None, eq=False, hash=False, repr=False
-    )
+    rpc_origins: typing.Optional[typing.Sequence[str]] = marshie.attrib(mdefault=None, eq=False, hash=False, repr=False)
     """A collection of this application's RPC origin URLs, if RPC is enabled."""
 
     verify_key: typing.Optional[bytes] = marshie.attrib(
-        "verify_key", deserialize=lambda value: bytes(value, "utf-8"), mdefault=None, eq=False, hash=False, repr=False
+        deserialize=lambda value: bytes(value, "utf-8"), mdefault=None, eq=False, hash=False, repr=False
     )
     """The base64 encoded key used for the GameSDK's `GetTicket`."""
 
     team: typing.Optional[Team] = marshie.attrib(
-        "team",
         deserialize=marshie.Ref(Team, lambda cast: data_binding.optional_cast(cast)),
         mdefault=None,
         eq=False,
@@ -503,16 +496,16 @@ class Application(guilds.PartialApplication):
     """
 
     guild_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "guild_id", deserialize=snowflakes.Snowflake, mdefault=None, eq=False, hash=False, repr=False
+        deserialize=snowflakes.Snowflake, mdefault=None, eq=False, hash=False, repr=False
     )
     """The ID of the guild this application is linked to if sold on Discord."""
 
     primary_sku_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "primary_sku_id", deserialize=snowflakes.Snowflake, mdefault=None, eq=False, hash=False, repr=False
+        deserialize=snowflakes.Snowflake, mdefault=None, eq=False, hash=False, repr=False
     )
     """The ID of the primary "Game SKU" of a game that's sold on Discord."""
 
-    slug: typing.Optional[str] = marshie.attrib("slug", mdefault=None, eq=False, hash=False, repr=False)
+    slug: typing.Optional[str] = marshie.attrib(mdefault=None, eq=False, hash=False, repr=False)
     """The URL "slug" that is used to point to this application's store page.
 
     Only applicable to applications sold on Discord.

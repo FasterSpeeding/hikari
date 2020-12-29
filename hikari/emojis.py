@@ -130,7 +130,7 @@ class UnicodeEmoji(Emoji):
         removed in a future release after a deprecation period.
     """
 
-    name: str = marshie.attrib("name", repr=True, hash=True)
+    name: str = marshie.attrib(repr=True, hash=True)
     """The code points that form the emoji."""
 
     def __str__(self) -> str:
@@ -271,10 +271,10 @@ class CustomEmoji(snowflakes.Unique, Emoji):
         https://github.com/discord/discord-api-docs/issues/1614#issuecomment-628548913
     """
 
-    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this entity."""
 
-    name: typing.Optional[str] = marshie.attrib("name", eq=False, hash=False, repr=True)
+    name: typing.Optional[str] = marshie.attrib(eq=False, hash=False, repr=True)
     """The name of the emoji.
 
     This can be `builtins.None` in reaction events.
@@ -366,7 +366,6 @@ class KnownCustomEmoji(CustomEmoji):
     """
 
     user: typing.Optional[users.User] = marshie.attrib(
-        "user",
         deserialize=marshie.Ref("UserImpl", data_binding.optional_cast),
         mdefault=None,
         eq=False,

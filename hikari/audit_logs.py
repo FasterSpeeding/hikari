@@ -200,15 +200,15 @@ class ChannelOverwriteEntryInfo(BaseAuditLogEntryInfo, snowflakes.Unique):
     entries.
     """
 
-    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this entity."""
 
     type: typing.Union[channels.PermissionOverwriteType, str] = marshie.attrib(
-        "type", deserialize=channels.PermissionOverwriteType, repr=True
+        deserialize=channels.PermissionOverwriteType, repr=True
     )
     """The type of entity this overwrite targets."""
 
-    role_name: typing.Optional[str] = marshie.attrib("role_name", mdefault=None, repr=True)
+    role_name: typing.Optional[str] = marshie.attrib(mdefault=None, repr=True)
     """The name of the role this overwrite targets, if it targets a role."""
 
 
@@ -220,10 +220,10 @@ class MessagePinEntryInfo(BaseAuditLogEntryInfo):
     Will be attached to the message pin and message unpin audit log entries.
     """
 
-    channel_id: snowflakes.Snowflake = marshie.attrib("channel_id", deserialize=snowflakes.Snowflake, repr=True)
+    channel_id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, repr=True)
     """The ID of the text based channel where a pinned message is being targeted."""
 
-    message_id: snowflakes.Snowflake = marshie.attrib("message_id", deserialize=snowflakes.Snowflake, repr=True)
+    message_id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, repr=True)
     """The ID of the message that's being pinned or unpinned."""
 
     async def fetch_channel(self) -> channels.TextChannel:
@@ -299,11 +299,11 @@ class MemberPruneEntryInfo(BaseAuditLogEntryInfo):
     """Extra information attached to guild prune log entries."""
 
     delete_member_days: datetime.timedelta = marshie.attrib(
-        "delete_member_days", deserialize=lambda value: datetime.timedelta(days=int(value)), repr=True
+        deserialize=lambda value: datetime.timedelta(days=int(value)), repr=True
     )
     """The timedelta of how many days members were pruned for inactivity based on."""
 
-    members_removed: int = marshie.attrib("members_removed", deserialize=int, repr=True)
+    members_removed: int = marshie.attrib(deserialize=int, repr=True)
     """The number of members who were removed by this prune."""
 
 
@@ -312,7 +312,7 @@ class MemberPruneEntryInfo(BaseAuditLogEntryInfo):
 class MessageBulkDeleteEntryInfo(BaseAuditLogEntryInfo):
     """Extra information for the message bulk delete audit entry."""
 
-    count: int = marshie.attrib("count", deserialize=int, repr=True)
+    count: int = marshie.attrib(deserialize=int, repr=True)
     """The amount of messages that were deleted."""
 
 
@@ -320,7 +320,7 @@ class MessageBulkDeleteEntryInfo(BaseAuditLogEntryInfo):
 class MessageDeleteEntryInfo(MessageBulkDeleteEntryInfo):
     """Extra information attached to the message delete audit entry."""
 
-    channel_id: snowflakes.Snowflake = marshie.attrib("channel_id", deserialize=snowflakes.Snowflake, repr=True)
+    channel_id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, repr=True)
     """The ID of guild text based channel where these message(s) were deleted."""
 
     async def fetch_channel(self) -> channels.GuildTextChannel:
@@ -371,7 +371,7 @@ class MemberDisconnectEntryInfo(BaseAuditLogEntryInfo):
 class MemberMoveEntryInfo(MemberDisconnectEntryInfo):
     """Extra information for the voice chat based member move entry."""
 
-    channel_id: snowflakes.Snowflake = marshie.attrib("channel_id", deserialize=snowflakes.Snowflake, repr=True)
+    channel_id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, repr=True)
     """The channel that the member(s) have been moved to"""
 
     async def fetch_channel(self) -> channels.GuildVoiceChannel:
@@ -437,11 +437,11 @@ class AuditLogEntry(snowflakes.Unique):
     )
     """The client application that models may use for procedures."""
 
-    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this entity."""
 
     target_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "target_id", deserialize=data_binding.optional_cast(snowflakes.Snowflake), eq=False, hash=False, repr=True
+        deserialize=data_binding.optional_cast(snowflakes.Snowflake), eq=False, hash=False, repr=True
     )
     """The ID of the entity affected by this change, if applicable."""
 

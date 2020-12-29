@@ -50,7 +50,7 @@ class VoiceState:
     """The client application that models may use for procedures."""
 
     channel_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "channel_id", deserialize=data_binding.optional_cast(snowflakes.Snowflake), eq=False, hash=False, repr=True
+        deserialize=data_binding.optional_cast(snowflakes.Snowflake), eq=False, hash=False, repr=True
     )
     """The ID of the channel this user is connected to.
 
@@ -81,15 +81,13 @@ class VoiceState:
     is_video_enabled: bool = marshie.attrib("self_video", eq=False, hash=False, repr=False)
     """Whether this user's camera is enabled."""
 
-    user_id: snowflakes.Snowflake = marshie.attrib(
-        "user_id", deserialize=snowflakes.Snowflake, eq=False, hash=False, repr=True
-    )
+    user_id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=False, hash=False, repr=True)
     """The ID of the user this voice state is for."""
 
     member: guilds.Member = marshie.attrib(from_kwarg=True, eq=False, hash=False, repr=False)
     """The guild member this voice state is for."""
 
-    session_id: str = marshie.attrib("session_id", eq=True, hash=True, repr=True)
+    session_id: str = marshie.attrib(eq=True, hash=True, repr=True)
     """The string ID of this voice state's session."""
 
 
@@ -98,7 +96,7 @@ class VoiceState:
 class VoiceRegion:
     """Represents a voice region server."""
 
-    id: str = marshie.attrib("id", eq=True, hash=True, repr=True)
+    id: str = marshie.attrib(eq=True, hash=True, repr=True)
     """The string ID of this region.
 
     !!! note
@@ -106,7 +104,7 @@ class VoiceRegion:
         This is intentional.
     """
 
-    name: str = marshie.attrib("name", eq=False, hash=False, repr=True)
+    name: str = marshie.attrib(eq=False, hash=False, repr=True)
     """The name of this region."""
 
     is_vip: bool = marshie.attrib("vip", eq=False, hash=False, repr=False)

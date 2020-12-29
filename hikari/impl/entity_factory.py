@@ -90,7 +90,7 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
 
     def __init__(self, app: traits.RESTAware) -> None:
         self._app = app
-        self._marshaller = marshie.MapMarshaller(constants={"app": self._app})
+        self._marshaller = marshie.MapMarshaller(constants={"app": self._app}, debug=True)
         self._audit_log_entry_converters: typing.Mapping[str, typing.Callable[[typing.Any], typing.Any]] = {
             audit_log_models.AuditLogChangeKey.OWNER_ID: snowflakes.Snowflake,
             audit_log_models.AuditLogChangeKey.AFK_CHANNEL_ID: snowflakes.Snowflake,
@@ -727,13 +727,21 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
                 voice_state = self.deserialize_voice_state(voice_state_payload, guild_id=guild_id, member=member)
                 voice_states[voice_state.user_id] = voice_state
 
+        presences: typing.Optional[typing.MutableMapping[snowflakes.Snowflake, presence_models.MemberPresence]] = None
+        if "presences" in payload:
+            presences = {}
+
+            for presence_payload in payload["presences"]:
+                presence = self.deserialize_member_presence(presence_payload, guild_id=guild_id)
+                presences[presence.user_id] = presence
+
         return self._marshaller.decode(
             entity_factory.GatewayGuildDefinition,
             payload,
             channels=channels,
             members=members,
+            presences=presences,
             voice_states=voice_states,
-            presences_guild_id=guild_id,
             roles_guild_id=guild_id,
             emojis_guild_id=guild_id,
         )
@@ -748,7 +756,7 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
     _InviteT = typing.TypeVar("_InviteT", bound=invite_models.Invite)
 
     def _deserialize_invite(self, cls: typing.Type[_InviteT], payload: data_binding.JSONObject) -> _InviteT:
-        channel_id = payload.get("channel_id") or (payload["channel"]["id"] if "channel" in payload else None)
+        channel_id = payload["channel"]["id"] if "channel" in payload else payload.get("channel_id")
 
         if channel_id is not None:
             channel_id = snowflakes.Snowflake(channel_id)
@@ -894,7 +902,10 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
 
         activities: typing.List[presence_models.RichActivity] = []
         for activity_payload in payload["activities"]:
-            emoji = self.deserialize_emoji(activity_payload["emoji"]) if "emoji" in activity_payload else None
+            emoji: typing.Optional[emoji_models.Emoji] = None
+            if raw_emoji := activity_payload.get("emoji"):
+                emoji = self.deserialize_emoji(raw_emoji)
+
             activities.append(self._marshaller.decode(presence_models.RichActivity, activity_payload, emoji=emoji))
 
         return self._marshaller.decode(

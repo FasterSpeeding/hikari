@@ -256,7 +256,7 @@ class GuildWidget:
     """The client application that models may use for procedures."""
 
     channel_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "channel_id", deserialize=data_binding.optional_cast(snowflakes.Snowflake), repr=True
+        deserialize=data_binding.optional_cast(snowflakes.Snowflake), repr=True
     )
     """The ID of the channel the invite for this embed targets, if enabled."""
 
@@ -292,9 +292,7 @@ class Member(users.User):
 
     This will be `hikari.undefined.UNDEFINED` if it's state is unknown."""
 
-    joined_at: datetime.datetime = marshie.attrib(
-        "joined_at", deserialize=time.iso8601_datetime_string_to_datetime, repr=True
-    )
+    joined_at: datetime.datetime = marshie.attrib(deserialize=time.iso8601_datetime_string_to_datetime, repr=True)
     """The datetime of when this member joined the guild they belong to."""
 
     nickname: undefined.UndefinedNoneOr[str] = marshie.attrib("nick", mdefault=undefined.UNDEFINED, repr=True)
@@ -307,7 +305,6 @@ class Member(users.User):
     """
 
     premium_since: typing.Optional[datetime.datetime] = marshie.attrib(
-        "premium_since",
         deserialize=data_binding.optional_cast(time.iso8601_datetime_string_to_datetime),
         mdefault=None,
         repr=False,
@@ -548,10 +545,10 @@ class PartialRole(snowflakes.Unique):
     )
     """The client application that models may use for procedures."""
 
-    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this entity."""
 
-    name: str = marshie.attrib("name", eq=False, hash=False, repr=True)
+    name: str = marshie.attrib(eq=False, hash=False, repr=True)
     """The role's name."""
 
     def __str__(self) -> str:
@@ -563,7 +560,7 @@ class PartialRole(snowflakes.Unique):
 class Role(PartialRole):
     """Represents a guild bound Role object."""
 
-    color: colors.Color = marshie.attrib("color", deserialize=colors.Color, eq=False, hash=False, repr=True)
+    color: colors.Color = marshie.attrib(deserialize=colors.Color, eq=False, hash=False, repr=True)
     """The colour of this role.
 
     This will be applied to a member's name in chat if it's their top coloured role.
@@ -585,14 +582,14 @@ class Role(PartialRole):
     """Whether this role can be mentioned by all regardless of permissions."""
 
     permissions: permissions_.Permissions = marshie.attrib(
-        "permissions", deserialize=lambda value: permissions_.Permissions(int(value)), eq=False, hash=False, repr=False
+        deserialize=lambda value: permissions_.Permissions(int(value)), eq=False, hash=False, repr=False
     )
     """The guild wide permissions this role gives to the members it's attached to,
 
     This may be overridden by channel overwrites.
     """
 
-    position: int = marshie.attrib("position", eq=False, hash=False, repr=True)
+    position: int = marshie.attrib(eq=False, hash=False, repr=True)
     """The position of this role in the role hierarchy.
 
     This will start at `0` for the lowest role (@everyone)
@@ -600,7 +597,7 @@ class Role(PartialRole):
     """
 
     bot_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        marshie.path("tags.bot_id"), deserialize=snowflakes.Snowflake, mdefault=None, eq=False, hash=False, repr=True
+        marshie.path("$.tags.bot_id"), deserialize=snowflakes.Snowflake, mdefault=None, eq=False, hash=False, repr=True
     )
     """The ID of the bot this role belongs to.
 
@@ -608,7 +605,7 @@ class Role(PartialRole):
     """
 
     integration_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        marshie.path("tags.integration_id"),
+        marshie.path("$.tags.integration_id"),
         deserialize=snowflakes.Snowflake,
         mdefault=None,
         eq=False,
@@ -621,7 +618,7 @@ class Role(PartialRole):
     """
 
     is_premium_subscriber_role: bool = marshie.attrib(
-        marshie.path("tags.premium_subscriber"),
+        marshie.path("$.tags.premium_subscriber"),
         deserialize=lambda _: True,
         mdefault=False,
         eq=False,
@@ -662,10 +659,10 @@ class IntegrationExpireBehaviour(int, enums.Enum):
 class IntegrationAccount:
     """An account that's linked to an integration."""
 
-    id: str = marshie.attrib("id", eq=True, hash=True, repr=True)
+    id: str = marshie.attrib(eq=True, hash=True, repr=True)
     """The string ID of this (likely) third party account."""
 
-    name: str = marshie.attrib("name", eq=False, hash=False, repr=True)
+    name: str = marshie.attrib(eq=False, hash=False, repr=True)
     """The name of this account."""
 
     def __str__(self) -> str:
@@ -678,20 +675,20 @@ class IntegrationAccount:
 class PartialApplication(snowflakes.Unique):
     """A partial representation of a Discord application."""
 
-    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this entity."""
 
-    name: str = marshie.attrib("name", eq=False, hash=False, repr=True)
+    name: str = marshie.attrib(eq=False, hash=False, repr=True)
     """The name of this application."""
 
     # TODO: default to None for consistency?
-    description: str = marshie.attrib("description", eq=False, hash=False, repr=False)
+    description: str = marshie.attrib(eq=False, hash=False, repr=False)
     """The description of this application, or an empty string if undefined."""
 
     icon_hash: typing.Optional[str] = marshie.attrib("icon", mdefault=None, eq=False, hash=False, repr=False)
     """The CDN hash of this application's icon, if set."""
 
-    summary: str = marshie.attrib("summary", eq=False, hash=False, repr=False)
+    summary: str = marshie.attrib(eq=False, hash=False, repr=False)
     """This summary for this application's primary SKU if it's sold on Discord.
 
     Will be an empty string if undefined.
@@ -752,7 +749,6 @@ class IntegrationApplication(PartialApplication):
     """An application that's linked to an integration."""
 
     bot: typing.Optional[users.User] = marshie.attrib(
-        "bot",
         deserialize=marshie.Ref("UserImpl", data_binding.optional_cast),
         mdefault=None,
         eq=False,
@@ -769,18 +765,18 @@ class PartialIntegration(snowflakes.Unique):
     """A partial representation of an integration, found in audit logs."""
 
     account: IntegrationAccount = marshie.attrib(
-        "account", deserialize=marshie.Ref(IntegrationAccount), eq=False, hash=False, repr=False
+        deserialize=marshie.Ref(IntegrationAccount), eq=False, hash=False, repr=False
     )
     """The account connected to this integration."""
 
-    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this entity."""
 
-    name: str = marshie.attrib("name", eq=False, hash=False, repr=True)
+    name: str = marshie.attrib(eq=False, hash=False, repr=True)
     """The name of this integration."""
 
     type: typing.Union[IntegrationType, str] = marshie.attrib(
-        "type", deserialize=IntegrationType, eq=False, hash=False, repr=True
+        deserialize=IntegrationType, eq=False, hash=False, repr=True
     )
     """The type of this integration."""
 
@@ -796,7 +792,6 @@ class Integration(PartialIntegration):
     """The ID of the guild this integration belongs to."""
 
     expire_behavior: typing.Union[IntegrationExpireBehaviour, int, None] = marshie.attrib(
-        "expire_behavior",
         deserialize=data_binding.optional_cast(IntegrationExpireBehaviour),
         mdefault=None,
         eq=False,
@@ -813,7 +808,6 @@ class Integration(PartialIntegration):
     """
 
     expire_grace_period: typing.Optional[datetime.timedelta] = marshie.attrib(
-        "expire_grace_period",
         deserialize=lambda value: datetime.timedelta(days=value) if value is not None else None,
         mdefault=None,
         eq=False,
@@ -852,7 +846,6 @@ class Integration(PartialIntegration):
     """The datetime of when this integration's subscribers were last synced."""
 
     role_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "role_id",
         deserialize=data_binding.optional_cast(snowflakes.Snowflake),
         mdefault=None,
         eq=False,
@@ -862,7 +855,6 @@ class Integration(PartialIntegration):
     """The ID of the managed role used for this integration's subscribers."""
 
     user: typing.Optional[users.User] = marshie.attrib(
-        "user",
         deserialize=marshie.Ref("UserImpl", data_binding.optional_cast),
         mdefault=None,
         eq=False,
@@ -871,13 +863,10 @@ class Integration(PartialIntegration):
     )
     """The user this integration belongs to."""
 
-    subscriber_count: typing.Optional[int] = marshie.attrib(
-        "subscriber_count", mdefault=None, eq=False, hash=False, repr=False
-    )
+    subscriber_count: typing.Optional[int] = marshie.attrib(mdefault=None, eq=False, hash=False, repr=False)
     """The number of subscribers this integration has."""
 
     application: typing.Optional[IntegrationApplication] = marshie.attrib(
-        "application",
         deserialize=marshie.Ref(IntegrationApplication, data_binding.optional_cast),
         mdefault=None,
         eq=False,
@@ -914,13 +903,13 @@ class PartialGuild(snowflakes.Unique):
     )
     """The client application that models may use for procedures."""
 
-    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this entity."""
 
     icon_hash: typing.Optional[str] = marshie.attrib("icon", eq=False, hash=False, repr=False)
     """The hash for the guild icon, if there is one."""
 
-    name: str = marshie.attrib("name", eq=False, hash=False, repr=True)
+    name: str = marshie.attrib(eq=False, hash=False, repr=True)
     """The name of the guild."""
 
     def __str__(self) -> str:
@@ -995,7 +984,7 @@ class GuildPreview(PartialGuild):
     """A preview of a guild with the `GuildFeature.DISCOVERABLE` feature."""
 
     features: typing.Sequence[GuildFeatureish] = marshie.attrib(
-        "features", deserialize=data_binding.seq_cast(GuildFeature), eq=False, hash=False, repr=False
+        deserialize=data_binding.seq_cast(GuildFeature), eq=False, hash=False, repr=False
     )
     """A list of the features in this guild."""
 
@@ -1006,7 +995,6 @@ class GuildPreview(PartialGuild):
     """The hash of the discovery splash for the guild, if there is one."""
 
     emojis: typing.Mapping[snowflakes.Snowflake, emojis_.KnownCustomEmoji] = marshie.attrib(
-        "emojis",
         deserialize=marshie.Ref("KnownCustomEmoji", lambda c: data_binding.seq_to_map(lambda e: e.id, c)),
         pass_kwargs="guild_id",
         eq=False,
@@ -1018,10 +1006,10 @@ class GuildPreview(PartialGuild):
     approximate_active_member_count: int = marshie.attrib("approximate_presence_count", eq=False, hash=False, repr=True)
     """The approximate amount of presences in this guild."""
 
-    approximate_member_count: int = marshie.attrib("approximate_member_count", eq=False, hash=False, repr=True)
+    approximate_member_count: int = marshie.attrib(eq=False, hash=False, repr=True)
     """The approximate amount of members in this guild."""
 
-    description: typing.Optional[str] = marshie.attrib("description", eq=False, hash=False, repr=False)
+    description: typing.Optional[str] = marshie.attrib(eq=False, hash=False, repr=False)
     """The guild's description, if set."""
 
     @property
@@ -1106,12 +1094,11 @@ class Guild(PartialGuild, abc.ABC):
     """A representation of a guild on Discord."""
 
     features: typing.Sequence[GuildFeatureish] = marshie.attrib(
-        "features", deserialize=data_binding.seq_cast(GuildFeature), eq=False, hash=False, repr=False
+        deserialize=data_binding.seq_cast(GuildFeature), eq=False, hash=False, repr=False
     )
     """A list of the features in this guild."""
 
     application_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "application_id",
         deserialize=data_binding.optional_cast(snowflakes.Snowflake),
         eq=False,
         hash=False,
@@ -1123,7 +1110,6 @@ class Guild(PartialGuild, abc.ABC):
     """
 
     afk_channel_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "afk_channel_id",
         deserialize=data_binding.optional_cast(snowflakes.Snowflake),
         eq=False,
         hash=False,
@@ -1135,7 +1121,7 @@ class Guild(PartialGuild, abc.ABC):
     """
 
     afk_timeout: datetime.timedelta = marshie.attrib(
-        "afk_timeout", deserialize=lambda value: datetime.timedelta(seconds=value), eq=False, hash=False, repr=False
+        deserialize=lambda value: datetime.timedelta(seconds=value), eq=False, hash=False, repr=False
     )
     """Timeout for activity before a member is classed as AFK.
 
@@ -1151,11 +1137,11 @@ class Guild(PartialGuild, abc.ABC):
     """
 
     default_message_notifications: typing.Union[GuildMessageNotificationsLevel, int] = marshie.attrib(
-        "default_message_notifications", deserialize=GuildMessageNotificationsLevel, eq=False, hash=False, repr=False
+        deserialize=GuildMessageNotificationsLevel, eq=False, hash=False, repr=False
     )
     """The default setting for message notifications in this guild."""
 
-    description: typing.Optional[str] = marshie.attrib("description", eq=False, hash=False, repr=False)
+    description: typing.Optional[str] = marshie.attrib(eq=False, hash=False, repr=False)
     """The guild's description.
 
     This is only present if certain `GuildFeature`'s are set in
@@ -1166,7 +1152,7 @@ class Guild(PartialGuild, abc.ABC):
     """The hash of the discovery splash for the guild, if there is one."""
 
     explicit_content_filter: typing.Union[GuildExplicitContentFilterLevel, int] = marshie.attrib(
-        "explicit_content_filter", deserialize=GuildExplicitContentFilterLevel, eq=False, hash=False, repr=False
+        deserialize=GuildExplicitContentFilterLevel, eq=False, hash=False, repr=False
     )
     """The setting for the explicit content filter in this guild."""
 
@@ -1179,7 +1165,7 @@ class Guild(PartialGuild, abc.ABC):
     """
 
     max_video_channel_users: typing.Optional[int] = marshie.attrib(
-        "max_video_channel_users", deserialize=int, mdefault=None, eq=False, hash=False, repr=False
+        deserialize=int, mdefault=None, eq=False, hash=False, repr=False
     )
     """The maximum number of users allowed in a video channel together.
 
@@ -1187,37 +1173,32 @@ class Guild(PartialGuild, abc.ABC):
     """
 
     mfa_level: typing.Union[GuildMFALevel, int] = marshie.attrib(
-        "mfa_level", deserialize=GuildMFALevel, eq=False, hash=False, repr=False
+        deserialize=GuildMFALevel, eq=False, hash=False, repr=False
     )
     """The required MFA level for users wishing to participate in this guild."""
 
-    owner_id: snowflakes.Snowflake = marshie.attrib(
-        "owner_id", deserialize=snowflakes.Snowflake, eq=False, hash=False, repr=True
-    )
+    owner_id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=False, hash=False, repr=True)
     """The ID of the owner of this guild."""
 
-    preferred_locale: str = marshie.attrib("preferred_locale", eq=False, hash=False, repr=False)
+    preferred_locale: str = marshie.attrib(eq=False, hash=False, repr=False)
     """The preferred locale to use for this guild.
 
     This can only be change if `GuildFeature.COMMUNITY` is in `Guild.features`
     for this guild and will otherwise default to `en-US`.
     """
 
-    premium_subscription_count: typing.Optional[int] = marshie.attrib(
-        "premium_subscription_count", mdefault=None, eq=False, hash=False, repr=False
-    )
+    premium_subscription_count: typing.Optional[int] = marshie.attrib(mdefault=None, eq=False, hash=False, repr=False)
     """The number of nitro boosts that the server currently has.
 
     This information may not be present, in which case, it will be `builtins.None`.
     """
 
     premium_tier: typing.Union[GuildPremiumTier, int] = marshie.attrib(
-        "premium_tier", deserialize=GuildPremiumTier, eq=False, hash=False, repr=False
+        deserialize=GuildPremiumTier, eq=False, hash=False, repr=False
     )
     """The premium tier for this guild."""
 
     public_updates_channel_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "public_updates_channel_id",
         deserialize=data_binding.optional_cast(snowflakes.Snowflake),
         eq=False,
         hash=False,
@@ -1230,11 +1211,10 @@ class Guild(PartialGuild, abc.ABC):
     this guild. For all other purposes, it should be considered to be `builtins.None`.
     """
 
-    region: str = marshie.attrib("region", eq=False, hash=False, repr=False)
+    region: str = marshie.attrib(eq=False, hash=False, repr=False)
     """The voice region for the guild."""
 
     rules_channel_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "rules_channel_id",
         deserialize=data_binding.optional_cast(snowflakes.Snowflake),
         eq=False,
         hash=False,
@@ -1250,7 +1230,7 @@ class Guild(PartialGuild, abc.ABC):
     """The hash of the splash for the guild, if there is one."""
 
     system_channel_flags: GuildSystemChannelFlag = marshie.attrib(
-        "system_channel_flags", deserialize=GuildSystemChannelFlag, eq=False, hash=False, repr=False
+        deserialize=GuildSystemChannelFlag, eq=False, hash=False, repr=False
     )
     """Return flags for the guild system channel.
 
@@ -1263,7 +1243,6 @@ class Guild(PartialGuild, abc.ABC):
     """
 
     system_channel_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "system_channel_id",
         deserialize=data_binding.optional_cast(snowflakes.Snowflake),
         eq=False,
         hash=False,
@@ -1274,7 +1253,7 @@ class Guild(PartialGuild, abc.ABC):
     Welcome messages and Nitro boost messages may be sent to this channel.
     """
 
-    vanity_url_code: typing.Optional[str] = marshie.attrib("vanity_url_code", eq=False, hash=False, repr=False)
+    vanity_url_code: typing.Optional[str] = marshie.attrib(eq=False, hash=False, repr=False)
     """The vanity URL code for the guild's vanity URL.
 
     This is only present if `GuildFeature.VANITY_URL` is in `Guild.features` for
@@ -1282,12 +1261,11 @@ class Guild(PartialGuild, abc.ABC):
     """
 
     verification_level: typing.Union[GuildVerificationLevel, int] = marshie.attrib(
-        "verification_level", deserialize=GuildVerificationLevel, eq=False, hash=False, repr=False
+        deserialize=GuildVerificationLevel, eq=False, hash=False, repr=False
     )
     """The verification level needed for a user to participate in this guild."""
 
     widget_channel_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "widget_channel_id",
         deserialize=data_binding.optional_cast(snowflakes.Snowflake),
         mdefault=None,
         eq=False,
@@ -1485,16 +1463,13 @@ class RESTGuild(Guild):
     This will be `builtins.None` when creating a guild.
     """
 
-    approximate_member_count: typing.Optional[int] = marshie.attrib(
-        "approximate_member_count", mdefault=None, eq=False, hash=False, repr=False
-    )
+    approximate_member_count: typing.Optional[int] = marshie.attrib(mdefault=None, eq=False, hash=False, repr=False)
     """The approximate number of members in the guild.
 
     This will be `builtins.None` when creating a guild.
     """
 
     max_presences: int = marshie.attrib(
-        "max_presences",
         deserialize=default_max_presences,
         mdefault=DEFAULT_MAX_PRESENCES,
         eq=False,
@@ -1503,7 +1478,7 @@ class RESTGuild(Guild):
     )
     """The maximum number of presences for the guild."""
 
-    max_members: int = marshie.attrib("max_members", eq=False, hash=False, repr=False)
+    max_members: int = marshie.attrib(eq=False, hash=False, repr=False)
     """The maximum number of members allowed in this guild."""
 
     @property
@@ -1544,7 +1519,6 @@ class GatewayGuild(Guild):
     """
 
     joined_at: typing.Optional[datetime.datetime] = marshie.attrib(
-        "joined_at",
         deserialize=time.iso8601_datetime_string_to_datetime,
         mdefault=None,
         eq=False,
@@ -1558,7 +1532,7 @@ class GatewayGuild(Guild):
     `builtins.None`.
     """
 
-    member_count: typing.Optional[int] = marshie.attrib("member_count", mdefault=None, eq=False, hash=False, repr=False)
+    member_count: typing.Optional[int] = marshie.attrib(mdefault=None, eq=False, hash=False, repr=False)
     """The number of members in this guild.
 
     This information is only available if the guild was sent via a `GUILD_CREATE`

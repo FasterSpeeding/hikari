@@ -527,7 +527,7 @@ class PartialUserImpl(PartialUser):
     present.
     """
 
-    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this user."""
 
     app: traits.RESTAware = marshie.attrib(
@@ -536,13 +536,11 @@ class PartialUserImpl(PartialUser):
     """Reference to the client application that models may use for procedures."""
 
     discriminator: undefined.UndefinedOr[str] = marshie.attrib(
-        "discriminator", mdefault=undefined.UNDEFINED, eq=False, hash=False, repr=True
+        mdefault=undefined.UNDEFINED, eq=False, hash=False, repr=True
     )
     """Four-digit discriminator for the user."""
 
-    username: undefined.UndefinedOr[str] = marshie.attrib(
-        "username", mdefault=undefined.UNDEFINED, eq=False, hash=False, repr=True
-    )
+    username: undefined.UndefinedOr[str] = marshie.attrib(mdefault=undefined.UNDEFINED, eq=False, hash=False, repr=True)
     """Username of the user."""
 
     avatar_hash: undefined.UndefinedNoneOr[str] = marshie.attrib(
@@ -609,10 +607,10 @@ class UserImpl(PartialUserImpl, User):
     # these fields without redefining them twice in the slots. This is
     # compatible with MYPY, hence why I have done it like this...
 
-    discriminator: str = marshie.attrib("discriminator", eq=False, hash=False, repr=True)
+    discriminator: str = marshie.attrib(eq=False, hash=False, repr=True)
     """The user's discriminator."""
 
-    username: str = marshie.attrib("username", eq=False, hash=False, repr=True)
+    username: str = marshie.attrib(eq=False, hash=False, repr=True)
     """The user's username."""
 
     avatar_hash: typing.Optional[str] = marshie.attrib("avatar", eq=False, hash=False, repr=False)
@@ -637,7 +635,7 @@ class OwnUser(UserImpl):
     is_mfa_enabled: bool = marshie.attrib("mfa_enabled", eq=False, hash=False, repr=False)
     """Whether the user's account has multi-factor authentication enabled."""
 
-    locale: typing.Optional[str] = marshie.attrib("locale", mdefault=None, eq=False, hash=False, repr=False)
+    locale: typing.Optional[str] = marshie.attrib(mdefault=None, eq=False, hash=False, repr=False)
     """The user's set language. This is not provided by the `READY` event."""
 
     is_verified: typing.Optional[bool] = marshie.attrib("verified", mdefault=None, eq=False, hash=False, repr=False)
@@ -647,7 +645,7 @@ class OwnUser(UserImpl):
     scope.
     """
 
-    email: typing.Optional[str] = marshie.attrib("email", mdefault=None, eq=False, hash=False, repr=False)
+    email: typing.Optional[str] = marshie.attrib(mdefault=None, eq=False, hash=False, repr=False)
     """The user's set email.
 
     Will be `builtins.None` if retrieved through OAuth2 flow without the `email`
@@ -655,7 +653,7 @@ class OwnUser(UserImpl):
     """
 
     premium_type: typing.Union[PremiumType, int, None] = marshie.attrib(
-        "premium_type", deserialize=PremiumType, mdefault=None, eq=False, hash=False, repr=False
+        deserialize=PremiumType, mdefault=None, eq=False, hash=False, repr=False
     )
     """The type of Nitro Subscription this user account had.
 

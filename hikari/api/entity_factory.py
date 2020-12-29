@@ -32,6 +32,7 @@ import marshie
 
 from hikari import undefined
 from hikari.internal import attr_extensions
+from hikari.internal import data_binding
 
 if typing.TYPE_CHECKING:
     from hikari import applications as application_models
@@ -50,7 +51,6 @@ if typing.TYPE_CHECKING:
     from hikari import users as user_models
     from hikari import voices as voice_models
     from hikari import webhooks as webhook_models
-    from hikari.internal import data_binding
 
 
 @attr_extensions.with_copy
@@ -59,7 +59,7 @@ class GatewayGuildDefinition:
     """A structure for handling entities within guild create and update events."""
 
     # TODO: handling this
-    guild: guild_models.GatewayGuild = marshie.attrib("", deserialize=marshie.Ref("GatewayGuild"))
+    guild: guild_models.GatewayGuild = marshie.attrib(marshie.path("$"), deserialize="GatewayGuild")
     """Object of the guild the definition is for."""
 
     channels: typing.Optional[typing.Mapping[snowflakes.Snowflake, channel_models.GuildChannel]] = marshie.attrib(
@@ -84,10 +84,7 @@ class GatewayGuildDefinition:
     """
 
     presences: typing.Optional[typing.Mapping[snowflakes.Snowflake, presence_models.MemberPresence]] = marshie.attrib(
-        "presences",
-        deserialize=marshie.Ref("MemberPresence", lambda cast: data_binding.seq_to_map(lambda mp: mp.user_id, cast)),
-        mdefault=None,
-        pass_kwargs="guild_id",
+        from_kwarg=True
     )
     """Mapping of user IDs to the presences that are active in the guild.
 
@@ -99,14 +96,12 @@ class GatewayGuildDefinition:
     """
 
     roles: typing.Mapping[snowflakes.Snowflake, guild_models.Role] = marshie.attrib(
-        "roles",
         deserialize=marshie.Ref("Role", lambda cast: data_binding.seq_to_map(lambda r: r.id, cast)),
         pass_kwargs="guild_id",
     )
     """Mapping of role IDs to the roles that belong to the guild."""
 
     emojis: typing.Mapping[snowflakes.Snowflake, emoji_models.KnownCustomEmoji] = marshie.attrib(
-        "emojis",
         deserialize=marshie.Ref("KnownCustomEmoji", lambda cast: data_binding.seq_to_map(lambda e: e.id, cast)),
         pass_kwargs="guild_id",
     )

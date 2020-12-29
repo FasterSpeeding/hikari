@@ -117,9 +117,7 @@ class ChannelFollow:
         The REST-aware application object.
     """
 
-    channel_id: snowflakes.Snowflake = marshie.attrib(
-        "channel_id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True
-    )
+    channel_id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """Return the channel ID of the channel being followed.
 
     Returns
@@ -128,9 +126,7 @@ class ChannelFollow:
         The channel ID for the channel being followed.
     """
 
-    webhook_id: snowflakes.Snowflake = marshie.attrib(
-        "webhook_id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True
-    )
+    webhook_id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """Return the ID of the webhook for this follow.
 
     Returns
@@ -246,7 +242,6 @@ class PermissionOverwrite(snowflakes.Unique):
     """
 
     id: snowflakes.Snowflake = marshie.attrib(
-        "id",
         converter=snowflakes.Snowflake,
         deserialize=snowflakes.Snowflake,
         serialize=str,
@@ -257,12 +252,11 @@ class PermissionOverwrite(snowflakes.Unique):
     """The ID of this entity."""
 
     type: typing.Union[PermissionOverwriteType, str] = marshie.attrib(
-        "type", converter=PermissionOverwriteType, deserialize=PermissionOverwriteType, eq=True, hash=True, repr=True
+        converter=PermissionOverwriteType, deserialize=PermissionOverwriteType, eq=True, hash=True, repr=True
     )
     """The type of entity this overwrite targets."""
 
     allow: permissions.Permissions = marshie.attrib(
-        "allow",
         converter=permissions.Permissions,
         deserialize=lambda value: permissions.Permissions(int(value)),
         serialize=lambda value: str(int(value)),
@@ -274,7 +268,6 @@ class PermissionOverwrite(snowflakes.Unique):
     """The permissions this overwrite allows."""
 
     deny: permissions.Permissions = marshie.attrib(
-        "deny",
         converter=permissions.Permissions,
         deserialize=lambda value: permissions.Permissions(int(value)),
         serialize=lambda value: str(int(value)),
@@ -306,15 +299,13 @@ class PartialChannel(snowflakes.Unique):
     )
     """The client application that models may use for procedures."""
 
-    id: snowflakes.Snowflake = marshie.attrib("id", deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
+    id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=True, hash=True, repr=True)
     """The ID of this entity."""
 
-    name: typing.Optional[str] = marshie.attrib("name", mdefault=None, eq=False, hash=False, repr=True)
+    name: typing.Optional[str] = marshie.attrib(mdefault=None, eq=False, hash=False, repr=True)
     """The channel's name. This will be missing for DM channels."""
 
-    type: typing.Union[ChannelType, int] = marshie.attrib(
-        "type", deserialize=ChannelType, eq=False, hash=False, repr=True
-    )
+    type: typing.Union[ChannelType, int] = marshie.attrib(deserialize=ChannelType, eq=False, hash=False, repr=True)
     """The channel's type."""
 
     def __str__(self) -> str:
@@ -567,7 +558,6 @@ class PrivateChannel(PartialChannel):
     """The base for anything that is a private (non-guild bound) channel."""
 
     last_message_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "last_message_id",
         deserialize=data_binding.optional_cast(snowflakes.Snowflake),
         mdefault=None,
         eq=False,
@@ -588,7 +578,7 @@ class DMChannel(PrivateChannel, TextChannel):
 
     # TODO: path indexing
     recipient: users.User = marshie.attrib(
-        marshie.path("recipients[0]"), deserialize=marshie.Ref("UserImpl"), eq=False, hash=False, repr=False
+        marshie.path("$.recipients[0]"), deserialize="UserImpl", eq=False, hash=False, repr=False
     )
     """The user recipient of this DM."""
 
@@ -601,6 +591,10 @@ class DMChannel(PrivateChannel, TextChannel):
         return f"{self.__class__.__name__} with: {self.recipient}"
 
 
+def _deserialize_nicknames(data: typing.Sequence[typing.Tuple[str, str]]) -> typing.Dict[snowflakes.Snowflake, str]:
+    return {snowflakes.Snowflake(entry["id"]): entry["nick"] for entry in data}
+
+
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class GroupDMChannel(PrivateChannel):
     """Represents a group direct message channel.
@@ -611,9 +605,7 @@ class GroupDMChannel(PrivateChannel):
         it.
     """
 
-    owner_id: snowflakes.Snowflake = marshie.attrib(
-        "owner_id", deserialize=snowflakes.Snowflake, eq=False, hash=False, repr=True
-    )
+    owner_id: snowflakes.Snowflake = marshie.attrib(deserialize=snowflakes.Snowflake, eq=False, hash=False, repr=True)
     """The ID of the owner of the group."""
 
     icon_hash: typing.Optional[str] = marshie.attrib("icon", eq=False, hash=False, repr=False)
@@ -621,7 +613,7 @@ class GroupDMChannel(PrivateChannel):
 
     nicknames: typing.MutableMapping[snowflakes.Snowflake, str] = marshie.attrib(
         "nicks",
-        deserialize=data_binding.map_cast(snowflakes.Snowflake, data_binding.no_cast),
+        deserialize=_deserialize_nicknames,
         mdefault_factory=dict,
         eq=False,
         hash=False,
@@ -630,7 +622,6 @@ class GroupDMChannel(PrivateChannel):
     """A mapping of set nicknames within this group DMs to user IDs."""
 
     recipients: typing.Mapping[snowflakes.Snowflake, users.User] = marshie.attrib(
-        "recipients",
         deserialize=marshie.Ref("UserImpl", lambda cast: data_binding.seq_to_map(lambda u: u.id, cast)),
         eq=False,
         hash=False,
@@ -639,7 +630,7 @@ class GroupDMChannel(PrivateChannel):
     """The recipients of the group DM."""
 
     application_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "application_id", deserialize=snowflakes.Snowflake, mdefault=None, eq=False, hash=False, repr=False
+        deserialize=snowflakes.Snowflake, mdefault=None, eq=False, hash=False, repr=False
     )
     """The ID of the application that created the group DM.
 
@@ -698,14 +689,13 @@ class GuildChannel(PartialChannel):
     guild_id: snowflakes.Snowflake = marshie.attrib(from_kwarg=True, eq=False, hash=False, repr=True)
     """The ID of the guild the channel belongs to."""
 
-    position: int = marshie.attrib("position", eq=False, hash=False, repr=False)
+    position: int = marshie.attrib(eq=False, hash=False, repr=False)
     """The sorting position of the channel.
 
     Higher numbers appear further down the channel list.
     """
 
     permission_overwrites: typing.Mapping[snowflakes.Snowflake, PermissionOverwrite] = marshie.attrib(
-        "permission_overwrites",
         deserialize=marshie.Ref(PermissionOverwrite, lambda cast: data_binding.seq_to_map(lambda v: v.id, cast)),
         eq=False,
         hash=False,
@@ -725,7 +715,6 @@ class GuildChannel(PartialChannel):
     """
 
     parent_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "parent_id",
         deserialize=data_binding.optional_cast(snowflakes.Snowflake),
         mdefault=None,
         eq=False,
@@ -766,11 +755,10 @@ class GuildCategory(GuildChannel):
 class GuildTextChannel(GuildChannel, TextChannel):
     """Represents a guild text channel."""
 
-    topic: typing.Optional[str] = marshie.attrib("topic", eq=False, hash=False, repr=False)
+    topic: typing.Optional[str] = marshie.attrib(eq=False, hash=False, repr=False)
     """The topic of the channel."""
 
     last_message_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "last_message_id",
         deserialize=data_binding.optional_cast(snowflakes.Snowflake),
         mdefault=None,
         eq=False,
@@ -785,7 +773,6 @@ class GuildTextChannel(GuildChannel, TextChannel):
     """
 
     rate_limit_per_user: datetime.timedelta = marshie.attrib(
-        "rate_limit_per_user",
         deserialize=lambda v: datetime.timedelta(seconds=v),
         mdefault=datetime.timedelta(seconds=0),
         eq=False,
@@ -803,7 +790,6 @@ class GuildTextChannel(GuildChannel, TextChannel):
     """
 
     last_pin_timestamp: typing.Optional[datetime.datetime] = marshie.attrib(
-        "last_pin_timestamp",
         deserialize=data_binding.optional_cast(time.iso8601_datetime_string_to_datetime),
         mdefault=None,
         eq=False,
@@ -822,11 +808,10 @@ class GuildTextChannel(GuildChannel, TextChannel):
 class GuildNewsChannel(GuildChannel, TextChannel):
     """Represents an news channel."""
 
-    topic: typing.Optional[str] = marshie.attrib("topic", eq=False, hash=False, repr=False)
+    topic: typing.Optional[str] = marshie.attrib(eq=False, hash=False, repr=False)
     """The topic of the channel."""
 
     last_message_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "last_message_id",
         deserialize=data_binding.optional_cast(snowflakes.Snowflake),
         mdefault=None,
         eq=False,
@@ -841,7 +826,6 @@ class GuildNewsChannel(GuildChannel, TextChannel):
     """
 
     last_pin_timestamp: typing.Optional[datetime.datetime] = marshie.attrib(
-        "last_pin_timestamp",
         deserialize=data_binding.optional_cast(time.iso8601_datetime_string_to_datetime),
         mdefault=None,
         eq=False,
@@ -870,10 +854,10 @@ class GuildStoreChannel(GuildChannel):
 class GuildVoiceChannel(GuildChannel):
     """Represents an voice channel."""
 
-    bitrate: int = marshie.attrib("bitrate", eq=False, hash=False, repr=True)
+    bitrate: int = marshie.attrib(eq=False, hash=False, repr=True)
     """The bitrate for the voice channel (in bits per second)."""
 
-    user_limit: int = marshie.attrib("user_limit", eq=False, hash=False, repr=True)
+    user_limit: int = marshie.attrib(eq=False, hash=False, repr=True)
     """The user limit for the voice channel.
 
     If this is `0`, then assume no limit.

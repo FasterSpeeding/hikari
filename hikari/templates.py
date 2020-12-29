@@ -51,14 +51,14 @@ class TemplateRole(guilds.PartialRole):
     """The partial role object attached to `Template`."""
 
     permissions: permissions_.Permissions = marshie.attrib(
-        "permissions", deserialize=lambda value: snowflakes.Snowflake(int(value)), eq=False, hash=False, repr=False
+        deserialize=lambda value: snowflakes.Snowflake(int(value)), eq=False, hash=False, repr=False
     )
     """The guild wide permissions this role gives to the members it's attached to,
 
     This may be overridden by channel overwrites.
     """
 
-    color: colors.Color = marshie.attrib("color", deserialize=colors.Color, eq=False, hash=False, repr=True)
+    color: colors.Color = marshie.attrib(deserialize=colors.Color, eq=False, hash=False, repr=True)
     """The colour of this role.
 
     This will be applied to a member's name in chat if it's their top coloured role.
@@ -86,19 +86,18 @@ class TemplateGuild(guilds.PartialGuild):
     # Cause Discord:TM:
     icon_hash: typing.Optional[str] = marshie.attrib("icon_hash", eq=False, hash=False, repr=False)
 
-    description: typing.Optional[str] = marshie.attrib("description", eq=False, hash=False, repr=False)
+    description: typing.Optional[str] = marshie.attrib(eq=False, hash=False, repr=False)
     """The guild's description, if set."""
 
-    region: str = marshie.attrib("region", eq=False, hash=False, repr=False)
+    region: str = marshie.attrib(eq=False, hash=False, repr=False)
     """The voice region for the guild."""
 
     verification_level: typing.Union[guilds.GuildVerificationLevel, int] = marshie.attrib(
-        "verification_level", deserialize=guilds.GuildVerificationLevel, eq=False, hash=False, repr=False
+        deserialize=guilds.GuildVerificationLevel, eq=False, hash=False, repr=False
     )
     """The verification level needed for a user to participate in this guild."""
 
     default_message_notifications: typing.Union[guilds.GuildMessageNotificationsLevel, int] = marshie.attrib(
-        "default_message_notifications",
         deserialize=guilds.GuildMessageNotificationsLevel,
         eq=False,
         hash=False,
@@ -107,11 +106,11 @@ class TemplateGuild(guilds.PartialGuild):
     """The default setting for message notifications in this guild."""
 
     explicit_content_filter: typing.Union[guilds.GuildExplicitContentFilterLevel, int] = marshie.attrib(
-        "explicit_content_filter", deserialize=guilds.GuildExplicitContentFilterLevel, eq=False, hash=False, repr=False
+        deserialize=guilds.GuildExplicitContentFilterLevel, eq=False, hash=False, repr=False
     )
     """The setting for the explicit content filter in this guild."""
 
-    preferred_locale: str = marshie.attrib("preferred_locale", eq=False, hash=False, repr=False)
+    preferred_locale: str = marshie.attrib(eq=False, hash=False, repr=False)
     """The preferred locale to use for this guild.
 
     This can only be change if `GuildFeature.COMMUNITY` is in `Guild.features`
@@ -119,7 +118,7 @@ class TemplateGuild(guilds.PartialGuild):
     """
 
     afk_timeout: datetime.timedelta = marshie.attrib(
-        "afk_timeout", deserialize=lambda value: datetime.timedelta(seconds=value), eq=False, hash=False, repr=False
+        deserialize=lambda value: datetime.timedelta(seconds=value), eq=False, hash=False, repr=False
     )
     """Timeout for activity before a member is classed as AFK.
 
@@ -128,7 +127,6 @@ class TemplateGuild(guilds.PartialGuild):
     """
 
     roles: typing.Mapping[snowflakes.Snowflake, TemplateRole] = marshie.attrib(
-        "roles",
         deserialize=marshie.Ref(TemplateRole, lambda cast: data_binding.seq_to_map(lambda r: r.id, cast)),
         eq=False,
         hash=False,
@@ -152,7 +150,7 @@ class TemplateGuild(guilds.PartialGuild):
     """
 
     afk_channel_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "afk_channel_id", deserialize=data_binding.optional_cast(snowflakes.Snowflake), eq=False, hash=False, repr=False
+        deserialize=data_binding.optional_cast(snowflakes.Snowflake), eq=False, hash=False, repr=False
     )
     """The ID for the channel that AFK voice users get sent to.
 
@@ -160,7 +158,6 @@ class TemplateGuild(guilds.PartialGuild):
     """
 
     system_channel_id: typing.Optional[snowflakes.Snowflake] = marshie.attrib(
-        "system_channel_id",
         deserialize=data_binding.optional_cast(snowflakes.Snowflake),
         eq=False,
         hash=False,
@@ -172,7 +169,7 @@ class TemplateGuild(guilds.PartialGuild):
     """
 
     system_channel_flags: guilds.GuildSystemChannelFlag = marshie.attrib(
-        "system_channel_flags", deserialize=guilds.GuildSystemChannelFlag, eq=False, hash=False, repr=False
+        deserialize=guilds.GuildSystemChannelFlag, eq=False, hash=False, repr=False
     )
     """Return flags for the guild system channel.
 
@@ -185,30 +182,28 @@ class TemplateGuild(guilds.PartialGuild):
 class Template:
     """Represents a template used for creating guilds."""
 
-    code: str = marshie.attrib("code", eq=True, hash=True, repr=True)
+    code: str = marshie.attrib(eq=True, hash=True, repr=True)
     """The template's unique ID."""
 
-    name: str = marshie.attrib("name", eq=False, hash=False, repr=True)
+    name: str = marshie.attrib(eq=False, hash=False, repr=True)
     """The template's name."""
 
     description: typing.Optional[str] = marshie.attrib("description", eq=False, hash=False, repr=False)
     """The template's description."""
 
-    usage_count: int = marshie.attrib("usage_count", eq=False, hash=False, repr=True)
+    usage_count: int = marshie.attrib(eq=False, hash=False, repr=True)
     """The number of times the template has been used to create a guild."""
 
-    creator: users.User = marshie.attrib(
-        "creator", deserialize=marshie.Ref("UserImpl"), eq=False, hash=False, repr=False
-    )
+    creator: users.User = marshie.attrib(deserialize="UserImpl", eq=False, hash=False, repr=False)
     """The user who created the template."""
 
     created_at: datetime.datetime = marshie.attrib(
-        "created_at", deserialize=time.iso8601_datetime_string_to_datetime, eq=False, hash=False, repr=True
+        deserialize=time.iso8601_datetime_string_to_datetime, eq=False, hash=False, repr=True
     )
     """When the template was created."""
 
     updated_at: datetime.datetime = marshie.attrib(
-        "updated_at", deserialize=time.iso8601_datetime_string_to_datetime, eq=False, hash=False, repr=True
+        deserialize=time.iso8601_datetime_string_to_datetime, eq=False, hash=False, repr=True
     )
     """When the template was last synced with the source guild."""
 
