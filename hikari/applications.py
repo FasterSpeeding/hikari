@@ -35,8 +35,11 @@ __all__: typing.List[str] = [
     "Team",
     "TeamMember",
     "TeamMembershipState",
+    "TokenType",
+    "get_token_id",
 ]
 
+import base64
 import typing
 
 import attr
@@ -97,6 +100,9 @@ class OAuth2Scope(str, enums.Enum):
     !!! note
         You must be whitelisted to use this scope.
     """
+
+    APPLICATIONS_COMMANDS_UPDATE = "applications.commands.update"
+    """Allows your app to update slash commands via this bearer token."""
 
     APPLICATIONS_ENTITLEMENTS = "applications.entitlements"
     """Enables reading entitlements for a user's applications."""
@@ -447,8 +453,8 @@ class Application(guilds.PartialApplication):
     rpc_origins: typing.Optional[typing.Sequence[str]] = attr.ib(eq=False, hash=False, repr=False)
     """A collection of this application's RPC origin URLs, if RPC is enabled."""
 
-    public_key: typing.Optional[bytes] = attr.ib(eq=False, hash=False, repr=False)
-    """The key used for verifying interaction and GameSDK payload signatures."""
+    public_key: bytes = attr.ib(eq=False, hash=False, repr=False)
+    """The key used for verifying interaction and GameSDK payload signatures."""  # TODO: update these docs
 
     team: typing.Optional[Team] = attr.ib(eq=False, hash=False, repr=False)
     """The team this application belongs to.
@@ -522,7 +528,7 @@ class Application(guilds.PartialApplication):
 class AuthorizationApplication(guilds.PartialApplication):
     """The application model found attached to `AuthorizationInformation`."""
 
-    public_key: typing.Optional[bytes] = attr.ib(eq=False, hash=False, repr=False)
+    public_key: bytes = attr.ib(eq=False, hash=False, repr=False)
     """The key used for verifying interaction and GameSDK payload signatures."""
 
     is_bot_public: typing.Optional[bool] = attr.ib(eq=False, hash=False, repr=True)
@@ -554,3 +560,33 @@ class AuthorizationInformation:
 
     user: typing.Optional[users.User] = attr.ib(eq=True, hash=False, repr=True)
     """The user who has authorized this token if they included the `identify` scope."""
+
+
+class TokenType(str, enums.Enum):
+    """Token types used within Hikari clients."""
+
+    BOT = "Bot"
+    """Bot token type."""
+
+    BEARER = "Bearer"
+    """Oauth2 bearer token type."""
+
+
+def get_token_id(token: str) -> snowflakes.Snowflake:
+    """Try to get the bot ID stored in a token.
+
+    Returns
+    -------
+    hikari.snowflakes.Snowflake
+        The ID that was extracted from the token.
+
+    Raises
+    ------
+    builtins.ValueError
+        If the passed token has an unexpected format.
+    """
+    try:
+        return snowflakes.Snowflake(base64.b64decode(token.split(".", 1)[0]))
+
+    except (TypeError, ValueError, IndexError) as exc:
+        raise ValueError("Unexpected token format") from exc

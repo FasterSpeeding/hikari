@@ -32,6 +32,7 @@ __all__: typing.List[str] = [
     "IntentsAware",
     "NetworkSettingsAware",
     "RESTAware",
+    "InteractionServerAware",
     "ShardAware",
     "VoiceAware",
     "BotAware",
@@ -54,6 +55,7 @@ if typing.TYPE_CHECKING:
     from hikari.api import entity_factory as entity_factory_
     from hikari.api import event_factory as event_factory_
     from hikari.api import event_manager as event_manager_
+    from hikari.api import interaction_server as interaction_server_
     from hikari.api import rest as rest_
     from hikari.api import shard as gateway_shard
     from hikari.api import voice as voice_
@@ -357,6 +359,38 @@ class ShardAware(IntentsAware, NetworkSettingsAware, ExecutorAware, VoiceAware, 
 
             This method is simply a facade to make performing this in bulk
             simpler.
+        """
+        raise NotImplementedError
+
+
+class InteractionServerAware(RESTAware, EventFactoryAware, protocol.Protocol):
+    """Structural supertype for a interaction REST server-aware object."""
+
+    __slots__: typing.Sequence[str] = ()
+
+    @property
+    def is_alive(self) -> bool:
+        """Check whether the REST server is alive.
+
+        This is useful as some functions might raise
+        `hikari.errors.ComponentNotRunningError` if this is
+        `builtins.False`.
+
+        Returns
+        -------
+        builtins.bool
+            Whether the bot is running or not.
+        """
+        raise NotImplementedError
+
+    @property
+    def interaction_server(self) -> interaction_server_.InteractionServer:
+        """Interaction server this app is bound to.
+
+        Returns
+        -------
+        hikari.api.interaction_server.InteractionServer
+            The interaction server this app is bound to.
         """
         raise NotImplementedError
 

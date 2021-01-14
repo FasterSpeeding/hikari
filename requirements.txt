@@ -2,3 +2,4 @@ aiohttp==3.7.3
 attrs==20.3.0
 colorlog==4.7.2
 multidict==5.1.0
+pure25519==0.0.1
