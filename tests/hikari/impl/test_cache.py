@@ -48,7 +48,7 @@ class TestCacheImpl:
     @pytest.fixture()
     def cache_impl(self, app_impl):
         return hikari_test_helpers.mock_class_namespace(cache_impl_.CacheImpl, slots_=False)(
-            app=app_impl, settings=config.CacheSettings()
+            app_impl, config.CacheSettings(), cache_app=mock.Mock()
         )
 
     def test__init___(self, app_impl):
@@ -98,7 +98,8 @@ class TestCacheImpl:
             is_available=True,
         )
         emoji = cache_impl._build_emoji(emoji_data)
-        assert emoji.app is cache_impl._app
+        assert emoji.cache_app is cache_impl._cache_app
+        assert emoji.rest_app is cache_impl._rest_app
         assert emoji.id == snowflakes.Snowflake(1233534234)
         assert emoji.name == "OKOKOKOKOK"
         assert emoji.guild_id == snowflakes.Snowflake(65234123)
@@ -375,7 +376,8 @@ class TestCacheImpl:
         mock_user = mock.Mock(users.User, id=snowflakes.Snowflake(654234))
         mock_reffed_user = cache_utilities.RefCell(mock_user)
         emoji = emojis.KnownCustomEmoji(
-            app=cache_impl._app,
+            cache_app=cache_impl._cache_app,
+            rest_app=cache_impl._rest_app,
             id=snowflakes.Snowflake(5123123),
             name="A name",
             guild_id=snowflakes.Snowflake(65234),
@@ -410,7 +412,8 @@ class TestCacheImpl:
     def test_set_emoji_with_pre_cached_emoji(self, cache_impl):
         mock_user = mock.Mock(users.User, id=snowflakes.Snowflake(654234))
         emoji = emojis.KnownCustomEmoji(
-            app=cache_impl._app,
+            cache_app=cache_impl._cache_app,
+            rest_app=cache_impl._rest_app,
             id=snowflakes.Snowflake(5123123),
             name="A name",
             guild_id=snowflakes.Snowflake(65234),
@@ -760,7 +763,8 @@ class TestCacheImpl:
             created_at=datetime.datetime(2020, 7, 30, 7, 22, 9, 550233, tzinfo=datetime.timezone.utc),
         )
         invite = cache_impl._build_invite(invite_data)
-        assert invite.app is cache_impl._app
+        assert invite.cache_app is cache_impl._cache_app
+        assert invite.rest_app is cache_impl._rest_app
         assert invite.code == "okokok"
         assert invite.guild is None
         assert invite.guild_id == snowflakes.Snowflake(965234)
@@ -1768,7 +1772,6 @@ class TestCacheImpl:
         )
         current_voice_state = cache_impl._build_voice_state(voice_state_data)
         mock_member_data.build_entity.assert_called_once()
-        assert current_voice_state.app is cache_impl._app
         assert current_voice_state.channel_id == snowflakes.Snowflake(4651234123)
         assert current_voice_state.guild_id == snowflakes.Snowflake(54123123)
         assert current_voice_state.is_guild_deafened is True
@@ -1966,7 +1969,6 @@ class TestCacheImpl:
         mock_member = object()
         mock_reffed_member = cache_utilities.RefCell(object())
         voice_state = voices.VoiceState(
-            app=None,
             channel_id=snowflakes.Snowflake(239211023123),
             guild_id=snowflakes.Snowflake(43123123),
             is_guild_muted=True,
@@ -2148,7 +2150,8 @@ class TestCacheImpl:
         )
 
         result = cache_impl._build_message(cache_utilities.RefCell(message_data))
-        assert result.app is cache_impl._app
+        assert result.cache_app is cache_impl._cache_app
+        assert result.rest_app is cache_impl._rest_app
         assert result.member is None
         assert result.content is None
         assert result.edited_timestamp is None

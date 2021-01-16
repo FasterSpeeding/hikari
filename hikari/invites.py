@@ -84,7 +84,13 @@ class InviteCode(abc.ABC):
 class VanityURL(InviteCode):
     """A special case invite object, that represents a guild's vanity url."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
+
+    rest_app: traits.RESTAware = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """The client application that models may use for procedures."""
 
     code: str = attr.ib(eq=True, hash=True, repr=True)
@@ -95,6 +101,14 @@ class VanityURL(InviteCode):
 
     def __str__(self) -> str:
         return f"https://discord.gg/{self.code}"
+
+    async def fetch_invite(self) -> Invite:
+        return await self.rest_app.rest.fetch_invite(self.code)
+
+    def get_invite(self) -> typing.Optional[InviteWithMetadata]:
+        if self.cache_app:
+            return self.cache_app.cache.get_invite(self.code)
+        return None
 
 
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
@@ -213,7 +227,13 @@ class InviteGuild(guilds.PartialGuild):
 class Invite(InviteCode):
     """Represents an invite that's used to add users to a guild or group dm."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
+
+    rest_app: traits.RESTAware = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """The client application that models may use for procedures."""
 
     code: str = attr.ib(eq=True, hash=True, repr=True)

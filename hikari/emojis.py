@@ -335,8 +335,12 @@ class KnownCustomEmoji(CustomEmoji):
     _are_ part of. As a result, it contains a lot more information with it.
     """
 
-    app: traits.RESTAware = attr.ib(
-        repr=False, eq=False, hash=False, init=True, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
+
+    rest_app: traits.RESTAware = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
     )
     """The client application that models may use for procedures."""
 

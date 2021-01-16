@@ -280,9 +280,13 @@ class TeamMember(users.User):
     """The user representation of this team member."""
 
     @property
-    def app(self) -> traits.RESTAware:
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.user.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
         """Return the app that is bound to the user object."""
-        return self.user.app
+        return self.user.rest_app
 
     @property
     def avatar_hash(self) -> typing.Optional[str]:
@@ -346,9 +350,6 @@ class TeamMember(users.User):
 class Team(snowflakes.Unique):
     """Represents a development team, along with all its members."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    """The client application that models may use for procedures."""
-
     id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
     """The ID of this entity."""
 
@@ -372,6 +373,14 @@ class Team(snowflakes.Unique):
         return f"Team {self.id}"
 
     @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.owner.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.owner.rest_app
+
+    @property
     def icon_url(self) -> typing.Optional[files.URL]:
         """Team icon.
 
@@ -381,6 +390,10 @@ class Team(snowflakes.Unique):
             The URL, or `builtins.None` if no icon exists.
         """
         return self.format_icon()
+
+    @property
+    def owner(self) -> TeamMember:
+        return self.members[self.owner_id]
 
     def format_icon(self, *, ext: str = "png", size: int = 4096) -> typing.Optional[files.URL]:
         """Generate the icon for this team if set.
@@ -421,9 +434,6 @@ class Team(snowflakes.Unique):
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Application(guilds.PartialApplication):
     """Represents the information of an Oauth2 Application."""
-
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    """The client application that models may use for procedures."""
 
     is_bot_public: typing.Optional[bool] = attr.ib(eq=False, hash=False, repr=True)
     """`builtins.True` if the bot associated with this application is public.
@@ -466,6 +476,14 @@ class Application(guilds.PartialApplication):
 
     cover_image_hash: typing.Optional[str] = attr.ib(eq=False, hash=False, repr=False)
     """The CDN's hash of this application's cover image, used on the store."""
+
+    @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.owner.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.owner.rest_app
 
     @property
     def cover_image_url(self) -> typing.Optional[files.URL]:

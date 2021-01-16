@@ -82,8 +82,7 @@ class GuildEvent(shard_events.ShardEvent, abc.ABC):
             The ID of the guild that relates to this event.
         """
 
-    @property
-    def guild(self) -> typing.Optional[guilds.GatewayGuild]:
+    def get_guild(self) -> typing.Optional[guilds.GatewayGuild]:
         """Get the cached guild that this event relates to, if known.
 
         If not known, this will return `builtins.None` instead.
@@ -93,10 +92,10 @@ class GuildEvent(shard_events.ShardEvent, abc.ABC):
         typing.Optional[hikari.guilds.GatewayGuild]
             The guild this event relates to, or `builtins.None` if not known.
         """
-        if not isinstance(self.app, traits.CacheAware):
+        if not self.cache_app:
             return None
 
-        return self.app.cache.get_available_guild(self.guild_id) or self.app.cache.get_unavailable_guild(self.guild_id)
+        return self.cache_app.cache.get_guild(self.guild_id)
 
     async def fetch_guild(self) -> guilds.RESTGuild:
         """Perform an API call to get the guild that this event relates to.
@@ -106,7 +105,7 @@ class GuildEvent(shard_events.ShardEvent, abc.ABC):
         hikari.guilds.RESTGuild
             The guild this event occurred in.
         """
-        return await self.app.rest.fetch_guild(self.guild_id)
+        return await self.rest_app.rest.fetch_guild(self.guild_id)
 
     async def fetch_guild_preview(self) -> guilds.GuildPreview:
         """Perform an API call to get the preview of the event's guild.
@@ -116,7 +115,7 @@ class GuildEvent(shard_events.ShardEvent, abc.ABC):
         hikari.guilds.GuildPreview
             The preview of the guild this event occurred in.
         """
-        return await self.app.rest.fetch_guild_preview(self.guild_id)
+        return await self.rest_app.rest.fetch_guild_preview(self.guild_id)
 
 
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
@@ -144,9 +143,6 @@ class GuildAvailableEvent(GuildVisibilityEvent):
         the other `GuildUpdateEvent` and `GuildUnavailableEvent` guild visibility
         event models.
     """
-
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
@@ -229,6 +225,14 @@ class GuildAvailableEvent(GuildVisibilityEvent):
     """
 
     @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.guild.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.guild.rest_app
+
+    @property
     def guild_id(self) -> snowflakes.Snowflake:
         # <<inherited docstring from GuildEvent>>.
         return self.guild.id
@@ -243,7 +247,9 @@ class GuildLeaveEvent(GuildVisibilityEvent):
     This will also fire if the guild was deleted.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
@@ -264,7 +270,9 @@ class GuildLeaveEvent(GuildVisibilityEvent):
 class GuildUnavailableEvent(GuildVisibilityEvent):
     """Event fired when a guild becomes unavailable because of an outage."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
@@ -279,9 +287,6 @@ class GuildUnavailableEvent(GuildVisibilityEvent):
 @base_events.requires_intents(intents.Intents.GUILDS)
 class GuildUpdateEvent(GuildEvent):
     """Event fired when an existing guild is updated."""
-
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
@@ -320,6 +325,14 @@ class GuildUpdateEvent(GuildEvent):
     """
 
     @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.guild.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.guild.rest_app
+
+    @property
     def guild_id(self) -> snowflakes.Snowflake:
         # <<inherited docstring from GuildEvent>>.
         return self.guild.id
@@ -329,6 +342,14 @@ class GuildUpdateEvent(GuildEvent):
 @base_events.requires_intents(intents.Intents.GUILD_BANS)
 class BanEvent(GuildEvent, abc.ABC):
     """Event base for any guild ban or unban."""
+
+    @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.user.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.user.rest_app
 
     @property
     @abc.abstractmethod
@@ -357,9 +378,6 @@ class BanEvent(GuildEvent, abc.ABC):
 class BanCreateEvent(BanEvent):
     """Event that is fired when a user is banned from a guild."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
-
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
 
@@ -380,7 +398,7 @@ class BanCreateEvent(BanEvent):
         hikari.guilds.GuildMemberBan
             The ban details.
         """
-        return await self.app.rest.fetch_ban(self.guild_id, self.user)
+        return await self.rest_app.rest.fetch_ban(self.guild_id, self.user)
 
 
 @attr_extensions.with_copy
@@ -388,9 +406,6 @@ class BanCreateEvent(BanEvent):
 @base_events.requires_intents(intents.Intents.GUILD_BANS)
 class BanDeleteEvent(BanEvent):
     """Event that is fired when a user is unbanned from a guild."""
-
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
@@ -408,7 +423,9 @@ class BanDeleteEvent(BanEvent):
 class EmojisUpdateEvent(GuildEvent):
     """Event that is fired when the emojis in a guild are updated."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
@@ -440,7 +457,7 @@ class EmojisUpdateEvent(GuildEvent):
         typing.Sequence[emojis_.KnownCustomEmoji]
             All emojis in the guild.
         """
-        return await self.app.rest.fetch_guild_emojis(self.guild_id)
+        return await self.rest_app.rest.fetch_guild_emojis(self.guild_id)
 
 
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
@@ -486,7 +503,7 @@ class IntegrationEvent(GuildEvent, abc.ABC):
             Some possibly random subset of the integrations in a guild,
             probably.
         """
-        return await self.app.rest.fetch_integrations(self.guild_id)
+        return await self.rest_app.rest.fetch_integrations(self.guild_id)
 
 
 @attr_extensions.with_copy
@@ -495,7 +512,9 @@ class IntegrationEvent(GuildEvent, abc.ABC):
 class IntegrationCreateEvent(IntegrationEvent):
     """Event that is fired when an integration is created in a guild."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
@@ -526,7 +545,9 @@ class IntegrationCreateEvent(IntegrationEvent):
 class IntegrationDeleteEvent(IntegrationEvent):
     """Event that is fired when an integration is deleted in a guild."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
@@ -548,7 +569,9 @@ class IntegrationDeleteEvent(IntegrationEvent):
 class IntegrationUpdateEvent(IntegrationEvent):
     """Event that is fired when an integration is updated in a guild."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
@@ -590,8 +613,13 @@ class PresenceUpdateEvent(shard_events.ShardEvent):
     shards that saw the presence update.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
+    @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.presence.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.presence.rest_app
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
@@ -657,10 +685,9 @@ class PresenceUpdateEvent(shard_events.ShardEvent):
         typing.Optional[hikari.users.User]
             The full cached user, or `builtins.None` if not cached.
         """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        return self.app.cache.get_user(self.user_id)
+        if self.cache_app:
+            return self.cache_app.cache.get_user(self.user_id)
+        return None
 
     async def fetch_user(self) -> users.User:
         """Perform an API call to fetch the user this event concerns.
@@ -670,4 +697,4 @@ class PresenceUpdateEvent(shard_events.ShardEvent):
         hikari.users.User
             The user affected by this event.
         """
-        return await self.app.rest.fetch_user(self.user_id)
+        return await self.rest_app.rest.fetch_user(self.user_id)

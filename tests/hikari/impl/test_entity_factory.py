@@ -75,15 +75,25 @@ def test__deserialize_max_age_returns_null():
 
 class TestEntityFactoryImpl:
     @pytest.fixture()
-    def mock_app(self) -> traits.RESTAware:
+    def mock_cache_app(self) -> traits.CacheAware:
+        return mock.MagicMock(traits.CacheAware)
+
+    @pytest.fixture()
+    def mock_rest_app(self) -> traits.RESTAware:
         return mock.MagicMock(traits.RESTAware)
 
     @pytest.fixture()
-    def entity_factory_impl(self, mock_app) -> entity_factory.EntityFactoryImpl:
-        return entity_factory.EntityFactoryImpl(app=mock_app)
+    def mock_shard_app(self) -> traits.ShardAware:
+        return mock.MagicMock(traits.ShardAware)
 
-    def test_app(self, entity_factory_impl, mock_app):
-        assert entity_factory_impl._app is mock_app
+    @pytest.fixture()
+    def entity_factory_impl(self, mock_cache_app, mock_rest_app, mock_shard_app) -> entity_factory.EntityFactoryImpl:
+        return entity_factory.EntityFactoryImpl(mock_rest_app, shard_app=mock_shard_app, cache_app=mock_cache_app)
+
+    def test_app(self, entity_factory_impl, mock_cache_app, mock_rest_app, mock_shard_app):
+        assert entity_factory_impl._rest_app is mock_rest_app
+        assert entity_factory_impl._cache_app is mock_cache_app
+        assert entity_factory_impl._shard_app is mock_shard_app
 
     ######################
     # APPLICATION MODELS #
@@ -150,7 +160,7 @@ class TestEntityFactoryImpl:
             "features": ["DISCOVERABLE", "FORCE_RELAY"],
         }
 
-    def test_deserialize_own_guild(self, entity_factory_impl, mock_app, own_guild_payload):
+    def test_deserialize_own_guild(self, entity_factory_impl, own_guild_payload):
         own_guild = entity_factory_impl.deserialize_own_guild(own_guild_payload)
         assert own_guild.id == 152559372126519269
         assert own_guild.name == "Isopropyl"
@@ -204,10 +214,17 @@ class TestEntityFactoryImpl:
         }
 
     def test_deserialize_application(
-        self, entity_factory_impl, mock_app, application_information_payload, owner_payload, user_payload
+        self,
+        entity_factory_impl,
+        mock_cache_app,
+        mock_rest_app,
+        application_information_payload,
+        owner_payload,
+        user_payload,
     ):
         application = entity_factory_impl.deserialize_application(application_information_payload)
-        assert application.app is mock_app
+        assert application.cache_app is mock_cache_app
+        assert application.rest_app is mock_rest_app
         assert application.id == 209333111222
         assert application.name == "Dream Sweet in Sea Major"
         assert application.description == "I am an application"
@@ -238,7 +255,7 @@ class TestEntityFactoryImpl:
         assert application.cover_image_hash == "hashmebaby"
         assert isinstance(application, application_models.Application)
 
-    def test_deserialize_application_with_unset_fields(self, entity_factory_impl, mock_app, owner_payload):
+    def test_deserialize_application_with_unset_fields(self, entity_factory_impl, owner_payload):
         application = entity_factory_impl.deserialize_application(
             {
                 "id": "209333111222",
@@ -259,7 +276,7 @@ class TestEntityFactoryImpl:
         assert application.slug is None
         assert application.cover_image_hash is None
 
-    def test_deserialize_application_with_null_fields(self, entity_factory_impl, mock_app, owner_payload):
+    def test_deserialize_application_with_null_fields(self, entity_factory_impl, owner_payload):
         application = entity_factory_impl.deserialize_application(
             {
                 "id": "209333111222",
@@ -451,7 +468,8 @@ class TestEntityFactoryImpl:
     def test_deserialize_audit_log(
         self,
         entity_factory_impl,
-        mock_app,
+        mock_cache_app,
+        mock_rest_app,
         audit_log_payload,
         user_payload,
         webhook_payload,
@@ -461,7 +479,8 @@ class TestEntityFactoryImpl:
 
         assert len(audit_log.entries) == 1
         entry = audit_log.entries[694026906592477214]
-        assert entry.app is mock_app
+        assert entry.cache_app is mock_cache_app
+        assert entry.rest_app is mock_rest_app
         assert entry.id == 694026906592477214
         assert entry.target_id == 115590097100865541
         assert entry.user_id == 560984860634644482
@@ -477,15 +496,17 @@ class TestEntityFactoryImpl:
 
         assert len(change.new_value) == 1
         role = change.new_value[568651298858074123]
-        role.app is mock_app
-        role.id == 568651298858074123
-        role.name == "Casual"
+        assert role.cache_app is mock_cache_app
+
+        assert role.id == 568651298858074123
+        assert role.name == "Casual"
 
         assert len(change.old_value) == 1
         role = change.old_value[123123123312312]
-        role.app is mock_app
-        role.id == 123123123312312
-        role.name == "aRole"
+        assert role.cache_app is mock_cache_app
+        assert role.rest_app is mock_rest_app
+        assert role.id == 123123123312312
+        assert role.name == "aRole"
 
         assert audit_log.integrations == {
             4949494949: entity_factory_impl.deserialize_partial_integration(partial_integration_payload)
@@ -531,9 +552,15 @@ class TestEntityFactoryImpl:
     # CHANNEL MODELS #
     ##################
 
-    def test_deserialize_channel_follow(self, entity_factory_impl, mock_app):
+    def test_deserialize_channel_follow(
+        self,
+        entity_factory_impl,
+        mock_cache_app,
+        mock_rest_app,
+    ):
         follow = entity_factory_impl.deserialize_channel_follow({"channel_id": "41231", "webhook_id": "939393"})
-        assert follow.app is mock_app
+        assert follow.cache_app is mock_cache_app
+        assert follow.rest_app is mock_rest_app
         assert follow.channel_id == 41231
         assert follow.webhook_id == 939393
 
@@ -570,9 +597,12 @@ class TestEntityFactoryImpl:
     def partial_channel_payload(self):
         return {"id": "561884984214814750", "name": "general", "type": 0}
 
-    def test_deserialize_partial_channel(self, entity_factory_impl, mock_app, partial_channel_payload):
+    def test_deserialize_partial_channel(
+        self, entity_factory_impl, mock_cache_app, mock_rest_app, partial_channel_payload
+    ):
         partial_channel = entity_factory_impl.deserialize_partial_channel(partial_channel_payload)
-        assert partial_channel.app is mock_app
+        assert partial_channel.cache_app is mock_cache_app
+        assert partial_channel.rest_app is mock_rest_app
         assert partial_channel.id == 561884984214814750
         assert partial_channel.name == "general"
         assert partial_channel.type == channel_models.ChannelType.GUILD_TEXT
@@ -590,9 +620,12 @@ class TestEntityFactoryImpl:
             "recipients": [user_payload],
         }
 
-    def test_deserialize_dm_channel(self, entity_factory_impl, mock_app, dm_channel_payload, user_payload):
+    def test_deserialize_dm_channel(
+        self, entity_factory_impl, mock_cache_app, mock_rest_app, dm_channel_payload, user_payload
+    ):
         dm_channel = entity_factory_impl.deserialize_dm(dm_channel_payload)
-        assert dm_channel.app is mock_app
+        assert dm_channel.cache_app is mock_cache_app
+        assert dm_channel.rest_app is mock_rest_app
         assert dm_channel.id == 123
         assert dm_channel.name is None
         assert dm_channel.last_message_id == 456
@@ -624,9 +657,12 @@ class TestEntityFactoryImpl:
             "recipients": [user_payload],
         }
 
-    def test_deserialize_group_dm_channel(self, entity_factory_impl, mock_app, group_dm_channel_payload, user_payload):
+    def test_deserialize_group_dm_channel(
+        self, entity_factory_impl, mock_cache_app, mock_rest_app, group_dm_channel_payload, user_payload
+    ):
         group_dm = entity_factory_impl.deserialize_group_dm(group_dm_channel_payload)
-        assert group_dm.app is mock_app
+        assert group_dm.cache_app is mock_cache_app
+        assert group_dm.rest_app is mock_rest_app
         assert group_dm.id == 123
         assert group_dm.name == "Secret Developer Group"
         assert group_dm.icon_hash == "123asdf123adsf"
@@ -666,10 +702,11 @@ class TestEntityFactoryImpl:
         }
 
     def test_deserialize_guild_category(
-        self, entity_factory_impl, mock_app, guild_category_payload, permission_overwrite_payload
+        self, entity_factory_impl, mock_cache_app, mock_rest_app, guild_category_payload, permission_overwrite_payload
     ):
         guild_category = entity_factory_impl.deserialize_guild_category(guild_category_payload)
-        assert guild_category.app is mock_app
+        assert guild_category.cache_app is mock_cache_app
+        assert guild_category.rest_app is mock_rest_app
         assert guild_category.id == 123
         assert guild_category.name == "Test"
         assert guild_category.type == channel_models.ChannelType.GUILD_CATEGORY
@@ -729,10 +766,16 @@ class TestEntityFactoryImpl:
         }
 
     def test_deserialize_guild_text_channel(
-        self, entity_factory_impl, mock_app, guild_text_channel_payload, permission_overwrite_payload
+        self,
+        entity_factory_impl,
+        mock_cache_app,
+        mock_rest_app,
+        guild_text_channel_payload,
+        permission_overwrite_payload,
     ):
         guild_text_channel = entity_factory_impl.deserialize_guild_text_channel(guild_text_channel_payload)
-        assert guild_text_channel.app is mock_app
+        assert guild_text_channel.cache_app is mock_cache_app
+        assert guild_text_channel.rest_app is mock_rest_app
         assert guild_text_channel.id == 123
         assert guild_text_channel.name == "general"
         assert guild_text_channel.type == channel_models.ChannelType.GUILD_TEXT
@@ -808,10 +851,16 @@ class TestEntityFactoryImpl:
         }
 
     def test_deserialize_guild_news_channel(
-        self, entity_factory_impl, mock_app, guild_news_channel_payload, permission_overwrite_payload
+        self,
+        entity_factory_impl,
+        mock_cache_app,
+        mock_rest_app,
+        guild_news_channel_payload,
+        permission_overwrite_payload,
     ):
         news_channel = entity_factory_impl.deserialize_guild_news_channel(guild_news_channel_payload)
-        assert news_channel.app is mock_app
+        assert news_channel.cache_app is mock_cache_app
+        assert news_channel.rest_app is mock_rest_app
         assert news_channel.id == 7777
         assert news_channel.name == "Important Announcements"
         assert news_channel.type == channel_models.ChannelType.GUILD_NEWS
@@ -881,9 +930,16 @@ class TestEntityFactoryImpl:
         }
 
     def test_deserialize_guild_store_channel(
-        self, entity_factory_impl, mock_app, guild_store_channel_payload, permission_overwrite_payload
+        self,
+        entity_factory_impl,
+        mock_cache_app,
+        mock_rest_app,
+        guild_store_channel_payload,
+        permission_overwrite_payload,
     ):
         store_chanel = entity_factory_impl.deserialize_guild_store_channel(guild_store_channel_payload)
+        assert store_chanel.cache_app is mock_cache_app
+        assert store_chanel.rest_app is mock_rest_app
         assert store_chanel.id == 123
         assert store_chanel.name == "Half Life 3"
         assert store_chanel.type == channel_models.ChannelType.GUILD_STORE
@@ -941,9 +997,16 @@ class TestEntityFactoryImpl:
         }
 
     def test_deserialize_guild_voice_channel(
-        self, entity_factory_impl, mock_app, guild_voice_channel_payload, permission_overwrite_payload
+        self,
+        entity_factory_impl,
+        mock_cache_app,
+        mock_rest_app,
+        guild_voice_channel_payload,
+        permission_overwrite_payload,
     ):
         voice_channel = entity_factory_impl.deserialize_guild_voice_channel(guild_voice_channel_payload)
+        assert voice_channel.cache_app is mock_cache_app
+        assert voice_channel.rest_app is mock_rest_app
         assert voice_channel.id == 555
         assert voice_channel.name == "Secret Developer Discussions"
         assert voice_channel.type == channel_models.ChannelType.GUILD_VOICE
@@ -1310,16 +1373,14 @@ class TestEntityFactoryImpl:
     def custom_emoji_payload(self):
         return {"id": "691225175349395456", "name": "test", "animated": True}
 
-    def test_deserialize_custom_emoji(self, entity_factory_impl, mock_app, custom_emoji_payload):
+    def test_deserialize_custom_emoji(self, entity_factory_impl, custom_emoji_payload):
         emoji = entity_factory_impl.deserialize_custom_emoji(custom_emoji_payload)
         assert emoji.id == snowflakes.Snowflake(691225175349395456)
         assert emoji.name == "test"
         assert emoji.is_animated is True
         assert isinstance(emoji, emoji_models.CustomEmoji)
 
-    def test_deserialize_custom_emoji_with_unset_and_null_fields(
-        self, entity_factory_impl, mock_app, custom_emoji_payload
-    ):
+    def test_deserialize_custom_emoji_with_unset_and_null_fields(self, entity_factory_impl, custom_emoji_payload):
         emoji = entity_factory_impl.deserialize_custom_emoji({"id": "691225175349395456", "name": None})
         assert emoji.is_animated is False
         assert emoji.name is None
@@ -1338,12 +1399,13 @@ class TestEntityFactoryImpl:
         }
 
     def test_deserialize_known_custom_emoji(
-        self, entity_factory_impl, mock_app, user_payload, known_custom_emoji_payload
+        self, entity_factory_impl, mock_cache_app, mock_rest_app, user_payload, known_custom_emoji_payload
     ):
         emoji = entity_factory_impl.deserialize_known_custom_emoji(
             known_custom_emoji_payload, guild_id=snowflakes.Snowflake(1235123)
         )
-        assert emoji.app is mock_app
+        assert emoji.cache_app is mock_cache_app
+        assert emoji.rest_app is mock_rest_app
         assert emoji.id == 12345
         assert emoji.guild_id == 1235123
         assert emoji.name == "testing"
@@ -1409,14 +1471,15 @@ class TestEntityFactoryImpl:
     def guild_embed_payload(self):
         return {"channel_id": "123123123", "enabled": True}
 
-    def test_deserialize_widget_embed(self, entity_factory_impl, mock_app, guild_embed_payload):
+    def test_deserialize_widget_embed(self, entity_factory_impl, mock_cache_app, mock_rest_app, guild_embed_payload):
         guild_embed = entity_factory_impl.deserialize_guild_widget(guild_embed_payload)
-        assert guild_embed.app is mock_app
+        assert guild_embed.cache_app is mock_cache_app
+        assert guild_embed.rest_app is mock_rest_app
         assert guild_embed.channel_id == 123123123
         assert guild_embed.is_enabled is True
         assert isinstance(guild_embed, guild_models.GuildWidget)
 
-    def test_deserialize_guild_embed_with_null_fields(self, entity_factory_impl, mock_app):
+    def test_deserialize_guild_embed_with_null_fields(self, entity_factory_impl):
         assert entity_factory_impl.deserialize_guild_widget({"channel_id": None, "enabled": True}).channel_id is None
 
     @pytest.fixture()
@@ -1432,10 +1495,9 @@ class TestEntityFactoryImpl:
             "user": user_payload,
         }
 
-    def test_deserialize_member(self, entity_factory_impl, mock_app, member_payload, user_payload):
+    def test_deserialize_member(self, entity_factory_impl, member_payload, user_payload):
         member_payload = {**member_payload, "guild_id": "76543325"}
         member = entity_factory_impl.deserialize_member(member_payload)
-        assert member.app is mock_app
         assert member.guild_id == 76543325
         assert member.user == entity_factory_impl.deserialize_user(user_payload)
         assert member.nickname == "foobarbaz"
@@ -1448,14 +1510,13 @@ class TestEntityFactoryImpl:
         assert isinstance(member, guild_models.Member)
 
     def test_deserialize_member_when_guild_id_already_in_role_array(
-        self, entity_factory_impl, mock_app, member_payload, user_payload
+        self, entity_factory_impl, member_payload, user_payload
     ):
         # While this isn't a legitimate case based on the current behaviour of the API, we still want to cover this
         # to ensure no duplication occurs.
         member_payload = {**member_payload, "guild_id": "76543325"}
         member_payload["roles"] = [11111, 22222, 76543325, 33333, 44444]
         member = entity_factory_impl.deserialize_member(member_payload)
-        assert member.app is mock_app
         assert member.guild_id == 76543325
         assert member.user == entity_factory_impl.deserialize_user(user_payload)
         assert member.nickname == "foobarbaz"
@@ -1535,9 +1596,10 @@ class TestEntityFactoryImpl:
             },
         }
 
-    def test_deserialize_role(self, entity_factory_impl, mock_app, guild_role_payload):
+    def test_deserialize_role(self, entity_factory_impl, mock_cache_app, mock_rest_app, guild_role_payload):
         guild_role = entity_factory_impl.deserialize_role(guild_role_payload, guild_id=snowflakes.Snowflake(76534453))
-        assert guild_role.app is mock_app
+        assert guild_role.cache_app is mock_cache_app
+        assert guild_role.rest_app is mock_rest_app
         assert guild_role.id == 41771983423143936
         assert guild_role.guild_id == 76534453
         assert guild_role.name == "WE DEM BOYZZ!!!!!!"
@@ -1729,10 +1791,11 @@ class TestEntityFactoryImpl:
         }
 
     def test_deserialize_guild_preview(
-        self, entity_factory_impl, mock_app, guild_preview_payload, known_custom_emoji_payload
+        self, entity_factory_impl, mock_cache_app, mock_rest_app, guild_preview_payload, known_custom_emoji_payload
     ):
         guild_preview = entity_factory_impl.deserialize_guild_preview(guild_preview_payload)
-        assert guild_preview.app is mock_app
+        assert guild_preview.cache_app is mock_cache_app
+        assert guild_preview.rest_app is mock_rest_app
         assert guild_preview.id == 152559372126519269
         assert guild_preview.name == "Isopropyl"
         assert guild_preview.icon_hash == "d4a983885dsaa7691ce8bcaaf945a"
@@ -1749,7 +1812,7 @@ class TestEntityFactoryImpl:
         assert guild_preview.description == "A DESCRIPTION."
         assert isinstance(guild_preview, guild_models.GuildPreview)
 
-    def test_deserialize_guild_preview_with_null_fields(self, entity_factory_impl, mock_app, guild_preview_payload):
+    def test_deserialize_guild_preview_with_null_fields(self, entity_factory_impl, guild_preview_payload):
         guild_preview = entity_factory_impl.deserialize_guild_preview(
             {
                 "id": "152559372126519269",
@@ -1817,13 +1880,15 @@ class TestEntityFactoryImpl:
     def test_deserialize_rest_guild(
         self,
         entity_factory_impl,
-        mock_app,
+        mock_cache_app,
+        mock_rest_app,
         deserialize_rest_guild_payload,
         known_custom_emoji_payload,
         guild_role_payload,
     ):
         guild = entity_factory_impl.deserialize_rest_guild(deserialize_rest_guild_payload)
-        assert guild.app is mock_app
+        assert guild.cache_app is mock_cache_app
+        assert guild.rest_app is mock_rest_app
         assert guild.id == 265828729970753537
         assert guild.name == "L33t guild"
         assert guild.icon_hash == "1a2b3c4d"
@@ -2029,7 +2094,8 @@ class TestEntityFactoryImpl:
     def test_deserialize_gateway_guild(
         self,
         entity_factory_impl,
-        mock_app,
+        mock_cache_app,
+        mock_rest_app,
         deserialize_gateway_guild_payload,
         guild_text_channel_payload,
         guild_voice_channel_payload,
@@ -2042,7 +2108,8 @@ class TestEntityFactoryImpl:
     ):
         guild_definition = entity_factory_impl.deserialize_gateway_guild(deserialize_gateway_guild_payload)
         guild = guild_definition.guild
-        assert guild.app is mock_app
+        assert guild.cache_app is mock_cache_app
+        assert guild.rest_app is mock_rest_app
         assert guild.id == 265828729970753537
         assert guild.name == "L33t guild"
         assert guild.icon_hash == "1a2b3c4d"
@@ -2237,9 +2304,10 @@ class TestEntityFactoryImpl:
     def vanity_url_payload(self):
         return {"code": "iamacode", "uses": 42}
 
-    def test_deserialize_vanity_url(self, entity_factory_impl, mock_app, vanity_url_payload):
+    def test_deserialize_vanity_url(self, entity_factory_impl, mock_cache_app, mock_rest_app, vanity_url_payload):
         vanity_url = entity_factory_impl.deserialize_vanity_url(vanity_url_payload)
-        assert vanity_url.app is mock_app
+        assert vanity_url.cache_app is mock_cache_app
+        assert vanity_url.rest_app is mock_rest_app
         assert vanity_url.code == "iamacode"
         assert vanity_url.uses == 42
         assert isinstance(vanity_url, invite_models.VanityURL)
@@ -2274,16 +2342,20 @@ class TestEntityFactoryImpl:
     def test_deserialize_invite(
         self,
         entity_factory_impl,
-        mock_app,
+        mock_cache_app,
+        mock_rest_app,
         invite_payload,
         partial_channel_payload,
         user_payload,
         alternative_user_payload,
     ):
         invite = entity_factory_impl.deserialize_invite(invite_payload)
-        assert invite.app is mock_app
+        assert invite.cache_app is mock_cache_app
+        assert invite.rest_app is mock_rest_app
         assert invite.code == "aCode"
         # InviteGuild
+        assert invite.guild.cache_app is mock_cache_app
+        assert invite.guild.rest_app is mock_rest_app
         assert invite.guild.id == 56188492224814744
         assert invite.guild.name == "Testin' Your Scene"
         assert invite.guild.icon_hash == "bb71f469c158984e265093a81b3397fb"
@@ -2358,16 +2430,20 @@ class TestEntityFactoryImpl:
     def test_deserialize_invite_with_metadata(
         self,
         entity_factory_impl,
-        mock_app,
+        mock_cache_app,
+        mock_rest_app,
         invite_with_metadata_payload,
         partial_channel_payload,
         user_payload,
         alternative_user_payload,
     ):
         invite_with_metadata = entity_factory_impl.deserialize_invite_with_metadata(invite_with_metadata_payload)
-        assert invite_with_metadata.app is mock_app
+        assert invite_with_metadata.cache_app is mock_cache_app
+        assert invite_with_metadata.rest_app is mock_rest_app
         assert invite_with_metadata.code == "aCode"
         # InviteGuild
+        assert invite_with_metadata.guild.cache_app is mock_cache_app
+        assert invite_with_metadata.rest_app is mock_rest_app
         assert invite_with_metadata.guild.id == 56188492224814744
         assert invite_with_metadata.guild.name == "Testin' Your Scene"
         assert invite_with_metadata.guild.icon_hash == "bb71f469c158984e265093a81b3397fb"
@@ -2485,7 +2561,9 @@ class TestEntityFactoryImpl:
     def test_deserialize_partial_message(
         self,
         entity_factory_impl,
-        mock_app,
+        mock_cache_app,
+        mock_rest_app,
+        mock_shard_app,
         message_payload,
         user_payload,
         member_payload,
@@ -2494,7 +2572,9 @@ class TestEntityFactoryImpl:
         embed_payload,
     ):
         partial_message = entity_factory_impl.deserialize_partial_message(message_payload)
-        assert partial_message.app is mock_app
+        assert partial_message.cache_app is mock_cache_app
+        assert partial_message.rest_app is mock_rest_app
+        assert partial_message.shard_app is mock_shard_app
         assert partial_message.id == 123
         assert partial_message.channel_id == 456
         assert partial_message._guild_id == 678
@@ -2555,7 +2635,8 @@ class TestEntityFactoryImpl:
         assert partial_message.application.primary_sku_id == 499494949494994
         assert isinstance(partial_message.application, message_models.MessageApplication)
         # MessageReference
-        assert partial_message.message_reference.app is mock_app
+        assert partial_message.message_reference.cache_app is mock_cache_app
+        assert partial_message.message_reference.rest_app is mock_rest_app
         assert partial_message.message_reference.id == 306588351130107906
         assert partial_message.message_reference.channel_id == 278325129692446722
         assert partial_message.message_reference.guild_id == 278325129692446720
@@ -2573,9 +2654,13 @@ class TestEntityFactoryImpl:
         assert partial_message.member is None
         assert partial_message.application.primary_sku_id is None
 
-    def test_deserialize_partial_message_with_unset_fields(self, entity_factory_impl, mock_app):
+    def test_deserialize_partial_message_with_unset_fields(
+        self, entity_factory_impl, mock_cache_app, mock_rest_app, mock_shard_app
+    ):
         partial_message = entity_factory_impl.deserialize_partial_message({"id": 123, "channel_id": 456})
-        assert partial_message.app is mock_app
+        assert partial_message.cache_app is mock_cache_app
+        assert partial_message.rest_app is mock_rest_app
+        assert partial_message.shard_app is mock_shard_app
         assert partial_message.id == 123
         assert partial_message.channel_id == 456
         assert partial_message._guild_id is None
@@ -2604,7 +2689,9 @@ class TestEntityFactoryImpl:
     def test_deserialize_full_message(
         self,
         entity_factory_impl,
-        mock_app,
+        mock_cache_app,
+        mock_rest_app,
+        mock_shard_app,
         message_payload,
         user_payload,
         member_payload,
@@ -2613,7 +2700,9 @@ class TestEntityFactoryImpl:
         embed_payload,
     ):
         message = entity_factory_impl.deserialize_message(message_payload)
-        assert message.app is mock_app
+        assert message.cache_app is mock_cache_app
+        assert message.rest_app is mock_rest_app
+        assert message.shard_app is mock_shard_app
         assert message.id == 123
         assert message.channel_id == 456
         assert message._guild_id == 678
@@ -2673,7 +2762,8 @@ class TestEntityFactoryImpl:
         assert isinstance(message.application, message_models.MessageApplication)
 
         # MessageReference
-        assert message.message_reference.app is mock_app
+        assert message.message_reference.cache_app is mock_cache_app
+        assert message.message_reference.rest_app is mock_rest_app
         assert message.message_reference.id == 306588351130107906
         assert message.message_reference.channel_id == 278325129692446722
         assert message.message_reference.guild_id == 278325129692446720
@@ -2684,7 +2774,9 @@ class TestEntityFactoryImpl:
     def test_deserialize_message_with_null_and_unset_fields(
         self,
         entity_factory_impl,
-        mock_app,
+        mock_cache_app,
+        mock_rest_app,
+        mock_shard_app,
         user_payload,
     ):
         message_payload = {
@@ -2705,7 +2797,9 @@ class TestEntityFactoryImpl:
         }
 
         message = entity_factory_impl.deserialize_message(message_payload)
-        assert message.app is mock_app
+        assert message.cache_app is mock_cache_app
+        assert message.rest_app is mock_rest_app
+        assert message.shard_app is mock_shard_app
         assert message._guild_id is None
         assert message.member is None
         assert message.edited_timestamp is None
@@ -2768,10 +2862,17 @@ class TestEntityFactoryImpl:
         }
 
     def test_deserialize_member_presence(
-        self, entity_factory_impl, mock_app, member_presence_payload, custom_emoji_payload, user_payload
+        self,
+        entity_factory_impl,
+        mock_cache_app,
+        mock_rest_app,
+        member_presence_payload,
+        custom_emoji_payload,
+        user_payload,
     ):
         presence = entity_factory_impl.deserialize_member_presence(member_presence_payload)
-        assert presence.app is mock_app
+        assert presence.cache_app is mock_cache_app
+        assert presence.rest_app is mock_rest_app
         assert presence.user_id == 115590097100865541
         assert presence.guild_id == 44004040
         assert presence.visible_status == presence_models.Status.DO_NOT_DISTURB
@@ -3013,7 +3114,13 @@ class TestEntityFactoryImpl:
         }
 
     def test_deserialize_template(
-        self, entity_factory_impl, mock_app, template_payload, user_payload, guild_text_channel_payload
+        self,
+        entity_factory_impl,
+        mock_cache_app,
+        mock_rest_app,
+        template_payload,
+        user_payload,
+        guild_text_channel_payload,
     ):
         template = entity_factory_impl.deserialize_template(template_payload)
         assert template.code == "4rDaewUKeYVj"
@@ -3025,7 +3132,8 @@ class TestEntityFactoryImpl:
         assert template.updated_at == datetime.datetime(2020, 12, 15, 1, 57, 35, tzinfo=datetime.timezone.utc)
 
         # TemplateGuild
-        assert template.source_guild.app is mock_app
+        assert template.source_guild.cache_app is mock_cache_app
+        assert template.source_guild.rest_app is mock_rest_app
         assert template.source_guild.id == 574921006817476608
         assert template.source_guild.icon_hash == "27b75989b5b42aba51346a6b69d8fcfe"
         assert template.source_guild.name == "hikari"
@@ -3043,7 +3151,8 @@ class TestEntityFactoryImpl:
         # TemplateRole
         assert len(template.source_guild.roles) == 1
         role = template.source_guild.roles[33]
-        assert role.app is mock_app
+        assert role.cache_app is mock_cache_app
+        assert role.rest_app is mock_rest_app
         assert role.id == 33
         assert role.name == "@everyone"
         assert role.permissions == permission_models.Permissions(104189505)
@@ -3121,9 +3230,10 @@ class TestEntityFactoryImpl:
             "public_flags": int(user_models.UserFlag.EARLY_VERIFIED_DEVELOPER),
         }
 
-    def test_deserialize_user(self, entity_factory_impl, mock_app, user_payload):
+    def test_deserialize_user(self, entity_factory_impl, mock_cache_app, mock_rest_app, user_payload):
         user = entity_factory_impl.deserialize_user(user_payload)
-        assert user.app is mock_app
+        assert user.cache_app is mock_cache_app
+        assert user.rest_app is mock_rest_app
         assert user.id == 115590097100865541
         assert user.username == "nyaa"
         assert user.avatar_hash == "b3b24c6d7cbcdec129d5d537067061a8"
@@ -3133,7 +3243,7 @@ class TestEntityFactoryImpl:
         assert user.flags == user_models.UserFlag.EARLY_VERIFIED_DEVELOPER
         assert isinstance(user, user_models.UserImpl)
 
-    def test_deserialize_user_with_unset_fields(self, entity_factory_impl, mock_app, user_payload):
+    def test_deserialize_user_with_unset_fields(self, entity_factory_impl, user_payload):
         user = entity_factory_impl.deserialize_user(
             {
                 "id": "115590097100865541",
@@ -3164,9 +3274,10 @@ class TestEntityFactoryImpl:
             "premium_type": 1,
         }
 
-    def test_deserialize_my_user(self, entity_factory_impl, mock_app, my_user_payload):
+    def test_deserialize_my_user(self, entity_factory_impl, mock_cache_app, mock_rest_app, my_user_payload):
         my_user = entity_factory_impl.deserialize_my_user(my_user_payload)
-        assert my_user.app is mock_app
+        assert my_user.cache_app is mock_cache_app
+        assert my_user.rest_app is mock_rest_app
         assert my_user.id == 379953393319542784
         assert my_user.username == "qt pi"
         assert my_user.avatar_hash == "820d0e50543216e812ad94e6ab7"
@@ -3181,7 +3292,9 @@ class TestEntityFactoryImpl:
         assert my_user.premium_type is user_models.PremiumType.NITRO_CLASSIC
         assert isinstance(my_user, user_models.OwnUser)
 
-    def test_deserialize_my_user_with_unset_fields(self, entity_factory_impl, mock_app, my_user_payload):
+    def test_deserialize_my_user_with_unset_fields(
+        self, entity_factory_impl, mock_cache_app, mock_rest_app, my_user_payload
+    ):
         my_user = entity_factory_impl.deserialize_my_user(
             {
                 "id": "379953393319542784",
@@ -3195,7 +3308,8 @@ class TestEntityFactoryImpl:
                 "premium_type": 1,
             }
         )
-        assert my_user.app is mock_app
+        assert my_user.cache_app is mock_cache_app
+        assert my_user.rest_app is mock_rest_app
         assert my_user.is_bot is False
         assert my_user.is_system is False
         assert my_user.is_verified is None
@@ -3224,10 +3338,11 @@ class TestEntityFactoryImpl:
         }
 
     def test_deserialize_voice_state_with_guild_id_in_payload(
-        self, entity_factory_impl, mock_app, voice_state_payload, member_payload
+        self, entity_factory_impl, mock_cache_app, mock_rest_app, voice_state_payload, member_payload
     ):
         voice_state = entity_factory_impl.deserialize_voice_state(voice_state_payload)
-        assert voice_state.app is mock_app
+        assert voice_state.cache_app is mock_cache_app
+        assert voice_state.rest_app is mock_rest_app
         assert voice_state.guild_id == 929292929292992
         assert voice_state.channel_id == 157733188964188161
         assert voice_state.user_id == 115590097100865541

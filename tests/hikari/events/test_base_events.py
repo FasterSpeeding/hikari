@@ -97,10 +97,15 @@ class TestExceptionEvent:
             failed_callback=mock.AsyncMock(),
         )
 
-    def test_app_property(self, event):
-        app = mock.Mock()
-        event.failed_event.app = app
-        assert event.app is app
+    def test_rest_app_property(self, event):
+        rest_app = mock.Mock()
+        event.failed_event.rest_app = rest_app
+        assert event.rest_app is rest_app
+
+    def test_cache_app_property(self, event):
+        cache_app = mock.Mock()
+        event.failed_event.cache_app = cache_app
+        assert event.cache_app is cache_app
 
     @pytest.mark.parametrize("has_shard", [True, False])
     def test_shard_property(self, has_shard, event):

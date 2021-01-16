@@ -184,7 +184,9 @@ class AuditLogEventType(int, enums.Enum):
 class BaseAuditLogEntryInfo(abc.ABC):
     """A base object that all audit log entry info objects will inherit from."""
 
-    app: traits.RESTAware = attr.ib(repr=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(repr=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(repr=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
     """The client application that models may use for procedures."""
 
 
@@ -251,7 +253,7 @@ class MessagePinEntryInfo(BaseAuditLogEntryInfo):
         hikari.errors.InternalServerError
             If an internal error occurs on Discord while handling the request.
         """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
+        channel = await self.rest_app.rest.fetch_channel(self.channel_id)
         assert isinstance(channel, channels.TextChannel)
         return channel
 
@@ -285,7 +287,7 @@ class MessagePinEntryInfo(BaseAuditLogEntryInfo):
         hikari.errors.InternalServerError
             If an internal error occurs on Discord while handling the request.
         """
-        return await self.app.rest.fetch_message(self.channel_id, self.message_id)
+        return await self.rest_app.rest.fetch_message(self.channel_id, self.message_id)
 
 
 @attr_extensions.with_copy
@@ -346,7 +348,7 @@ class MessageDeleteEntryInfo(MessageBulkDeleteEntryInfo):
         hikari.errors.InternalServerError
             If an internal error occurs on Discord while handling the request.
         """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
+        channel = await self.rest_app.rest.fetch_channel(self.channel_id)
         assert isinstance(channel, channels.GuildTextChannel)
         return channel
 
@@ -397,7 +399,7 @@ class MemberMoveEntryInfo(MemberDisconnectEntryInfo):
         hikari.errors.InternalServerError
             If an internal error occurs on Discord while handling the request.
         """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
+        channel = await self.rest_app.rest.fetch_channel(self.channel_id)
         assert isinstance(channel, channels.GuildVoiceChannel)
         return channel
 
@@ -425,7 +427,13 @@ class UnrecognisedAuditLogEntryInfo(BaseAuditLogEntryInfo):
 class AuditLogEntry(snowflakes.Unique):
     """Represents an entry in a guild's audit log."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
+
+    rest_app: traits.RESTAware = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """The client application that models may use for procedures."""
 
     id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
@@ -479,7 +487,12 @@ class AuditLogEntry(snowflakes.Unique):
         """
         if self.user_id is None:
             return None
-        return await self.app.rest.fetch_user(self.user_id)
+        return await self.rest_app.rest.fetch_user(self.user_id)
+
+    def get_user(self) -> typing.Optional[users_.User]:
+        if self.cache_app and self.user_id:
+            return self.cache_app.cache.get_user(self.user_id)
+        return None
 
 
 @attr_extensions.with_copy

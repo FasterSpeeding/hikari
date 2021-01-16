@@ -60,7 +60,9 @@ class StartingEvent(base_events.Event):
     should consider using `StartedEvent` instead.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.
 
 
@@ -77,7 +79,9 @@ class StartedEvent(base_events.Event):
     consider using `StartingEvent` instead.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.
 
 
@@ -102,7 +106,9 @@ class StoppingEvent(base_events.Event):
     should consider using `StoppedEvent` instead.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.
 
 
@@ -126,5 +132,7 @@ class StoppedEvent(base_events.Event):
     `StoppingEvent` instead.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.

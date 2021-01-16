@@ -117,8 +117,7 @@ class GuildChannelEvent(ChannelEvent, abc.ABC):
             The ID of the guild that relates to this event.
         """
 
-    @property
-    def guild(self) -> typing.Optional[guilds.GatewayGuild]:
+    def get_guild(self) -> typing.Optional[guilds.GatewayGuild]:
         """Get the cached guild that this event relates to, if known.
 
         If not, return `builtins.None`.
@@ -129,10 +128,10 @@ class GuildChannelEvent(ChannelEvent, abc.ABC):
             The gateway guild this event relates to, if known. Otherwise
             this will return `builtins.None`.
         """
-        if not isinstance(self.app, traits.CacheAware):
+        if not self.cache_app:
             return None
 
-        return self.app.cache.get_available_guild(self.guild_id) or self.app.cache.get_unavailable_guild(self.guild_id)
+        return self.cache_app.cache.get_guild(self.guild_id)
 
     async def fetch_guild(self) -> guilds.RESTGuild:
         """Perform an API call to fetch the guild that this event relates to.
@@ -142,10 +141,9 @@ class GuildChannelEvent(ChannelEvent, abc.ABC):
         hikari.guilds.RESTGuild
             The guild that this event occurred in.
         """
-        return await self.app.rest.fetch_guild(self.guild_id)
+        return await self.rest_app.rest.fetch_guild(self.guild_id)
 
-    @property
-    def channel(self) -> typing.Optional[channels.GuildChannel]:
+    def get_channel(self) -> typing.Optional[channels.GuildChannel]:
         """Get the cached channel that this event relates to, if known.
 
         If not, return `builtins.None`.
@@ -156,10 +154,10 @@ class GuildChannelEvent(ChannelEvent, abc.ABC):
             The cached channel this event relates to. If not known, this
             will return `builtins.None` instead.
         """
-        if not isinstance(self.app, traits.CacheAware):
+        if not self.cache_app:
             return None
 
-        return self.app.cache.get_guild_channel(self.channel_id)
+        return self.cache_app.cache.get_guild_channel(self.channel_id)
 
     async def fetch_channel(self) -> channels.GuildChannel:
         """Perform an API call to fetch the details about this channel.
@@ -175,7 +173,7 @@ class GuildChannelEvent(ChannelEvent, abc.ABC):
             type will vary depending on the type of channel this event
             concerns.
         """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
+        channel = await self.rest_app.rest.fetch_channel(self.channel_id)
         assert isinstance(channel, channels.GuildChannel)
         return channel
 
@@ -198,7 +196,7 @@ class DMChannelEvent(ChannelEvent, abc.ABC):
             type will vary depending on the type of channel this event
             concerns.
         """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
+        channel = await self.rest_app.rest.fetch_channel(self.channel_id)
         assert isinstance(channel, channels.PrivateChannel)
         return channel
 
@@ -207,6 +205,14 @@ class DMChannelEvent(ChannelEvent, abc.ABC):
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class ChannelCreateEvent(ChannelEvent, abc.ABC):
     """Base event for any channel being created."""
+
+    @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.channel.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.channel.rest_app
 
     @property
     @abc.abstractmethod
@@ -230,9 +236,6 @@ class ChannelCreateEvent(ChannelEvent, abc.ABC):
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class GuildChannelCreateEvent(GuildChannelEvent, ChannelCreateEvent):
     """Event fired when a guild channel is created."""
-
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
@@ -258,6 +261,14 @@ class ChannelUpdateEvent(ChannelEvent, abc.ABC):
     """Base event for any channel being updated."""
 
     @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.channel.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.channel.rest_app
+
+    @property
     @abc.abstractmethod
     def channel(self) -> channels.PartialChannel:
         """Channel this event represents.
@@ -279,9 +290,6 @@ class ChannelUpdateEvent(ChannelEvent, abc.ABC):
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class GuildChannelUpdateEvent(GuildChannelEvent, ChannelUpdateEvent):
     """Event fired when a guild channel is edited."""
-
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
@@ -313,6 +321,14 @@ class ChannelDeleteEvent(ChannelEvent, abc.ABC):
     """Base event for any channel being deleted."""
 
     @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.channel.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.channel.rest_app
+
+    @property
     @abc.abstractmethod
     def channel(self) -> channels.PartialChannel:
         """Channel this event represents.
@@ -339,9 +355,6 @@ class ChannelDeleteEvent(ChannelEvent, abc.ABC):
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class GuildChannelDeleteEvent(GuildChannelEvent, ChannelDeleteEvent):
     """Event fired when a guild channel is deleted."""
-
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
@@ -406,7 +419,7 @@ class PinsUpdateEvent(ChannelEvent, abc.ABC):
         typing.Sequence[hikari.messages.Message]
             The pinned messages in this channel.
         """
-        return await self.app.rest.fetch_pins(self.channel_id)
+        return await self.rest_app.rest.fetch_pins(self.channel_id)
 
 
 @base_events.requires_intents(intents.Intents.GUILDS)
@@ -415,7 +428,9 @@ class PinsUpdateEvent(ChannelEvent, abc.ABC):
 class GuildPinsUpdateEvent(PinsUpdateEvent, GuildChannelEvent):
     """Event fired when a message is pinned/unpinned in a guild channel."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
@@ -431,8 +446,7 @@ class GuildPinsUpdateEvent(PinsUpdateEvent, GuildChannelEvent):
 
     # <<inherited docstring from ChannelPinsUpdateEvent>>.
 
-    @property
-    def channel(self) -> typing.Optional[channels.GuildTextChannel]:
+    def get_channel(self) -> typing.Optional[channels.GuildTextChannel]:
         """Get the cached channel that this event relates to, if known.
 
         If not, return `builtins.None`.
@@ -443,10 +457,10 @@ class GuildPinsUpdateEvent(PinsUpdateEvent, GuildChannelEvent):
             The cached channel this event relates to. If not known, this
             will return `builtins.None` instead.
         """
-        if not isinstance(self.app, traits.CacheAware):
+        if not self.cache_app:
             return None
 
-        channel = self.app.cache.get_guild_channel(self.channel_id)
+        channel = self.cache_app.cache.get_guild_channel(self.channel_id)
         assert channel is None or isinstance(channel, channels.GuildTextChannel)
         return channel
 
@@ -460,7 +474,7 @@ class GuildPinsUpdateEvent(PinsUpdateEvent, GuildChannelEvent):
             type will vary depending on the type of channel this event
             concerns.
         """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
+        channel = await self.rest_app.rest.fetch_channel(self.channel_id)
         assert isinstance(channel, channels.GuildTextChannel)
         return channel
 
@@ -471,7 +485,9 @@ class GuildPinsUpdateEvent(PinsUpdateEvent, GuildChannelEvent):
 class DMPinsUpdateEvent(PinsUpdateEvent, DMChannelEvent):
     """Event fired when a message is pinned/unpinned in a private channel."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
@@ -481,7 +497,6 @@ class DMPinsUpdateEvent(PinsUpdateEvent, DMChannelEvent):
     # <<inherited docstring from ChannelEvent>>.
 
     last_pin_timestamp: typing.Optional[datetime.datetime] = attr.ib(repr=True)
-
     # <<inherited docstring from ChannelPinsUpdateEvent>>.
 
     async def fetch_channel(self) -> channels.DMChannel:
@@ -494,7 +509,7 @@ class DMPinsUpdateEvent(PinsUpdateEvent, DMChannelEvent):
             type will vary depending on the type of channel this event
             concerns.
         """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
+        channel = await self.rest_app.rest.fetch_channel(self.channel_id)
         assert isinstance(channel, channels.DMChannel)
         return channel
 
@@ -523,7 +538,7 @@ class InviteEvent(GuildChannelEvent, abc.ABC):
         hikari.invites.Invite
             The invite object.
         """
-        return await self.app.rest.fetch_invite(self.code)
+        return await self.rest_app.rest.fetch_invite(self.code)
 
 
 @base_events.requires_intents(intents.Intents.GUILD_INVITES)
@@ -531,9 +546,6 @@ class InviteEvent(GuildChannelEvent, abc.ABC):
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class InviteCreateEvent(InviteEvent):
     """Event fired when an invite is created in a channel."""
-
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
@@ -546,6 +558,14 @@ class InviteCreateEvent(InviteEvent):
     hikari.invites.InviteWithMetadata
         The created invite object.
     """
+
+    @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.invite.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.invite.rest_app
 
     @property
     def channel_id(self) -> snowflakes.Snowflake:
@@ -571,7 +591,9 @@ class InviteCreateEvent(InviteEvent):
 class InviteDeleteEvent(InviteEvent):
     """Event fired when an invite is deleted from a channel."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
@@ -604,7 +626,9 @@ class WebhookUpdateEvent(GuildChannelEvent):
     the channel manually beforehand.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
@@ -625,7 +649,7 @@ class WebhookUpdateEvent(GuildChannelEvent):
         typing.Sequence[hikari.webhooks.Webhook]
             The webhooks in this channel.
         """
-        return await self.app.rest.fetch_channel_webhooks(self.channel_id)
+        return await self.rest_app.rest.fetch_channel_webhooks(self.channel_id)
 
     async def fetch_guild_webhooks(self) -> typing.Sequence[webhooks.Webhook]:
         """Perform an API call to fetch the webhooks for this guild.
@@ -635,4 +659,4 @@ class WebhookUpdateEvent(GuildChannelEvent):
         typing.Sequence[hikari.webhooks.Webhook]
             The webhooks in this guild.
         """
-        return await self.app.rest.fetch_guild_webhooks(self.guild_id)
+        return await self.rest_app.rest.fetch_guild_webhooks(self.guild_id)

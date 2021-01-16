@@ -297,13 +297,21 @@ class BaseData(abc.ABC, typing.Generic[ValueT]):
     __slots__: typing.Sequence[str] = ()
 
     @abc.abstractmethod
-    def build_entity(self, app: traits.RESTAware, /) -> ValueT:
+    def build_entity(
+        self, rest_app: traits.RESTAware, /, *, cache_app: typing.Optional[traits.CacheAware] = None
+    ) -> ValueT:
         """Build an entity object from this data object.
 
         Parameters
         ----------
-        app : hikari.traits.RESTAware
-            The hikari application the built object should be bound to.
+        rest_app : hikari.traits.RESTAware
+            The Hikari REST application the built object should be bound to.
+
+        Other Parameters
+        ----------------
+        cache_app : hikari.traits.CacheAware
+            The Hikari cache application the built object should be bound to.
+
 
         Returns
         -------
@@ -343,8 +351,12 @@ class InviteData(BaseData[invites.InviteWithMetadata]):
     is_temporary: bool = attr.ib()
     created_at: datetime.datetime = attr.ib()
 
-    def build_entity(self, app: traits.RESTAware, /) -> invites.InviteWithMetadata:
+    def build_entity(
+        self, rest_app: traits.RESTAware, /, *, cache_app: typing.Optional[traits.CacheAware] = None
+    ) -> invites.InviteWithMetadata:
         return invites.InviteWithMetadata(
+            cache_app=cache_app,
+            rest_app=rest_app,
             code=self.code,
             guild_id=self.guild_id,
             channel_id=self.channel_id,
@@ -358,7 +370,6 @@ class InviteData(BaseData[invites.InviteWithMetadata]):
             approximate_active_member_count=None,
             channel=None,
             guild=None,
-            app=app,
             inviter=self.inviter.copy() if self.inviter else None,
             target_user=self.target_user.copy() if self.target_user else None,
         )
@@ -427,7 +438,9 @@ class MemberData(BaseData[guilds.Member]):
             role_ids=tuple(member.role_ids),
         )
 
-    def build_entity(self, _: traits.RESTAware, /) -> guilds.Member:
+    def build_entity(
+        self, _: traits.RESTAware, /, *, cache_app: typing.Optional[traits.CacheAware] = None
+    ) -> guilds.Member:
         return guilds.Member(
             guild_id=self.guild_id,
             nickname=self.nickname,
@@ -480,8 +493,12 @@ class KnownCustomEmojiData(BaseData[emojis.KnownCustomEmoji]):
             role_ids=tuple(emoji.role_ids),
         )
 
-    def build_entity(self, app: traits.RESTAware, /) -> emojis.KnownCustomEmoji:
+    def build_entity(
+        self, rest_app: traits.RESTAware, /, *, cache_app: typing.Optional[traits.CacheAware] = None
+    ) -> emojis.KnownCustomEmoji:
         return emojis.KnownCustomEmoji(
+            cache_app=cache_app,
+            rest_app=rest_app,
             id=self.id,
             name=self.name,
             is_animated=self.is_animated,
@@ -490,7 +507,6 @@ class KnownCustomEmojiData(BaseData[emojis.KnownCustomEmoji]):
             is_colons_required=self.is_colons_required,
             is_managed=self.is_managed,
             is_available=self.is_available,
-            app=app,
             user=self.user.copy() if self.user else None,
         )
 
@@ -553,7 +569,9 @@ class RichActivityData(BaseData[presences.RichActivity]):
             secrets=secrets,
         )
 
-    def build_entity(self, _: traits.RESTAware, /) -> presences.RichActivity:
+    def build_entity(
+        self, _: traits.RESTAware, /, *, cache_app: typing.Optional[traits.CacheAware] = None
+    ) -> presences.RichActivity:
         emoji: typing.Optional[emojis.Emoji] = None
         if isinstance(self.emoji, RefCell):
             emoji = self.emoji.copy()
@@ -602,13 +620,16 @@ class MemberPresenceData(BaseData[presences.MemberPresence]):
             client_status=copy.copy(presence.client_status),
         )
 
-    def build_entity(self, app: traits.RESTAware, /) -> presences.MemberPresence:
+    def build_entity(
+        self, rest_app: traits.RESTAware, /, *, cache_app: typing.Optional[traits.CacheAware] = None
+    ) -> presences.MemberPresence:
         return presences.MemberPresence(
+            cache_app=cache_app,
+            rest_app=rest_app,
             user_id=self.user_id,
             guild_id=self.guild_id,
             visible_status=self.visible_status,
-            app=app,
-            activities=[activity.build_entity(app) for activity in self.activities],
+            activities=[activity.build_entity(rest_app, cache_app=cache_app) for activity in self.activities],
             client_status=copy.copy(self.client_status),
         )
 
@@ -649,7 +670,12 @@ class MentionsData(BaseData[messages.Mentions]):
         )
 
     def build_entity(
-        self, _: traits.RESTAware, /, *, message: typing.Optional[messages.Message] = None
+        self,
+        _: traits.RESTAware,
+        /,
+        *,
+        cache_app: typing.Optional[traits.CacheAware] = None,
+        message: typing.Optional[messages.Message] = None,
     ) -> messages.Mentions:
         users: undefined.UndefinedOr[typing.Mapping[snowflakes.Snowflake, users_.User]] = undefined.UNDEFINED
         if self.users is not undefined.UNDEFINED:
@@ -785,21 +811,30 @@ class MessageData(BaseData[messages.Message]):
             referenced_message=referenced_message,
         )
 
-    def build_entity(self, app: traits.RESTAware, /) -> messages.Message:
+    def build_entity(
+        self,
+        rest_app: traits.RESTAware,
+        /,
+        *,
+        cache_app: typing.Optional[traits.CacheAware] = None,
+        shard_app: typing.Optional[traits.ShardAware] = None,
+    ) -> messages.Message:
         referenced_message: undefined.UndefinedNoneOr[messages.Message]
         if isinstance(self.referenced_message, RefCell):
-            referenced_message = self.referenced_message.object.build_entity(app)
+            referenced_message = self.referenced_message.object.build_entity(rest_app, cache_app=cache_app)
 
         else:
             referenced_message = self.referenced_message
 
         message = messages.Message(
+            cache_app=cache_app,
+            rest_app=rest_app,
+            shard_app=shard_app,
             id=self.id,
-            app=app,
             channel_id=self.channel_id,
             guild_id=self.guild_id,
             author=self.author.copy(),
-            member=self.member.object.build_entity(app) if self.member else None,
+            member=self.member.object.build_entity(rest_app, cache_app=cache_app) if self.member else None,
             content=self.content,
             timestamp=self.timestamp,
             edited_timestamp=self.edited_timestamp,
@@ -818,7 +853,7 @@ class MessageData(BaseData[messages.Message]):
             nonce=self.nonce,
             referenced_message=referenced_message,
         )
-        message.mentions = self.mentions.build_entity(app, message=message)
+        message.mentions = self.mentions.build_entity(rest_app, cache_app=cache_app, message=message)
         return message
 
     def update(
@@ -865,8 +900,10 @@ class VoiceStateData(BaseData[voices.VoiceState]):
     member: RefCell[MemberData] = attr.ib()
     session_id: str = attr.ib()
 
-    def build_entity(self, app: traits.RESTAware, /) -> voices.VoiceState:
-        member = self.member.object.build_entity(app)
+    def build_entity(
+        self, rest_app: traits.RESTAware, /, *, cache_app: typing.Optional[traits.CacheAware] = None
+    ) -> voices.VoiceState:
+        member = self.member.object.build_entity(rest_app, cache_app=cache_app)
         return voices.VoiceState(
             channel_id=self.channel_id,
             guild_id=self.guild_id,
@@ -879,7 +916,6 @@ class VoiceStateData(BaseData[voices.VoiceState]):
             is_video_enabled=self.is_video_enabled,
             user_id=member.user.id,
             session_id=self.session_id,
-            app=app,
             member=member,
         )
 

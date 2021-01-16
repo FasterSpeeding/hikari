@@ -281,13 +281,18 @@ class Mentions:
         if self.users is undefined.UNDEFINED:
             return undefined.UNDEFINED
 
-        if self._ensure_cache(intents.Intents.GUILDS, True):
-            guild_id = typing.cast(snowflakes.Snowflake, self._message.guild_id)
-            app = typing.cast(traits.CacheAware, self._message.app)
-
+        if (
+            self._message.cache_app
+            and self._ensure_cache(intents.Intents.GUILDS, True)
+            and self._message.guild_id is not None
+        ):
+            # This is a doulbe case of https://github.com/python/mypy/issues/4297
+            # (Narrowed down types sometimes not propagated to lambda)
             return self._map_cache_maybe_discover(
                 self.users,
-                lambda user_id: app.cache.get_member(guild_id, user_id),
+                lambda user_id: self._message.cache_app.cache.get_member(  # type: ignore[union-attr]
+                    self._message.guild_id, user_id  # type: ignore[arg-type]
+                ),
             )
 
         return {}
@@ -315,23 +320,18 @@ class Mentions:
             in `notifies_role_ids` may not be present here. This is a limitation
             of Discord, again.
         """
-        if self._ensure_cache(intents.Intents.GUILDS, True):
-            app = typing.cast(traits.CacheAware, self._message.app)
-
+        if self._message.cache_app and self._ensure_cache(intents.Intents.GUILDS, True):
             return self._map_cache_maybe_discover(
                 self.roles,
-                app.cache.get_role,
+                self._message.cache_app.cache.get_role,
             )
 
         return {}
 
     def _ensure_cache(self, intents_required: intents.Intents, needs_guild: bool) -> bool:
-        app = self._message.app
-
         return bool(
-            isinstance(app, traits.ShardAware)
-            and isinstance(app, traits.CacheAware)
-            and (app.intents & intents_required) == intents_required
+            self._message.shard_app
+            and (self._message.shard_app.intents & intents_required) == intents_required
             and (not needs_guild or self._message.guild_id)
         )
 
@@ -357,7 +357,13 @@ class MessageReference:
     message, pin add messages and replies.
     """
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
+
+    rest_app: traits.RESTAware = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """The client application that models may use for procedures."""
 
     id: typing.Optional[snowflakes.Snowflake] = attr.ib(repr=True)
@@ -451,8 +457,18 @@ class PartialMessage(snowflakes.Unique):
         nullability.
     """
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
+
+    rest_app: traits.RESTAware = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """The client application that models may use for procedures."""
+
+    shard_app: typing.Optional[traits.ShardAware] = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
 
     id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
     """The ID of this entity."""
@@ -561,11 +577,11 @@ class PartialMessage(snowflakes.Unique):
         if self._guild_id:
             return self._guild_id
 
-        if not isinstance(self.app, traits.CacheAware):
+        if not self.cache_app:
             return None
         # Don't check the member, as if the guild_id is missing, the member
         # will always be missing too.
-        channel = self.app.cache.get_guild_channel(self.channel_id)
+        channel = self.cache_app.cache.get_guild_channel(self.channel_id)
 
         if channel is None:
             return None
@@ -602,7 +618,7 @@ class PartialMessage(snowflakes.Unique):
         hikari.errors.NotFoundError
             If the channel this message was created in does not exist.
         """
-        return await self.app.rest.fetch_channel(self.channel_id)
+        return await self.rest_app.rest.fetch_channel(self.channel_id)
 
     async def edit(
         self,
@@ -724,7 +740,7 @@ class PartialMessage(snowflakes.Unique):
         hikari.errors.InternalServerError
             If an internal error occurs on Discord while handling the request.
         """  # noqa: E501 - Line too long
-        return await self.app.rest.edit_message(
+        return await self.rest_app.rest.edit_message(
             message=self.id,
             channel=self.channel_id,
             content=content,
@@ -879,7 +895,7 @@ class PartialMessage(snowflakes.Unique):
         if reply is True:
             reply = self
 
-        return await self.app.rest.create_message(
+        return await self.rest_app.rest.create_message(
             channel=self.channel_id,
             content=content,
             embed=embed,
@@ -905,7 +921,7 @@ class PartialMessage(snowflakes.Unique):
         hikari.errors.ForbiddenError
             If you lack the permissions to delete the message.
         """
-        await self.app.rest.delete_message(self.channel_id, self.id)
+        await self.rest_app.rest.delete_message(self.channel_id, self.id)
 
     async def add_reaction(self, emoji: emojis_.Emojiish) -> None:
         r"""Add a reaction to this message.
@@ -956,7 +972,7 @@ class PartialMessage(snowflakes.Unique):
             guild you are not part of if no one else has previously
             reacted with the same emoji.
         """
-        await self.app.rest.add_reaction(channel=self.channel_id, message=self.id, emoji=emoji)
+        await self.rest_app.rest.add_reaction(channel=self.channel_id, message=self.id, emoji=emoji)
 
     async def remove_reaction(
         self,
@@ -1012,9 +1028,9 @@ class PartialMessage(snowflakes.Unique):
             found.
         """
         if user is undefined.UNDEFINED:
-            await self.app.rest.delete_my_reaction(channel=self.channel_id, message=self.id, emoji=emoji)
+            await self.rest_app.rest.delete_my_reaction(channel=self.channel_id, message=self.id, emoji=emoji)
         else:
-            await self.app.rest.delete_reaction(channel=self.channel_id, message=self.id, emoji=emoji, user=user)
+            await self.rest_app.rest.delete_reaction(channel=self.channel_id, message=self.id, emoji=emoji, user=user)
 
     async def remove_all_reactions(self, emoji: undefined.UndefinedOr[emojis_.Emojiish] = undefined.UNDEFINED) -> None:
         r"""Remove all users' reactions for a specific emoji from the message.
@@ -1052,9 +1068,11 @@ class PartialMessage(snowflakes.Unique):
             due to it being outside of the range of a 64 bit integer.
         """
         if emoji is undefined.UNDEFINED:
-            await self.app.rest.delete_all_reactions(channel=self.channel_id, message=self.id)
+            await self.rest_app.rest.delete_all_reactions(channel=self.channel_id, message=self.id)
         else:
-            await self.app.rest.delete_all_reactions_for_emoji(channel=self.channel_id, message=self.id, emoji=emoji)
+            await self.rest_app.rest.delete_all_reactions_for_emoji(
+                channel=self.channel_id, message=self.id, emoji=emoji
+            )
 
 
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)

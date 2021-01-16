@@ -163,15 +163,26 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
     """
 
     __slots__: typing.Sequence[str] = (
-        "_app",
+        "_cache_app",
+        "_rest_app",
+        "_shard_app",
         "_audit_log_entry_converters",
         "_audit_log_event_mapping",
         "_dm_channel_type_mapping",
         "_guild_channel_type_mapping",
     )
 
-    def __init__(self, app: traits.RESTAware) -> None:
-        self._app = app
+    def __init__(
+        self,
+        rest_app: traits.RESTAware,
+        /,
+        *,
+        cache_app: typing.Optional[traits.CacheAware] = None,
+        shard_app: typing.Optional[traits.ShardAware] = None,
+    ) -> None:
+        self._cache_app = cache_app
+        self._rest_app = rest_app
+        self._shard_app = shard_app
         self._audit_log_entry_converters: typing.Mapping[str, typing.Callable[[typing.Any], typing.Any]] = {
             audit_log_models.AuditLogChangeKey.OWNER_ID: snowflakes.Snowflake,
             audit_log_models.AuditLogChangeKey.AFK_CHANNEL_ID: snowflakes.Snowflake,
@@ -257,7 +268,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
 
     def deserialize_own_guild(self, payload: data_binding.JSONObject) -> application_models.OwnGuild:
         return application_models.OwnGuild(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
+            shard_app=self._shard_app,
             id=snowflakes.Snowflake(payload["id"]),
             name=payload["name"],
             icon_hash=payload["icon"],
@@ -280,7 +293,6 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
                 members[team_member.user.id] = team_member
 
             team = application_models.Team(
-                app=self._app,
                 id=snowflakes.Snowflake(team_payload["id"]),
                 icon_hash=team_payload["icon"],
                 members=members,
@@ -290,7 +302,6 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         primary_sku_id = snowflakes.Snowflake(payload["primary_sku_id"]) if "primary_sku_id" in payload else None
 
         return application_models.Application(
-            app=self._app,
             id=snowflakes.Snowflake(payload["id"]),
             name=payload["name"],
             description=payload["description"],
@@ -318,7 +329,10 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         roles = {}
         for role_payload in payload:
             role = guild_models.PartialRole(
-                app=self._app, id=snowflakes.Snowflake(role_payload["id"]), name=role_payload["name"]
+                cache_app=self._cache_app,
+                rest_app=self._rest_app,
+                id=snowflakes.Snowflake(role_payload["id"]),
+                name=role_payload["name"],
             )
             roles[role.id] = role
 
@@ -337,7 +351,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         payload: data_binding.JSONObject,
     ) -> audit_log_models.ChannelOverwriteEntryInfo:
         return audit_log_models.ChannelOverwriteEntryInfo(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             id=snowflakes.Snowflake(payload["id"]),
             type=channel_models.PermissionOverwriteType(payload["type"]),
             role_name=payload.get("role_name"),
@@ -347,7 +362,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         self, payload: data_binding.JSONObject
     ) -> audit_log_models.MessagePinEntryInfo:
         return audit_log_models.MessagePinEntryInfo(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             channel_id=snowflakes.Snowflake(payload["channel_id"]),
             message_id=snowflakes.Snowflake(payload["message_id"]),
         )
@@ -356,7 +372,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         self, payload: data_binding.JSONObject
     ) -> audit_log_models.MemberPruneEntryInfo:
         return audit_log_models.MemberPruneEntryInfo(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             delete_member_days=datetime.timedelta(days=int(payload["delete_member_days"])),
             members_removed=int(payload["members_removed"]),
         )
@@ -365,27 +382,37 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         self,
         payload: data_binding.JSONObject,
     ) -> audit_log_models.MessageBulkDeleteEntryInfo:
-        return audit_log_models.MessageBulkDeleteEntryInfo(app=self._app, count=int(payload["count"]))
+        return audit_log_models.MessageBulkDeleteEntryInfo(
+            cache_app=self._cache_app, rest_app=self._rest_app, count=int(payload["count"])
+        )
 
     def _deserialize_message_delete_entry_info(
         self,
         payload: data_binding.JSONObject,
     ) -> audit_log_models.MessageDeleteEntryInfo:
         return audit_log_models.MessageDeleteEntryInfo(
-            app=self._app, channel_id=snowflakes.Snowflake(payload["channel_id"]), count=int(payload["count"])
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
+            channel_id=snowflakes.Snowflake(payload["channel_id"]),
+            count=int(payload["count"]),
         )
 
     def _deserialize_member_disconnect_entry_info(
         self,
         payload: data_binding.JSONObject,
     ) -> audit_log_models.MemberDisconnectEntryInfo:
-        return audit_log_models.MemberDisconnectEntryInfo(app=self._app, count=int(payload["count"]))
+        return audit_log_models.MemberDisconnectEntryInfo(
+            cache_app=self._cache_app, rest_app=self._rest_app, count=int(payload["count"])
+        )
 
     def _deserialize_member_move_entry_info(
         self, payload: data_binding.JSONObject
     ) -> audit_log_models.MemberMoveEntryInfo:
         return audit_log_models.MemberMoveEntryInfo(
-            app=self._app, channel_id=snowflakes.Snowflake(payload["channel_id"]), count=int(payload["count"])
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
+            channel_id=snowflakes.Snowflake(payload["channel_id"]),
+            count=int(payload["count"]),
         )
 
     def _deserialize_unrecognised_audit_log_entry_info(
@@ -433,7 +460,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
                 options = option_converter(raw_option)
 
             entries[entry_id] = audit_log_models.AuditLogEntry(
-                app=self._app,
+                cache_app=self._cache_app,
+                rest_app=self._rest_app,
                 id=entry_id,
                 target_id=target_id,
                 changes=changes,
@@ -459,7 +487,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
 
     def deserialize_channel_follow(self, payload: data_binding.JSONObject) -> channel_models.ChannelFollow:
         return channel_models.ChannelFollow(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             channel_id=snowflakes.Snowflake(payload["channel_id"]),
             webhook_id=snowflakes.Snowflake(payload["webhook_id"]),
         )
@@ -484,7 +513,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
 
     def deserialize_partial_channel(self, payload: data_binding.JSONObject) -> channel_models.PartialChannel:
         return channel_models.PartialChannel(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             id=snowflakes.Snowflake(payload["id"]),
             name=payload.get("name"),
             type=channel_models.ChannelType(payload["type"]),
@@ -496,7 +526,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
             last_message_id = snowflakes.Snowflake(raw_last_message_id)
 
         return channel_models.DMChannel(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             id=snowflakes.Snowflake(payload["id"]),
             name=payload.get("name"),
             type=channel_models.ChannelType(payload["type"]),
@@ -517,7 +548,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         recipients = {snowflakes.Snowflake(user["id"]): self.deserialize_user(user) for user in payload["recipients"]}
 
         return channel_models.GroupDMChannel(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             id=snowflakes.Snowflake(payload["id"]),
             name=payload.get("name"),
             type=channel_models.ChannelType(payload["type"]),
@@ -568,7 +600,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
     ) -> channel_models.GuildCategory:
         channel_fields = self._set_guild_channel_attributes(payload, guild_id=guild_id)
         return channel_models.GuildCategory(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
+            shard_app=self._shard_app,
             id=channel_fields.id,
             name=channel_fields.name,
             type=channel_fields.type,
@@ -596,7 +630,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
             last_pin_timestamp = time.iso8601_datetime_string_to_datetime(raw_last_pin_timestamp)
 
         return channel_models.GuildTextChannel(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
+            shard_app=self._shard_app,
             id=channel_fields.id,
             name=channel_fields.name,
             type=channel_fields.type,
@@ -631,7 +667,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
             last_pin_timestamp = time.iso8601_datetime_string_to_datetime(raw_last_pin_timestamp)
 
         return channel_models.GuildNewsChannel(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
+            shard_app=self._shard_app,
             id=channel_fields.id,
             name=channel_fields.name,
             type=channel_fields.type,
@@ -653,7 +691,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
     ) -> channel_models.GuildStoreChannel:
         channel_fields = self._set_guild_channel_attributes(payload, guild_id=guild_id)
         return channel_models.GuildStoreChannel(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
+            shard_app=self._shard_app,
             id=channel_fields.id,
             name=channel_fields.name,
             type=channel_fields.type,
@@ -672,7 +712,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
     ) -> channel_models.GuildVoiceChannel:
         channel_fields = self._set_guild_channel_attributes(payload, guild_id=guild_id)
         return channel_models.GuildVoiceChannel(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
+            shard_app=self._shard_app,
             id=channel_fields.id,
             name=channel_fields.name,
             type=channel_fields.type,
@@ -921,7 +963,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
             user = self.deserialize_user(raw_user)
 
         return emoji_models.KnownCustomEmoji(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             id=snowflakes.Snowflake(payload["id"]),
             name=payload["name"],
             is_animated=payload.get("animated", False),
@@ -970,7 +1013,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         if (raw_channel_id := payload["channel_id"]) is not None:
             channel_id = snowflakes.Snowflake(raw_channel_id)
 
-        return guild_models.GuildWidget(app=self._app, channel_id=channel_id, is_enabled=payload["enabled"])
+        return guild_models.GuildWidget(
+            cache_app=self._cache_app, rest_app=self._rest_app, channel_id=channel_id, is_enabled=payload["enabled"]
+        )
 
     def deserialize_member(
         self,
@@ -1028,7 +1073,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
                 is_premium_subscriber_role = True
 
         return guild_models.Role(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             id=snowflakes.Snowflake(payload["id"]),
             guild_id=guild_id,
             name=payload["name"],
@@ -1135,7 +1181,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
             for emoji in payload["emojis"]
         }
         return guild_models.GuildPreview(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
+            shard_app=self._shard_app,
             id=guild_id,
             name=payload["name"],
             icon_hash=payload["icon"],
@@ -1226,7 +1274,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
             for emoji in payload["emojis"]
         }
         guild = guild_models.RESTGuild(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
+            shard_app=self._shard_app,
             id=guild_fields.id,
             name=guild_fields.name,
             icon_hash=guild_fields.icon_hash,
@@ -1271,7 +1321,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         member_count = int(payload["member_count"]) if "member_count" in payload else None
 
         guild = guild_models.GatewayGuild(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
+            shard_app=self._shard_app,
             id=guild_fields.id,
             name=guild_fields.name,
             icon_hash=guild_fields.icon_hash,
@@ -1357,7 +1409,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
     #################
 
     def deserialize_vanity_url(self, payload: data_binding.JSONObject) -> invite_models.VanityURL:
-        return invite_models.VanityURL(app=self._app, code=payload["code"], uses=int(payload["uses"]))
+        return invite_models.VanityURL(
+            cache_app=self._cache_app, rest_app=self._rest_app, code=payload["code"], uses=int(payload["uses"])
+        )
 
     def _set_invite_attributes(self, payload: data_binding.JSONObject) -> _InviteFields:
         guild: typing.Optional[invite_models.InviteGuild] = None
@@ -1365,7 +1419,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         if "guild" in payload:
             guild_payload = payload["guild"]
             guild = invite_models.InviteGuild(
-                app=self._app,
+                cache_app=self._cache_app,
+                rest_app=self._rest_app,
+                shard_app=self._shard_app,
                 id=snowflakes.Snowflake(guild_payload["id"]),
                 name=guild_payload["name"],
                 features=[guild_models.GuildFeature(feature) for feature in guild_payload["features"]],
@@ -1412,7 +1468,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
     def deserialize_invite(self, payload: data_binding.JSONObject) -> invite_models.Invite:
         invite_fields = self._set_invite_attributes(payload)
         return invite_models.Invite(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             code=invite_fields.code,
             guild=invite_fields.guild,
             guild_id=invite_fields.guild_id,
@@ -1429,7 +1486,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         invite_fields = self._set_invite_attributes(payload)
         max_age = payload["max_age"]
         return invite_models.InviteWithMetadata(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             code=invite_fields.code,
             guild=invite_fields.guild,
             guild_id=invite_fields.guild_id,
@@ -1545,7 +1603,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
                 message_reference_guild_id = snowflakes.Snowflake(message_reference_payload["guild_id"])
 
             message_reference = message_models.MessageReference(
-                app=self._app,
+                cache_app=self._cache_app,
+                rest_app=self._rest_app,
                 id=message_reference_message_id,
                 channel_id=snowflakes.Snowflake(message_reference_payload["channel_id"]),
                 guild_id=message_reference_guild_id,
@@ -1559,7 +1618,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
                 referenced_message = None
 
         message = message_models.PartialMessage(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
+            shard_app=self._shard_app,
             id=snowflakes.Snowflake(payload["id"]),
             channel_id=snowflakes.Snowflake(payload["channel_id"]),
             guild_id=guild_id,
@@ -1672,7 +1733,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
                 message_reference_guild_id = snowflakes.Snowflake(message_reference_payload["guild_id"])
 
             message_reference = message_models.MessageReference(
-                app=self._app,
+                cache_app=self._cache_app,
+                rest_app=self._rest_app,
                 id=message_reference_message_id,
                 channel_id=snowflakes.Snowflake(message_reference_payload["channel_id"]),
                 guild_id=message_reference_guild_id,
@@ -1703,7 +1765,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
             )
 
         message = message_models.Message(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
+            shard_app=self._shard_app,
             id=snowflakes.Snowflake(payload["id"]),
             channel_id=snowflakes.Snowflake(payload["channel_id"]),
             guild_id=guild_id,
@@ -1858,7 +1922,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         client_status = presence_models.ClientStatus(desktop=desktop, mobile=mobile, web=web)
 
         return presence_models.MemberPresence(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             user_id=snowflakes.Snowflake(payload["user"]["id"]),
             guild_id=guild_id if guild_id is not undefined.UNDEFINED else snowflakes.Snowflake(payload["guild_id"]),
             visible_status=presence_models.Status(payload["status"]),
@@ -1884,7 +1949,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         roles: typing.MutableMapping[snowflakes.Snowflake, template_models.TemplateRole] = {}
         for role_payload in source_guild_payload["roles"]:
             role = template_models.TemplateRole(
-                app=self._app,
+                cache_app=self._cache_app,
+                rest_app=self._rest_app,
                 id=snowflakes.Snowflake(role_payload["id"]),
                 name=role_payload["name"],
                 permissions=permission_models.Permissions(int(role_payload["permissions"])),
@@ -1905,7 +1971,9 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         system_channel_id = source_guild_payload["system_channel_id"]
 
         source_guild = template_models.TemplateGuild(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
+            shard_app=self._shard_app,
             id=guild_id,
             # For some reason in this case they use the key "icon_hash" rather than "icon".
             # Cause Discord:TM:
@@ -1958,7 +2026,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
             user_models.UserFlag(payload["public_flags"]) if "public_flags" in payload else user_models.UserFlag.NONE
         )
         return user_models.UserImpl(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             id=user_fields.id,
             discriminator=user_fields.discriminator,
             username=user_fields.username,
@@ -1971,7 +2040,8 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
     def deserialize_my_user(self, payload: data_binding.JSONObject) -> user_models.OwnUser:
         user_fields = self._set_user_attributes(payload)
         return user_models.OwnUser(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             id=user_fields.id,
             discriminator=user_fields.discriminator,
             username=user_fields.username,
@@ -2008,7 +2078,6 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
             member = self.deserialize_member(payload["member"], guild_id=guild_id)
 
         return voice_models.VoiceState(
-            app=self._app,
             guild_id=guild_id,
             channel_id=channel_id,
             user_id=snowflakes.Snowflake(payload["user_id"]),
@@ -2054,14 +2123,17 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         if "source_guild" in payload:
             source_guild_payload = payload["source_guild"]
             source_guild = guild_models.PartialGuild(
-                app=self._app,
+                cache_app=self._cache_app,
+                rest_app=self._rest_app,
+                shard_app=self._shard_app,
                 id=snowflakes.Snowflake(source_guild_payload["id"]),
                 name=source_guild_payload["name"],
                 icon_hash=source_guild_payload["icon"],
             )
 
         return webhook_models.Webhook(
-            app=self._app,
+            cache_app=self._cache_app,
+            rest_app=self._rest_app,
             id=snowflakes.Snowflake(payload["id"]),
             type=webhook_models.WebhookType(payload["type"]),
             guild_id=snowflakes.Snowflake(payload["guild_id"]) if "guild_id" in payload else None,

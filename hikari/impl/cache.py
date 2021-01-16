@@ -84,7 +84,9 @@ class CacheImpl(cache.MutableCache):
     """
 
     __slots__: typing.Sequence[str] = (
-        "_app",
+        "_cache_app",
+        "_rest_app",
+        "_shard_app",
         "_emoji_entries",
         "_guild_channel_entries",
         "_guild_entries",
@@ -119,10 +121,21 @@ class CacheImpl(cache.MutableCache):
         snowflakes.Snowflake, cache_utility.RefCell[cache_utility.MessageData]
     ]
 
-    def __init__(self, app: traits.BotAware, settings: config.CacheSettings) -> None:
-        self._app = app
+    def __init__(
+        self,
+        rest_app: traits.RESTAware,
+        settings: config.CacheSettings,
+        /,
+        *,
+        cache_app: typing.Optional[traits.CacheAware] = None,
+        shard_app: typing.Optional[traits.ShardAware] = None,
+        intents: typing.Optional[intents_.Intents] = None,
+    ) -> None:
+        self._cache_app = cache_app
+        self._rest_app = rest_app
+        self._shard_app = shard_app
         self._me = None
-        self._intents = app.intents
+        self._intents = intents
         self._settings = settings
         # We store it like this for faster lookups as getattr is quite slow
         self._settings_map = attr.asdict(settings)
@@ -149,7 +162,7 @@ class CacheImpl(cache.MutableCache):
 
     # TODO: Setup this check or remove it
     def _assert_has_intent(self, intents: intents_.Intents, /) -> None:
-        if self._intents ^ intents:
+        if self._intents is not None and self._intents ^ intents:
             warnings.warn(
                 f"Cache call made made without required intents {intents}",
                 category=errors.MissingIntentWarning,
@@ -173,7 +186,7 @@ class CacheImpl(cache.MutableCache):
         self,
         emoji_data: cache_utility.KnownCustomEmojiData,
     ) -> emojis.KnownCustomEmoji:
-        return emoji_data.build_entity(self._app)
+        return emoji_data.build_entity(self._rest_app, cache_app=self._cache_app)
 
     def clear_emojis(self) -> cache.CacheView[snowflakes.Snowflake, emojis.KnownCustomEmoji]:
         if not self._is_cache_enabled_for(EMOJIS):
@@ -537,7 +550,7 @@ class CacheImpl(cache.MutableCache):
         self,
         invite_data: cache_utility.InviteData,
     ) -> invites.InviteWithMetadata:
-        return invite_data.build_entity(self._app)
+        return invite_data.build_entity(self._rest_app, cache_app=self._cache_app)
 
     def _remove_invite_users(self, invite: cache_utility.InviteData) -> None:
         if invite.inviter:
@@ -744,7 +757,7 @@ class CacheImpl(cache.MutableCache):
         self,
         member_data: cache_utility.RefCell[cache_utility.MemberData],
     ) -> guilds.Member:
-        return member_data.object.build_entity(self._app)
+        return member_data.object.build_entity(self._rest_app, cache_app=self._cache_app)
 
     @staticmethod
     def _can_remove_member(
@@ -924,7 +937,7 @@ class CacheImpl(cache.MutableCache):
         self,
         presence_data: cache_utility.MemberPresenceData,
     ) -> presences.MemberPresence:
-        return presence_data.build_entity(self._app)
+        return presence_data.build_entity(self._rest_app, cache_app=self._cache_app)
 
     def _garbage_collect_unknown_custom_emoji(
         self, emoji: cache_utility.RefCell[emojis.CustomEmoji], *, decrement: typing.Optional[int] = None
@@ -1216,7 +1229,7 @@ class CacheImpl(cache.MutableCache):
         self,
         voice_data: cache_utility.VoiceStateData,
     ) -> voices.VoiceState:
-        return voice_data.build_entity(self._app)
+        return voice_data.build_entity(self._rest_app, cache_app=self._cache_app)
 
     def clear_voice_states(
         self,
@@ -1386,7 +1399,7 @@ class CacheImpl(cache.MutableCache):
         return cached_voice_state, self.get_voice_state(voice_state.guild_id, voice_state.user_id)
 
     def _build_message(self, message_data: cache_utility.RefCell[cache_utility.MessageData]) -> messages.Message:
-        return message_data.object.build_entity(self._app)
+        return message_data.object.build_entity(self._rest_app, cache_app=self._cache_app, shard_app=self._shard_app)
 
     def _can_remove_message(self, message: cache_utility.RefCell[cache_utility.MessageData]) -> bool:
         return message.object.id not in self._message_entries and message.ref_count < 1

@@ -51,10 +51,10 @@ class TestPartialUser:
     @pytest.mark.asyncio
     async def test_fetch_self(self, obj):
         obj.id = 123
-        obj.app = mock.AsyncMock()
+        obj.rest_app = mock.AsyncMock()
 
-        assert await obj.fetch_self() is obj.app.rest.fetch_user.return_value
-        obj.app.rest.fetch_user.assert_awaited_once_with(user=123)
+        assert await obj.fetch_self() is obj.rest_app.rest.fetch_user.return_value
+        obj.rest_app.rest.fetch_user.assert_awaited_once_with(user=123)
 
     @pytest.mark.asyncio
     async def test_send(self, obj):
@@ -68,9 +68,9 @@ class TestPartialUser:
         reply = object()
         mentions_reply = object()
 
-        obj.app = mock.Mock()
+        obj.rest_app = mock.Mock()
         obj.fetch_dm_channel = mock.AsyncMock(return_value=mock_channel)
-        obj.app.rest.create_message = mock.AsyncMock(return_value=mock_message)
+        obj.rest_app.rest.create_message = mock.AsyncMock(return_value=mock_message)
         obj._dm_channel = None
 
         returned = await obj.send(
@@ -90,7 +90,7 @@ class TestPartialUser:
         assert returned == mock_message
 
         obj.fetch_dm_channel.assert_awaited_once_with()
-        obj.app.rest.create_message.assert_awaited_once_with(
+        obj.rest_app.rest.create_message.assert_awaited_once_with(
             channel=456,
             content="test",
             embed=embed,
@@ -195,7 +195,8 @@ class TestPartialUserImpl:
     def obj(self):
         return users.PartialUserImpl(
             id=snowflakes.Snowflake(123),
-            app=mock.Mock(),
+            cache_app=mock.Mock(),
+            rest_app=mock.Mock(),
             discriminator="8637",
             username="thomm.o",
             avatar_hash=None,
@@ -219,14 +220,14 @@ class TestPartialUserImpl:
         mock_channel = mock.Mock(id=456)
 
         obj.id = 123
-        obj.app = mock.Mock()
-        obj.app.rest.create_dm_channel = mock.AsyncMock(return_value=mock_channel)
+        obj.rest_app = mock.Mock()
+        obj.rest_app.rest.create_dm_channel = mock.AsyncMock(return_value=mock_channel)
         obj._dm_channel = None
 
         assert await obj.fetch_dm_channel() == mock_channel
 
         assert obj._dm_channel == mock_channel
-        obj.app.rest.create_dm_channel.assert_awaited_once_with(123)
+        obj.rest_app.rest.create_dm_channel.assert_awaited_once_with(123)
 
     @pytest.mark.asyncio
     async def test_fetch_dm_channel_when_cached(self, obj):
@@ -236,14 +237,14 @@ class TestPartialUserImpl:
         assert await obj.fetch_dm_channel() == mock_channel
 
         assert obj._dm_channel == mock_channel
-        obj.app.rest.create_dm_channel.assert_not_called()
+        obj.rest_app.rest.create_dm_channel.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_fetch_self(self, obj):
         user = object()
-        obj.app.rest.fetch_user = mock.AsyncMock(return_value=user)
+        obj.rest_app.rest.fetch_user = mock.AsyncMock(return_value=user)
         assert await obj.fetch_self() is user
-        obj.app.rest.fetch_user.assert_awaited_once_with(user=123)
+        obj.rest_app.rest.fetch_user.assert_awaited_once_with(user=123)
 
 
 @pytest.mark.asyncio
@@ -252,7 +253,8 @@ class TestOwnUser:
     def obj(self):
         return users.OwnUser(
             id=snowflakes.Snowflake(12345),
-            app=mock.Mock(),
+            rest_app=mock.Mock(),
+            cache_app=mock.Mock(),
             discriminator="1234",
             username="foobar",
             avatar_hash="69420",
@@ -268,9 +270,9 @@ class TestOwnUser:
 
     async def test_fetch_self(self, obj):
         user = object()
-        obj.app.rest.fetch_my_user = mock.AsyncMock(return_value=user)
+        obj.rest_app.rest.fetch_my_user = mock.AsyncMock(return_value=user)
         assert await obj.fetch_self() is user
-        obj.app.rest.fetch_my_user.assert_awaited_once_with()
+        obj.rest_app.rest.fetch_my_user.assert_awaited_once_with()
 
     async def test_fetch_dm_channel(self, obj):
         with pytest.raises(TypeError, match=r"Unable to fetch your own DM channel"):

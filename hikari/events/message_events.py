@@ -93,6 +93,14 @@ class MessageCreateEvent(MessageEvent, abc.ABC):
     """Event that is fired when a message is created."""
 
     @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.message.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.message.rest_app
+
+    @property
     def author(self) -> users.User:
         """User that sent the message.
 
@@ -210,9 +218,6 @@ class GuildMessageCreateEvent(MessageCreateEvent):
     This contains the full message in the internal `message` attribute.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>
-
     message: messages.Message = attr.ib()
     # <<inherited docstring from MessageCreateEvent>>
 
@@ -242,10 +247,10 @@ class GuildMessageCreateEvent(MessageCreateEvent):
             The channel that the message was sent in, if known and cached,
             otherwise, `builtins.None`.
         """
-        if not isinstance(self.app, traits.CacheAware):
+        if not self.cache_app:
             return None
 
-        channel = self.app.cache.get_guild_channel(self.channel_id)
+        channel = self.cache_app.cache.get_guild_channel(self.channel_id)
         assert channel is None or isinstance(
             channel, (channels.GuildNewsChannel, channels.GuildTextChannel)
         ), f"Cached channel ID is not a GuildNewsChannel or a GuildTextChannel, but a {type(channel).__name__}!"
@@ -265,10 +270,10 @@ class GuildMessageCreateEvent(MessageCreateEvent):
             The guild that this event occurred in, if cached. Otherwise,
             `builtins.None` instead.
         """
-        if not isinstance(self.app, traits.CacheAware):
+        if not self.cache_app:
             return None
 
-        return self.app.cache.get_guild(self.guild_id)
+        return self.cache_app.cache.get_guild(self.guild_id)
 
     @property
     def guild_id(self) -> snowflakes.Snowflake:
@@ -294,9 +299,6 @@ class DMMessageCreateEvent(MessageCreateEvent):
     This contains the full message in the internal `message` attribute.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>
-
     message: messages.Message = attr.ib()
     # <<inherited docstring from MessageCreateEvent>>
 
@@ -313,6 +315,14 @@ class MessageUpdateEvent(MessageEvent, abc.ABC):
         Less information will be available here than in the creation event
         due to Discord limitations.
     """
+
+    @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.message.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.message.rest_app
 
     @property
     def author(self) -> typing.Optional[users.User]:
@@ -459,9 +469,6 @@ class GuildMessageUpdateEvent(MessageUpdateEvent):
         due to Discord limitations.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>
-
     old_message: typing.Optional[messages.PartialMessage] = attr.ib()
     """The old message object.
 
@@ -495,14 +502,12 @@ class GuildMessageUpdateEvent(MessageUpdateEvent):
 
         author = self.message.author
 
-        if author is not None and isinstance(self.app, traits.CacheAware):
-            member = self.app.cache.get_member(self.guild_id, author.id)
-
-            if member is not None:
-                return member
+        if author and self.cache_app:
+            author = self.cache_app.cache.get_member(self.guild_id, author.id) or author
 
         return author
 
+    # TODO: getter
     @property
     def channel(self) -> typing.Union[None, channels.GuildTextChannel, channels.GuildNewsChannel]:
         """Channel that the message was sent in, if known.
@@ -513,10 +518,10 @@ class GuildMessageUpdateEvent(MessageUpdateEvent):
             The channel that the message was sent in, if known and cached,
             otherwise, `builtins.None`.
         """
-        if not isinstance(self.app, traits.CacheAware):
+        if not self.cache_app:
             return None
 
-        channel = self.app.cache.get_guild_channel(self.channel_id)
+        channel = self.cache_app.cache.get_guild_channel(self.channel_id)
         assert channel is None or isinstance(
             channel, (channels.GuildNewsChannel, channels.GuildTextChannel)
         ), f"Cached channel ID is not a GuildNewsChannel or a GuildTextChannel, but a {type(channel).__name__}!"
@@ -536,10 +541,10 @@ class GuildMessageUpdateEvent(MessageUpdateEvent):
             The guild that this event occurred in, if cached. Otherwise,
             `builtins.None` instead.
         """
-        if not isinstance(self.app, traits.CacheAware):
+        if not self.cache_app:
             return None
 
-        return self.app.cache.get_guild(self.guild_id)
+        return self.cache_app.cache.get_guild(self.guild_id)
 
     @property
     def guild_id(self) -> snowflakes.Snowflake:
@@ -566,9 +571,6 @@ class DMMessageUpdateEvent(MessageUpdateEvent):
         Less information will be available here than in the creation event
         due to Discord limitations.
     """
-
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>
 
     old_message: typing.Optional[messages.PartialMessage] = attr.ib()
     """The old message object.
@@ -610,10 +612,10 @@ class MessageDeleteEvent(MessageEvent, abc.ABC):
             if it is a normal message, or `hikari.channels.GuildNewsChannel` if
             sent in an announcement channel.
         """
-        if not isinstance(self.app, traits.CacheAware):
+        if not self.cache_app:
             return None
 
-        channel = self.app.cache.get_guild_channel(self.channel_id)
+        channel = self.cache_app.cache.get_guild_channel(self.channel_id)
         assert channel is None or isinstance(
             channel, (channels.GuildNewsChannel, channels.GuildTextChannel)
         ), f"Cached channel ID is not a GuildNewsChannel or a GuildTextChannel, but a {type(channel).__name__}!"
@@ -676,7 +678,9 @@ class GuildMessageDeleteEvent(MessageDeleteEvent):
     checking the `is_bulk` attribute.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>
 
     channel_id: snowflakes.Snowflake = attr.ib()
@@ -714,10 +718,9 @@ class GuildMessageDeleteEvent(MessageDeleteEvent):
             The gateway guild that this event corresponds to, if known and
             cached.
         """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        return self.app.cache.get_guild(self.guild_id)
+        if self.cache_app:
+            return self.cache_app.cache.get_guild(self.guild_id)
+        return None
 
 
 @attr_extensions.with_copy
@@ -737,7 +740,9 @@ class DMMessageDeleteEvent(MessageDeleteEvent):
     `is_bulk` attribute.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>
 
     channel_id: snowflakes.Snowflake = attr.ib()

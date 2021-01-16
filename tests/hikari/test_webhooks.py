@@ -34,7 +34,8 @@ class TestWebhook:
     @pytest.fixture()
     def webhook(self):
         return webhooks.Webhook(
-            app=mock.Mock(),
+            rest_app=mock.Mock(),
+            cache_app=mock.Mock(),
             id=987654321,
             type=webhooks.WebhookType.CHANNEL_FOLLOWER,
             guild_id=123,
@@ -60,7 +61,7 @@ class TestWebhook:
         message = object()
         embed = object()
         returned_message = object()
-        webhook.app.rest.edit_webhook_message = mock.AsyncMock(return_value=returned_message)
+        webhook.rest_app.rest.edit_webhook_message = mock.AsyncMock(return_value=returned_message)
 
         returned = await webhook.edit_message(
             message,
@@ -74,7 +75,7 @@ class TestWebhook:
 
         assert returned == returned_message
 
-        webhook.app.rest.edit_webhook_message.assert_called_once_with(
+        webhook.rest_app.rest.edit_webhook_message.assert_called_once_with(
             987654321,
             token="abc123bca",
             message=message,
@@ -95,11 +96,13 @@ class TestWebhook:
     @pytest.mark.asyncio
     async def test_delete_message(self, webhook):
         message = object()
-        webhook.app.rest.delete_webhook_message = mock.AsyncMock()
+        webhook.rest_app.rest.delete_webhook_message = mock.AsyncMock()
 
         await webhook.delete_message(message)
 
-        webhook.app.rest.delete_webhook_message.assert_called_once_with(987654321, token="abc123bca", message=message)
+        webhook.rest_app.rest.delete_webhook_message.assert_called_once_with(
+            987654321, token="abc123bca", message=message
+        )
 
     @pytest.mark.asyncio
     async def test_delete_message_when_no_token(self, webhook):

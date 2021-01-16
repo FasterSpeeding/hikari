@@ -127,7 +127,12 @@ class PartialUser(snowflakes.Unique, abc.ABC):
 
     @property
     @abc.abstractmethod
-    def app(self) -> traits.RESTAware:
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def rest_app(self) -> traits.RESTAware:
         """Client application that models may use for procedures."""
 
     @property
@@ -211,7 +216,7 @@ class PartialUser(snowflakes.Unique, abc.ABC):
         hikari.errors.NotFoundError
             If the user is not found.
         """
-        return await self.app.rest.fetch_user(user=self.id)
+        return await self.rest_app.rest.fetch_user(user=self.id)
 
     async def send(
         self,
@@ -371,7 +376,7 @@ class PartialUser(snowflakes.Unique, abc.ABC):
         """  # noqa: E501 - Line too long
         channel = await self.fetch_dm_channel()
 
-        return await self.app.rest.create_message(
+        return await self.rest_app.rest.create_message(
             channel=channel.id,
             content=content,
             embed=embed,
@@ -393,11 +398,6 @@ class User(PartialUser, abc.ABC):
 
     This does not include partial users, as they may not be fully formed.
     """
-
-    @property
-    @abc.abstractmethod
-    def app(self) -> traits.RESTAware:
-        """Client application that models may use for procedures."""
 
     @property
     @abc.abstractmethod
@@ -528,7 +528,13 @@ class PartialUserImpl(PartialUser):
     id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
     """The ID of this user."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
+
+    rest_app: traits.RESTAware = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """Reference to the client application that models may use for procedures."""
 
     discriminator: undefined.UndefinedOr[str] = attr.ib(eq=False, hash=False, repr=True)
@@ -555,7 +561,7 @@ class PartialUserImpl(PartialUser):
 
     async def fetch_dm_channel(self) -> channels.DMChannel:
         if self._dm_channel is None:
-            self._dm_channel = await self.app.rest.create_dm_channel(self.id)
+            self._dm_channel = await self.rest_app.rest.create_dm_channel(self.id)
 
         return self._dm_channel
 
@@ -649,7 +655,7 @@ class OwnUser(UserImpl):
         hikari.users.OwnUser
             The requested user object.
         """
-        return await self.app.rest.fetch_my_user()
+        return await self.rest_app.rest.fetch_my_user()
 
     async def fetch_dm_channel(self) -> typing.NoReturn:
         raise TypeError("Unable to fetch your own DM channel")

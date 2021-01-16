@@ -88,9 +88,8 @@ class TypingEvent(shard_events.ShardEvent, abc.ABC):
             UTC timestamp of when the user started typing.
         """
 
-    @property
     @abc.abstractmethod
-    def user(self) -> typing.Optional[users.User]:
+    def get_user(self) -> typing.Optional[users.User]:
         """Get the cached user that is typing, if known.
 
         Returns
@@ -128,7 +127,7 @@ class TypingEvent(shard_events.ShardEvent, abc.ABC):
             A typing indicator context manager and awaitable to trigger typing
             in a channel with.
         """
-        return self.app.rest.trigger_typing(self.channel_id)
+        return self.rest_app.rest.trigger_typing(self.channel_id)
 
 
 @base_events.requires_intents(intents.Intents.GUILD_MESSAGE_TYPING)
@@ -136,9 +135,6 @@ class TypingEvent(shard_events.ShardEvent, abc.ABC):
 @attr.s(kw_only=True, slots=True, weakref_slot=False)
 class GuildTypingEvent(TypingEvent):
     """Event fired when a user starts typing in a guild channel."""
-
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
@@ -158,7 +154,7 @@ class GuildTypingEvent(TypingEvent):
         The ID of the guild that relates to this event.
     """
 
-    user: guilds.Member = attr.ib(repr=False)
+    member: guilds.Member = attr.ib(repr=False)
     """Member object of the user who triggered this typing event.
 
     Unlike on `PrivateTypingEvent` instances, Discord will always send
@@ -171,25 +167,19 @@ class GuildTypingEvent(TypingEvent):
     """
 
     @property
-    def channel(self) -> typing.Union[channels.GuildTextChannel, channels.GuildNewsChannel, None]:
-        """Get the cached channel object this typing event occurred in.
-
-        Returns
-        -------
-        typing.Union[hikari.channels.GuildTextChannel, hikari.channels.GuildNewsChannel, builtins.None]
-            The channel.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        channel = self.app.cache.get_guild_channel(self.channel_id)
-        assert channel is None or isinstance(
-            channel, (channels.GuildTextChannel, channels.GuildNewsChannel)
-        ), f"expected GuildTextChannel or GuildNewsChannel from cache, got {channel}"
-        return channel
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.member.cache_app
 
     @property
-    def guild(self) -> typing.Optional[guilds.GatewayGuild]:
+    def rest_app(self) -> traits.RESTAware:
+        return self.member.rest_app
+
+    @property
+    def user_id(self) -> snowflakes.Snowflake:
+        # <<inherited docstring from TypingEvent>>.
+        return self.member.id
+
+    def get_guild(self) -> typing.Optional[guilds.GatewayGuild]:
         """Get the cached object of the guild this typing event occurred in.
 
         If the guild is not found then this will return `builtins.None`.
@@ -199,15 +189,30 @@ class GuildTypingEvent(TypingEvent):
         typing.Optional[hikari.guilds.GatewayGuild]
             The object of the gateway guild if found else `builtins.None`.
         """
-        if not isinstance(self.app, traits.CacheAware):
+        if not self.cache_app:
             return None
 
-        return self.app.cache.get_available_guild(self.guild_id) or self.app.cache.get_unavailable_guild(self.guild_id)
+        return self.cache_app.cache.get_guild(self.guild_id)
 
-    @property
-    def user_id(self) -> snowflakes.Snowflake:
-        # <<inherited docstring from TypingEvent>>.
-        return self.user.id
+    def get_channel(self) -> typing.Union[channels.GuildTextChannel, channels.GuildNewsChannel, None]:
+        """Get the cached channel object this typing event occurred in.
+
+        Returns
+        -------
+        typing.Union[hikari.channels.GuildTextChannel, hikari.channels.GuildNewsChannel, builtins.None]
+            The channel.
+        """
+        if not self.cache_app:
+            return None
+
+        channel = self.cache_app.cache.get_guild_channel(self.channel_id)
+        assert channel is None or isinstance(
+            channel, (channels.GuildTextChannel, channels.GuildNewsChannel)
+        ), f"expected GuildTextChannel or GuildNewsChannel from cache, got {channel}"
+        return channel
+
+    def get_user(self) -> users.User:
+        return self.member.user
 
     async def fetch_channel(self) -> typing.Union[channels.GuildTextChannel, channels.GuildNewsChannel]:
         """Perform an API call to fetch an up-to-date image of this channel.
@@ -217,7 +222,7 @@ class GuildTypingEvent(TypingEvent):
         typing.Union[hikari.channels.GuildTextChannel, hikari.channels.GuildNewsChannel]
             The channel.
         """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
+        channel = await self.rest_app.rest.fetch_channel(self.channel_id)
         assert isinstance(
             channel, (channels.GuildTextChannel, channels.GuildNewsChannel)
         ), f"expected GuildTextChannel or GuildNewsChannel from API, got {channel}"
@@ -231,7 +236,7 @@ class GuildTypingEvent(TypingEvent):
         hikari.guilds.Guild
             The guild.
         """
-        return await self.app.rest.fetch_guild(self.guild_id)
+        return await self.rest_app.rest.fetch_guild(self.guild_id)
 
     async def fetch_guild_preview(self) -> guilds.GuildPreview:
         """Perform an API call to fetch an up-to-date preview of this guild.
@@ -241,7 +246,7 @@ class GuildTypingEvent(TypingEvent):
         hikari.guilds.GuildPreview
             The guild.
         """
-        return await self.app.rest.fetch_guild_preview(self.guild_id)
+        return await self.rest_app.rest.fetch_guild_preview(self.guild_id)
 
     async def fetch_user(self) -> guilds.Member:
         """Perform an API call to fetch an up-to-date image of this member.
@@ -251,7 +256,7 @@ class GuildTypingEvent(TypingEvent):
         hikari.guilds.Member
             The member.
         """
-        return await self.app.rest.fetch_member(self.guild_id, self.user_id)
+        return await self.rest_app.rest.fetch_member(self.guild_id, self.user_id)
 
 
 @base_events.requires_intents(intents.Intents.DM_MESSAGES)
@@ -260,8 +265,9 @@ class GuildTypingEvent(TypingEvent):
 class DMTypingEvent(TypingEvent):
     """Event fired when a user starts typing in a guild channel."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
@@ -275,13 +281,11 @@ class DMTypingEvent(TypingEvent):
     timestamp: datetime.datetime = attr.ib(repr=False)
     # <<inherited docstring from TypingEvent>>.
 
-    @property
-    def user(self) -> typing.Optional[users.User]:
+    def get_user(self) -> typing.Optional[users.User]:
         # <<inherited docstring from TypingEvent>>.
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        return self.app.cache.get_user(self.user_id)
+        if self.cache_app:
+            return self.cache_app.cache.get_user(self.user_id)
+        return None
 
     async def fetch_channel(self) -> channels.DMChannel:
         """Perform an API call to fetch an up-to-date image of this channel.
@@ -291,7 +295,7 @@ class DMTypingEvent(TypingEvent):
         hikari.channels.DMChannel
             The channel.
         """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
+        channel = await self.rest_app.rest.fetch_channel(self.channel_id)
         assert isinstance(channel, channels.DMChannel), f"expected DMChannel from API, got {channel}"
         return channel
 
@@ -303,4 +307,4 @@ class DMTypingEvent(TypingEvent):
         hikari.users.User
             The user.
         """
-        return await self.app.rest.fetch_user(self.user_id)
+        return await self.rest_app.rest.fetch_user(self.user_id)

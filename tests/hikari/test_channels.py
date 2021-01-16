@@ -28,13 +28,24 @@ from hikari import channels
 from hikari import files
 from hikari import permissions
 from hikari import snowflakes
+from hikari import traits
 from hikari import users
 from tests.hikari import hikari_test_helpers
 
 
 @pytest.fixture()
-def mock_app():
-    return mock.Mock()
+def mock_cache_app():
+    return mock.Mock(traits.CacheAware)
+
+
+@pytest.fixture()
+def mock_rest_app():
+    return mock.Mock(traits.RESTAware)
+
+
+@pytest.fixture()
+def mock_shard_app():
+    return mock.Mock(traits.ShardAware)
 
 
 class TestChannelType:
@@ -45,49 +56,61 @@ class TestChannelType:
 
 class TestChannelFollow:
     @pytest.mark.asyncio
-    async def test_fetch_channel(self, mock_app):
+    async def test_fetch_channel(self, mock_cache_app, mock_rest_app):
         mock_channel = mock.Mock(spec=channels.GuildNewsChannel)
-        mock_app.rest.fetch_channel = mock.AsyncMock(return_value=mock_channel)
+        mock_rest_app.rest.fetch_channel = mock.AsyncMock(return_value=mock_channel)
         follow = channels.ChannelFollow(
-            channel_id=snowflakes.Snowflake(9459234123), app=mock_app, webhook_id=snowflakes.Snowflake(3123123)
+            channel_id=snowflakes.Snowflake(9459234123),
+            cache_app=mock_cache_app,
+            rest_app=mock_rest_app,
+            webhook_id=snowflakes.Snowflake(3123123),
         )
 
         result = await follow.fetch_channel()
 
         assert result is mock_channel
-        mock_app.rest.fetch_channel.assert_awaited_once_with(9459234123)
+        mock_rest_app.rest.fetch_channel.assert_awaited_once_with(9459234123)
 
     @pytest.mark.asyncio
-    async def test_fetch_webhook(self, mock_app):
+    async def test_fetch_webhook(self, mock_cache_app, mock_rest_app):
         mock_webhook = object()
-        mock_app.rest.fetch_webhook = mock.AsyncMock(return_value=mock_webhook)
+        mock_rest_app.rest.fetch_webhook = mock.AsyncMock(return_value=mock_webhook)
         follow = channels.ChannelFollow(
-            webhook_id=snowflakes.Snowflake(54123123), app=mock_app, channel_id=snowflakes.Snowflake(94949494)
+            webhook_id=snowflakes.Snowflake(54123123),
+            cache_app=mock_cache_app,
+            rest_app=mock_rest_app,
+            channel_id=snowflakes.Snowflake(94949494),
         )
 
         result = await follow.fetch_webhook()
 
         assert result is mock_webhook
-        mock_app.rest.fetch_webhook.assert_awaited_once_with(54123123)
+        mock_rest_app.rest.fetch_webhook.assert_awaited_once_with(54123123)
 
-    def test_channel(self, mock_app):
+    def test_get_channel(self, mock_cache_app, mock_rest_app):
         mock_channel = mock.Mock(spec=channels.GuildNewsChannel)
-        mock_app.cache.get_guild_channel = mock.Mock(return_value=mock_channel)
+        mock_cache_app.cache.get_guild_channel = mock.Mock(return_value=mock_channel)
         follow = channels.ChannelFollow(
-            webhook_id=snowflakes.Snowflake(993883), app=mock_app, channel_id=snowflakes.Snowflake(696969)
+            webhook_id=snowflakes.Snowflake(993883),
+            cache_app=mock_cache_app,
+            rest_app=mock_rest_app,
+            channel_id=snowflakes.Snowflake(696969),
         )
 
-        result = follow.channel
+        result = follow.get_channel()
 
         assert result is mock_channel
-        mock_app.cache.get_guild_channel.assert_called_once_with(696969)
+        mock_cache_app.cache.get_guild_channel.assert_called_once_with(696969)
 
-    def test_channel_when_no_cache_trait(self):
+    def test_get_channel_when_no_cache(self):
         follow = channels.ChannelFollow(
-            webhook_id=snowflakes.Snowflake(993883), app=object(), channel_id=snowflakes.Snowflake(696969)
+            webhook_id=snowflakes.Snowflake(993883),
+            cache_app=None,
+            rest_app=object(),
+            channel_id=snowflakes.Snowflake(696969),
         )
 
-        assert follow.channel is None
+        assert follow.get_channel() is None
 
 
 class TestPermissionOverwrite:
@@ -107,9 +130,10 @@ class TestPermissionOverwrite:
 
 class TestPartialChannel:
     @pytest.fixture()
-    def model(self, mock_app):
+    def model(self, mock_cache_app, mock_rest_app):
         return hikari_test_helpers.mock_class_namespace(channels.PartialChannel, rename_impl_=False)(
-            app=mock_app,
+            cache_app=mock_cache_app,
+            rest_app=mock_rest_app,
             id=snowflakes.Snowflake(1234567),
             name="foo",
             type=channels.ChannelType.GUILD_NEWS,
@@ -125,14 +149,15 @@ class TestPartialChannel:
 
 class TestDMChannel:
     @pytest.fixture()
-    def model(self, mock_app):
+    def model(self, mock_cache_app, mock_rest_app):
         return channels.DMChannel(
             id=snowflakes.Snowflake(12345),
             name="steve",
             type=channels.ChannelType.DM,
             last_message_id=snowflakes.Snowflake(12345),
             recipient=mock.Mock(spec_set=users.UserImpl, __str__=mock.Mock(return_value="snoop#0420")),
-            app=mock_app,
+            cache_app=mock_cache_app,
+            rest_app=mock_rest_app,
         )
 
     def test_str_operator(self, model):
@@ -144,9 +169,10 @@ class TestDMChannel:
 
 class TestGroupDMChannel:
     @pytest.fixture()
-    def model(self, mock_app):
+    def model(self, mock_cache_app, mock_rest_app):
         return channels.GroupDMChannel(
-            app=mock_app,
+            cache_app=mock_cache_app,
+            rest_app=mock_rest_app,
             id=snowflakes.Snowflake(136134),
             name="super cool group dm",
             type=channels.ChannelType.DM,
@@ -195,16 +221,17 @@ class TestGroupDMChannel:
 @pytest.mark.asyncio
 class TestTextChannel:
     @pytest.fixture()
-    def model(self, mock_app):
+    def model(self, cache, mock_rest_app):
         return hikari_test_helpers.mock_class_namespace(channels.TextChannel)(
-            app=mock_app,
+            cache_app=cache,
+            rest_app=mock_rest_app,
             id=snowflakes.Snowflake(12345679),
             name="foo1",
             type=channels.ChannelType.GUILD_TEXT,
         )
 
     async def test_history(self, model):
-        model.app.rest.fetch_messages = mock.AsyncMock()
+        model.rest_app.rest.fetch_messages = mock.AsyncMock()
 
         await model.history(
             before=datetime.datetime(2020, 4, 1, 1, 0, 0),
@@ -212,7 +239,7 @@ class TestTextChannel:
             around=datetime.datetime(2020, 4, 1, 0, 30, 0),
         )
 
-        model.app.rest.fetch_messages.assert_awaited_once_with(
+        model.rest_app.rest.fetch_messages.assert_awaited_once_with(
             12345679,
             before=datetime.datetime(2020, 4, 1, 1, 0, 0),
             after=datetime.datetime(2020, 4, 1, 0, 0, 0),
@@ -220,7 +247,7 @@ class TestTextChannel:
         )
 
     async def test_send(self, model):
-        model.app.rest.create_message = mock.AsyncMock()
+        model.rest_app.rest.create_message = mock.AsyncMock()
         mock_attachment = object()
         mock_embed = object()
         mock_attachments = [object(), object(), object()]
@@ -240,7 +267,7 @@ class TestTextChannel:
             mentions_reply=True,
         )
 
-        model.app.rest.create_message.assert_awaited_once_with(
+        model.rest_app.rest.create_message.assert_awaited_once_with(
             channel=12345679,
             content="test content",
             nonce="abc123",
@@ -256,18 +283,20 @@ class TestTextChannel:
         )
 
     def test_trigger_typing(self, model):
-        model.app.rest.trigger_typing = mock.Mock()
+        model.rest_app.rest.trigger_typing = mock.Mock()
 
         model.trigger_typing()
 
-        model.app.rest.trigger_typing.assert_called_once_with(12345679)
+        model.rest_app.rest.trigger_typing.assert_called_once_with(12345679)
 
 
 class TestGuildChannel:
     @pytest.fixture()
-    def model(self, mock_app):
+    def model(self, mock_cache_app, mock_rest_app, mock_shard_app):
         return hikari_test_helpers.mock_class_namespace(channels.GuildChannel)(
-            app=mock_app,
+            cache_app=mock_cache_app,
+            rest_app=mock_rest_app,
+            shard_app=mock_shard_app,
             id=snowflakes.Snowflake(69420),
             name="foo1",
             type=channels.ChannelType.GUILD_VOICE,
@@ -279,17 +308,11 @@ class TestGuildChannel:
         )
 
     @pytest.mark.parametrize("error", [TypeError, AttributeError, NameError])
-    def test_shard_id_property_when_guild_id_error_raised(self, model, error):
-        class BrokenApp:
-            def __getattr__(self, name):
-                if name == "shard_count":
-                    raise error
-                return mock.Mock()
-
-        model.app = BrokenApp()
+    def test_shard_id_property_when_no_shard_app(self, model, error):
+        model.shard_app = None
 
         assert model.shard_id is None
 
-    def test_shard_id_property_when_guild_id_is_not_None(self, model):
-        model.app.shard_count = 3
+    def test_shard_id_property(self, model):
+        model.shard_app.shard_count = 3
         assert model.shard_id == 2

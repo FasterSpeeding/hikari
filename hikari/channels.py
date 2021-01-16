@@ -104,7 +104,13 @@ class ChannelFollow:
     to any "broadcast" announcements that the news channel creates.
     """
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
+
+    rest_app: traits.RESTAware = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """Return the client application that models may use for procedures.
 
     Returns
@@ -152,7 +158,7 @@ class ChannelFollow:
         hikari.errors.InternalServerError
             If an internal error occurs on Discord while handling the request.
         """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
+        channel = await self.rest_app.rest.fetch_channel(self.channel_id)
         assert isinstance(channel, (GuildTextChannel, GuildNewsChannel))
         return channel
 
@@ -176,10 +182,9 @@ class ChannelFollow:
         hikari.errors.InternalServerError
             If an internal error occurs on Discord while handling the request.
         """
-        return await self.app.rest.fetch_webhook(self.webhook_id)
+        return await self.rest_app.rest.fetch_webhook(self.webhook_id)
 
-    @property
-    def channel(self) -> typing.Union[GuildNewsChannel, GuildTextChannel, None]:
+    def get_channel(self) -> typing.Union[GuildNewsChannel, GuildTextChannel, None]:
         """Get the channel being followed from the cache.
 
         !!! warning
@@ -194,10 +199,10 @@ class ChannelFollow:
             `builtins.None`, if the channel referenced has since lost it's news
             status then this will return a `GuildTextChannel`.
         """
-        if not isinstance(self.app, traits.CacheAware):
+        if not self.cache_app:
             return None
 
-        channel = self.app.cache.get_guild_channel(self.channel_id)
+        channel = self.cache_app.cache.get_guild_channel(self.channel_id)
         assert channel is None or isinstance(channel, (GuildNewsChannel, GuildTextChannel))
         return channel
 
@@ -282,7 +287,13 @@ class PartialChannel(snowflakes.Unique):
     not available from Discord.
     """
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
+
+    rest_app: traits.RESTAware = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """The client application that models may use for procedures."""
 
     id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
@@ -357,7 +368,7 @@ class TextChannel(PartialChannel, abc.ABC):
             this function itself will not raise anything (other than
             `builtins.TypeError`).
         """  # noqa: E501 - Line too long
-        return self.app.rest.fetch_messages(self.id, before=before, after=after, around=around)
+        return self.rest_app.rest.fetch_messages(self.id, before=before, after=after, around=around)
 
     async def send(
         self,
@@ -497,7 +508,7 @@ class TextChannel(PartialChannel, abc.ABC):
             You are expected to make a connection to the gateway and identify
             once before being able to use this endpoint for a bot.
         """  # noqa: E501 - Line too long
-        return await self.app.rest.create_message(
+        return await self.rest_app.rest.create_message(
             channel=self.id,
             content=content,
             embed=embed,
@@ -536,7 +547,7 @@ class TextChannel(PartialChannel, abc.ABC):
         hikari.api.special_endpoints.TypingIndicator
             The typing indicator object.
         """
-        return self.app.rest.trigger_typing(self.id)
+        return self.rest_app.rest.trigger_typing(self.id)
 
 
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
@@ -645,6 +656,10 @@ class GroupDMChannel(PrivateChannel):
 class GuildChannel(PartialChannel):
     """The base for anything that is a guild channel."""
 
+    shard_app: typing.Optional[traits.ShardAware] = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
+
     guild_id: snowflakes.Snowflake = attr.ib(eq=False, hash=False, repr=True)
     """The ID of the guild the channel belongs to."""
 
@@ -682,13 +697,8 @@ class GuildChannel(PartialChannel):
 
         This may be `builtins.None` if the shard count is not known.
         """
-        try:
-            shard_count = getattr(self.app, "shard_count")
-            assert isinstance(shard_count, int), f"shard_count attr was expected to be int, but got {shard_count}"
-            return snowflakes.calculate_shard_id(shard_count, self.guild_id)
-        except (TypeError, AttributeError, NameError):
-            pass
-
+        if self.shard_app:
+            return snowflakes.calculate_shard_id(self.shard_app, self.guild_id)
         return None
 
 

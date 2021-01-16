@@ -40,54 +40,43 @@ class TestMemberEvent:
         return cls()
 
     def test_user_id_property(self, event):
-        event.user_id == 456
+        assert event.user_id == 456
 
-    def test_guild_when_available(self, event):
+    def test_guild(self, event):
         result = event.guild
 
-        assert result is event.app.cache.get_available_guild.return_value
-        event.app.cache.get_available_guild.assert_called_once_with(123)
-        event.app.cache.get_unavailable_guild.assert_not_called()
-
-    def test_guild_when_unavailable(self, event):
-        event.app.cache.get_available_guild.return_value = None
-        result = event.guild
-
-        assert result is event.app.cache.get_unavailable_guild.return_value
-        event.app.cache.get_unavailable_guild.assert_called_once_with(123)
-        event.app.cache.get_available_guild.assert_called_once_with(123)
+        assert result is event.cache_app.cache.get_guild.return_value
+        event.cache_app.cache.get_guild.assert_called_once_with(123)
 
 
 class TestMemberCreateEvent:
     @pytest.fixture()
     def event(self):
-        return member_events.MemberCreateEvent(app=None, shard=None, member=mock.Mock())
+        return member_events.MemberCreateEvent(shard=None, member=mock.Mock())
 
     def test_guild_property(self, event):
         event.member.guild_id = 123
-        event.guild_id == 123
+        assert event.guild_id == 123
 
     def test_user_property(self, event):
         user = object()
         event.member.user = user
-        event.user == user
+        assert event.user == user
 
 
 class TestMemberUpdateEvent:
     @pytest.fixture()
     def event(self):
-        return member_events.MemberUpdateEvent(
-            app=None, shard=None, member=mock.Mock(), old_member=mock.Mock(guilds.Member)
-        )
+        return member_events.MemberUpdateEvent(shard=None, member=mock.Mock(), old_member=mock.Mock(guilds.Member))
 
     def test_guild_property(self, event):
         event.member.guild_id = 123
-        event.guild_id == 123
+        assert event.guild_id == 123
 
     def test_user_property(self, event):
         user = object()
         event.member.user = user
-        event.user == user
+        assert event.user == user
 
     def test_old_user_property(self, event):
         event.member.guild_id = 123

@@ -75,9 +75,6 @@ class VoiceStateUpdateEvent(VoiceEvent):
     to connect to the voice gateway to stream audio or video content.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
-
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring>>.
 
@@ -97,6 +94,14 @@ class VoiceStateUpdateEvent(VoiceEvent):
     """
 
     @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.state.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.state.rest_app
+
+    @property
     def guild_id(self) -> snowflakes.Snowflake:
         # <<inherited docstring from VoiceEvent>>
         return self.state.guild_id
@@ -111,7 +116,9 @@ class VoiceServerUpdateEvent(VoiceEvent):
     falls over to a new server.
     """
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
+
+    rest_app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})

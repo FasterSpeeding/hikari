@@ -775,7 +775,7 @@ class TestRESTClientImpl:
             returned = rest_client.fetch_audit_log(
                 guild, user=user, before=datetime_obj, event_type=audit_logs.AuditLogEventType.GUILD_UPDATE
             )
-            returned == stub_iterator
+            assert returned == stub_iterator
 
             iterator.assert_called_once_with(
                 entity_factory=rest_client._entity_factory,
@@ -1245,7 +1245,8 @@ class TestRESTClientImplAsync:
             (
                 users.UserImpl(
                     id=456,
-                    app=object(),
+                    cache_app=object(),
+                    rest_app=object(),
                     avatar_hash="",
                     discriminator="",
                     flags=0,
@@ -1258,7 +1259,8 @@ class TestRESTClientImplAsync:
             (
                 guilds.Role(
                     id=456,
-                    app=object(),
+                    cache_app=object(),
+                    rest_app=object(),
                     color=None,
                     guild_id=123,
                     is_hoisted=True,

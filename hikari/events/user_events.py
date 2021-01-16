@@ -43,9 +43,6 @@ if typing.TYPE_CHECKING:
 class OwnUserUpdateEvent(shard_events.ShardEvent):
     """Event fired when the account user is updated."""
 
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
-
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
 
@@ -63,3 +60,11 @@ class OwnUserUpdateEvent(shard_events.ShardEvent):
     hikari.users.OwnUser
         This application user.
     """
+
+    @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.user.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.user.rest_app

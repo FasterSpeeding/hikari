@@ -30,6 +30,7 @@ import typing
 
 import attr
 
+from hikari import channels as channels_
 from hikari import files as files_
 from hikari import snowflakes
 from hikari import undefined
@@ -39,7 +40,6 @@ from hikari.internal import enums
 from hikari.internal import routes
 
 if typing.TYPE_CHECKING:
-    from hikari import channels as channels_
     from hikari import embeds as embeds_
     from hikari import guilds as guilds_
     from hikari import messages as messages_
@@ -68,7 +68,13 @@ class Webhook(snowflakes.Unique):
     send informational messages to specific channels.
     """
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
+
+    rest_app: traits.RESTAware = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """The client application that models may use for procedures."""
 
     id: snowflakes.Snowflake = attr.ib(eq=True, hash=True, repr=True)
@@ -249,7 +255,7 @@ class Webhook(snowflakes.Unique):
         if not self.token:
             raise ValueError("Cannot send a message using a webhook where we don't know the token")
 
-        return await self.app.rest.execute_webhook(
+        return await self.rest_app.rest.execute_webhook(
             webhook=self.id,
             token=self.token,
             content=content,
@@ -389,7 +395,7 @@ class Webhook(snowflakes.Unique):
         if self.token is None:
             raise ValueError("Cannot edit a message using a webhook where we don't know the token")
 
-        return await self.app.rest.edit_webhook_message(
+        return await self.rest_app.rest.edit_webhook_message(
             self.id,
             token=self.token,
             message=message,
@@ -435,7 +441,7 @@ class Webhook(snowflakes.Unique):
         if self.token is None:
             raise ValueError("Cannot delete a message using a webhook where we don't know the token")
 
-        await self.app.rest.delete_webhook_message(self.id, token=self.token, message=message)
+        await self.rest_app.rest.delete_webhook_message(self.id, token=self.token, message=message)
 
     async def delete(self, *, use_token: undefined.UndefinedOr[bool] = undefined.UNDEFINED) -> None:
         """Delete this webhook.
@@ -466,7 +472,7 @@ class Webhook(snowflakes.Unique):
         else:
             token = undefined.UNDEFINED
 
-        await self.app.rest.delete_webhook(self.id, token=token)
+        await self.rest_app.rest.delete_webhook(self.id, token=token)
 
     async def edit(
         self,
@@ -526,7 +532,7 @@ class Webhook(snowflakes.Unique):
         else:
             token = undefined.UNDEFINED
 
-        return await self.app.rest.edit_webhook(
+        return await self.rest_app.rest.edit_webhook(
             self.id,
             token=token,
             name=name,
@@ -550,7 +556,7 @@ class Webhook(snowflakes.Unique):
         hikari.errors.NotFoundError
             If the channel this message was created in does not exist.
         """
-        return await self.app.rest.fetch_channel(self.channel_id)
+        return await self.rest_app.rest.fetch_channel(self.channel_id)
 
     async def fetch_self(self, *, use_token: undefined.UndefinedOr[bool] = undefined.UNDEFINED) -> Webhook:
         """Fetch this webhook.
@@ -591,7 +597,7 @@ class Webhook(snowflakes.Unique):
         else:
             token = undefined.UNDEFINED
 
-        return await self.app.rest.fetch_webhook(self.id, token=token)
+        return await self.rest_app.rest.fetch_webhook(self.id, token=token)
 
     @property
     def avatar(self) -> files_.URL:
@@ -652,3 +658,19 @@ class Webhook(snowflakes.Unique):
             size=size,
             file_format=ext,
         )
+
+    async def fetch_guild(self) -> guilds_.RESTGuild:
+        if self.guild_id is None:
+            raise ValueError("Cannot fetch the guild of a webhook with no guild id")
+
+        return await self.rest_app.rest.fetch_guild(self.guild_id)
+
+    def get_channel(self) -> typing.Optional[channels_.GuildChannel]:
+        if self.cache_app:
+            return self.cache_app.cache.get_guild_channel(self.channel_id)
+        return None
+
+    def get_guild(self) -> typing.Optional[guilds_.GatewayGuild]:
+        if self.cache_app and self.guild_id:
+            return self.cache_app.cache.get_guild(self.guild_id)
+        return None

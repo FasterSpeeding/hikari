@@ -30,7 +30,8 @@ class TestMemberChunkEvent:
     @pytest.fixture()
     def event(self):
         return shard_events.MemberChunkEvent(
-            app=mock.Mock(),
+            rest_app=mock.Mock(),
+            cache_app=mock.Mock(),
             shard=mock.Mock(),
             guild_id=snowflakes.Snowflake(69420),
             members={

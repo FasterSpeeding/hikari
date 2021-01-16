@@ -54,6 +54,14 @@ class MemberEvent(shard_events.ShardEvent, abc.ABC):
     """Event base for any events that concern guild members."""
 
     @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.user.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.user.rest_app
+
+    @property
     @abc.abstractmethod
     def guild_id(self) -> snowflakes.Snowflake:
         """ID of the guild that this event relates to.
@@ -98,10 +106,10 @@ class MemberEvent(shard_events.ShardEvent, abc.ABC):
             The guild that this event occurred in, if known, else
             `builtins.None`.
         """
-        if not isinstance(self.app, traits.CacheAware):
+        if not self.cache_app:
             return None
 
-        return self.app.cache.get_available_guild(self.guild_id) or self.app.cache.get_unavailable_guild(self.guild_id)
+        return self.cache_app.cache.get_guild(self.guild_id)
 
 
 @attr_extensions.with_copy
@@ -109,9 +117,6 @@ class MemberEvent(shard_events.ShardEvent, abc.ABC):
 @base_events.requires_intents(intents.Intents.GUILD_MEMBERS)
 class MemberCreateEvent(MemberEvent):
     """Event that is fired when a member joins a guild."""
-
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
@@ -144,9 +149,6 @@ class MemberUpdateEvent(MemberEvent):
 
     This may occur if roles are amended, or if the nickname is changed.
     """
-
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
@@ -182,9 +184,6 @@ class MemberUpdateEvent(MemberEvent):
 @base_events.requires_intents(intents.Intents.GUILD_MEMBERS)
 class MemberDeleteEvent(MemberEvent):
     """Event fired when a member is kicked from or leaves a guild."""
-
-    app: traits.RESTAware = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
 
     shard: gateway_shard.GatewayShard = attr.ib(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.

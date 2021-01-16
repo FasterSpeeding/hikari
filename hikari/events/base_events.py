@@ -57,7 +57,12 @@ class Event(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def app(self) -> traits.RESTAware:
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def rest_app(self) -> traits.RESTAware:
         """App instance for this application.
 
         Returns
@@ -187,9 +192,13 @@ class ExceptionEvent(Event, typing.Generic[FailedEventT]):
     _failed_callback: FailedCallbackT[FailedEventT] = attr.ib()
 
     @property
-    def app(self) -> traits.RESTAware:
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
         # <<inherited docstring from Event>>.
-        return self.failed_event.app
+        return self.failed_event.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.failed_event.rest_app
 
     @property
     def shard(self) -> typing.Optional[gateway_shard.GatewayShard]:

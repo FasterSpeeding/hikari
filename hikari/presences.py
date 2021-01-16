@@ -50,7 +50,9 @@ if typing.TYPE_CHECKING:
     import datetime
 
     from hikari import emojis as emojis_
+    from hikari import guilds
     from hikari import traits
+    from hikari import users
 
 
 @typing.final
@@ -278,7 +280,13 @@ class ClientStatus:
 class MemberPresence:
     """Used to represent a guild member's presence."""
 
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
+    cache_app: typing.Optional[traits.CacheAware] = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
+
+    rest_app: traits.RESTAware = attr.ib(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
     """The client application that models may use for procedures."""
 
     user_id: snowflakes.Snowflake = attr.ib(repr=True, eq=False, hash=True)
@@ -299,3 +307,19 @@ class MemberPresence:
 
     client_status: ClientStatus = attr.ib(eq=False, hash=False, repr=False)
     """Platform-specific user-statuses."""
+
+    async def fetch_guild(self) -> guilds.RESTGuild:
+        return await self.rest_app.rest.fetch_guild(self.guild_id)
+
+    async def fetch_user(self) -> users.User:
+        return await self.rest_app.rest.fetch_user(self.user_id)
+
+    def get_guild(self) -> typing.Optional[guilds.GatewayGuild]:
+        if self.cache_app:
+            return self.cache_app.cache.get_guild(self.guild_id)
+        return None
+
+    def get_user(self) -> typing.Optional[users.User]:
+        if self.cache_app:
+            return self.cache_app.cache.get_user(self.user_id)
+        return None

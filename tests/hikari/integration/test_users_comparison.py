@@ -45,7 +45,8 @@ def assert_objects_not_equal(a, b):
 
 def make_user(user_id, username):
     return users.UserImpl(
-        app=mock.Mock(),
+        rest_app=mock.Mock(),
+        cache_app=mock.Mock(),
         id=snowflakes.Snowflake(user_id),
         discriminator="0001",
         username=username,

@@ -52,8 +52,11 @@ class TestTeamMember:
     def model(self):
         return applications.TeamMember(membership_state=4, permissions=["*"], team_id=34123, user=mock.Mock(users.User))
 
-    def test_app_property(self, model):
-        assert model.app is model.user.app
+    def test_cache_app_property(self, model):
+        assert model.cache_app is model.user.cache_app
+
+    def test_rest_app_property(self, model):
+        assert model.rest_app is model.user.rest_app
 
     def test_avatar_hash_property(self, model):
         assert model.avatar_hash is model.user.avatar_hash
@@ -84,10 +87,10 @@ class TestTeamMember:
         assert model.is_system is model.user.is_system
 
     def test_mention_property(self, model):
-        assert model.app is model.user.app
+        assert model.mention is model.user.mention
 
     def test_username_property(self, model):
-        assert model.app is model.user.app
+        assert model.username is model.user.username
 
     @pytest.mark.asyncio
     async def test_fetch_dm_channel(self, model):
@@ -112,7 +115,7 @@ class TestTeam:
         )()
 
     def test_str_operator(self):
-        team = applications.Team(id=696969, app=object(), icon_hash="", members=[], owner_id=0)
+        team = applications.Team(id=696969, icon_hash="", members=[], owner_id=0)
         assert str(team) == "Team 696969"
 
     def test_icon_url_property(self, model):

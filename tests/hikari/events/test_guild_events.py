@@ -74,7 +74,6 @@ class TestGuildAvailableEvent:
     @pytest.fixture()
     def event(self):
         return guild_events.GuildAvailableEvent(
-            app=None,
             shard=object(),
             guild=mock.Mock(guilds.Guild),
             emojis={},
@@ -94,7 +93,6 @@ class TestGuildUpdateEvent:
     @pytest.fixture()
     def event(self):
         return guild_events.GuildUpdateEvent(
-            app=None,
             shard=object(),
             guild=mock.Mock(guilds.Guild),
             old_guild=mock.Mock(guilds.Guild),
@@ -115,7 +113,6 @@ class TestPresenceUpdateEvent:
     @pytest.fixture()
     def event(self):
         return guild_events.PresenceUpdateEvent(
-            app=None,
             shard=object(),
             presence=mock.Mock(presences.MemberPresence),
             old_presence=mock.Mock(presences.MemberPresence),

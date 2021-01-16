@@ -30,6 +30,7 @@ import typing
 
 import attr
 
+from hikari import channels
 from hikari.internal import attr_extensions
 
 if typing.TYPE_CHECKING:
@@ -42,9 +43,6 @@ if typing.TYPE_CHECKING:
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class VoiceState:
     """Represents a user's voice connection status."""
-
-    app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    """The client application that models may use for procedures."""
 
     channel_id: typing.Optional[snowflakes.Snowflake] = attr.ib(eq=False, hash=False, repr=True)
     """The ID of the channel this user is connected to.
@@ -84,6 +82,38 @@ class VoiceState:
 
     session_id: str = attr.ib(eq=True, hash=True, repr=True)
     """The string ID of this voice state's session."""
+
+    @property
+    def cache_app(self) -> typing.Optional[traits.CacheAware]:
+        return self.member.cache_app
+
+    @property
+    def rest_app(self) -> traits.RESTAware:
+        return self.member.rest_app
+
+    async def fetch_channel(self) -> channels.GuildVoiceChannel:
+        if self.channel_id is None:
+            raise ValueError("Cannot fetch the channel of a voice state with no channel id")
+
+        channel = await self.rest_app.rest.fetch_channel(self.channel_id)
+        assert isinstance(channel, channels.GuildVoiceChannel)
+        return channel
+
+    async def fetch_guild(self) -> guilds.RESTGuild:
+        return await self.rest_app.rest.fetch_guild(self.guild_id)
+
+    def get_channel(self) -> typing.Optional[channels.GuildVoiceChannel]:
+        if self.cache_app and self.channel_id is not None:
+            channel = self.cache_app.cache.get_guild_channel(self.channel_id)
+            assert isinstance(channel, channels.GuildVoiceChannel)
+            return channel
+
+        return None
+
+    def get_guild(self) -> typing.Optional[guilds.GatewayGuild]:
+        if self.cache_app:
+            return self.cache_app.cache.get_guild(self.guild_id)
+        return None
 
 
 @attr_extensions.with_copy
