@@ -29,6 +29,7 @@ __all__: typing.List[str] = ["EventFactoryImpl"]
 import datetime
 import typing
 
+from hikari import applications as application_models
 from hikari import channels as channel_models
 from hikari import emojis as emojis_models
 from hikari import guilds as guild_models
@@ -347,6 +348,33 @@ class EventFactoryImpl(event_factory.EventFactory):
     # INTERACTION EVENTS #
     ######################
 
+    def deserialize_command_create_event(
+        self,
+        shard: gateway_shard.GatewayShard,
+        payload: data_binding.JSONObject,
+    ) -> interaction_events.CommandCreateEvent:
+        return interaction_events.CommandCreateEvent(
+            app=self._app, shard=shard, command=self._app.entity_factory.deserialize_command(payload)
+        )
+
+    def deserialize_command_update_event(
+        self,
+        shard: gateway_shard.GatewayShard,
+        payload: data_binding.JSONObject,
+    ) -> interaction_events.CommandUpdateEvent:
+        return interaction_events.CommandUpdateEvent(
+            app=self._app, shard=shard, command=self._app.entity_factory.deserialize_command(payload)
+        )
+
+    def deserialize_command_delete_event(
+        self,
+        shard: gateway_shard.GatewayShard,
+        payload: data_binding.JSONObject,
+    ) -> interaction_events.CommandDeleteEvent:
+        return interaction_events.CommandDeleteEvent(
+            app=self._app, shard=shard, command=self._app.entity_factory.deserialize_command(payload)
+        )
+
     def deserialize_interaction_create_event(
         self,
         shard: typing.Optional[gateway_shard.GatewayShard],
@@ -643,6 +671,8 @@ class EventFactoryImpl(event_factory.EventFactory):
             session_id=session_id,
             my_user=my_user,
             unavailable_guilds=unavailable_guilds,
+            application_id=snowflakes.Snowflake(payload["application"]["id"]),
+            application_flags=application_models.ApplicationFlags(payload["application"]["flags"]),
         )
 
     def deserialize_connected_event(self, shard: gateway_shard.GatewayShard) -> shard_events.ShardConnectedEvent:

@@ -26,6 +26,7 @@ from __future__ import annotations
 
 __all__: typing.List[str] = [
     "Application",
+    "ApplicationFlags",
     "AuthorizationApplication",
     "AuthorizationInformation",
     "ConnectionVisibility",
@@ -59,6 +60,17 @@ if typing.TYPE_CHECKING:
     from hikari import channels
     from hikari import permissions as permissions_
     from hikari import traits
+
+
+@typing.final
+class ApplicationFlags(enums.Flag):
+    """The known application flag bits."""
+
+    GUILD_PRESENCES_INTENT = 1 << 13
+    """Denotes that the application has the GUILD_PRESENCES intent enabled."""
+
+    GUILD_MEMBERS_INTENT = 1 << 15
+    """Denotes that the application has the GUILD_MEMBERS intent enabled."""
 
 
 @typing.final
