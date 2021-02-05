@@ -253,7 +253,7 @@ class BotApp(traits.BotAware):
         if application is not None:
             application = snowflakes.Snowflake(application)
 
-        elif token is not None:
+        else:
             try:
                 application = applications.get_token_id(token)
 
@@ -291,7 +291,7 @@ class BotApp(traits.BotAware):
         self._voice = voice_impl.VoiceComponentImpl(self)
 
         # RESTful API.
-        self._rest = rest_impl.RESTClientImpl(  # noqa: S106,S107 - Possible hardcoded password: 'Bot'
+        self._rest = rest_impl.RESTClientImpl(
             application=application,
             connector_factory=rest_impl.BasicLazyCachedTCPConnectorFactory(self._http_settings),
             connector_owner=True,

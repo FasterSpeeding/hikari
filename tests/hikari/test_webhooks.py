@@ -59,7 +59,7 @@ class TestExecutableWebhook:
         )
 
         assert result is executable_webhook.app.rest.execute_webhook.return_value
-        executable_webhook.app.rest.execute_webhook(
+        executable_webhook.app.rest.execute_webhook.assert_awaited_once_with(
             webhook=executable_webhook.id,
             token=executable_webhook.token,
             content="coooo",
@@ -79,7 +79,7 @@ class TestExecutableWebhook:
         result = await executable_webhook.execute()
 
         assert result is executable_webhook.app.rest.execute_webhook.return_value
-        executable_webhook.app.rest.execute_webhook(
+        executable_webhook.app.rest.execute_webhook.assert_awaited_once_with(
             webhook=executable_webhook.id,
             token=executable_webhook.token,
             content=undefined.UNDEFINED,

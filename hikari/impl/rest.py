@@ -282,6 +282,7 @@ class RESTApp(traits.ExecutorAware):
     def acquire(
         self,
         token: typing.Optional[str] = None,
+        # TODO: can we be more smart about this default for token_type?
         token_type: typing.Union[str, applications.TokenType] = applications.TokenType.BEARER,
         *,
         application: typing.Optional[snowflakes.SnowflakeishOr[guilds.PartialApplication]] = None,
@@ -396,8 +397,8 @@ class RESTClientImpl(rest_api.RESTClient):
     """
 
     __slots__: typing.Sequence[str] = (
+        "_application_fetch_lock",
         "_application_id",
-        "_application_id_lock",
         "buckets",
         "global_rate_limit",
         "_client_session",
@@ -449,8 +450,8 @@ class RESTClientImpl(rest_api.RESTClient):
             except ValueError:
                 pass
 
+        self._application_fetch_lock = asyncio.Lock()
         self._application_id = application
-        self._application_id_lock = asyncio.Lock()
         self.buckets = buckets_.RESTBucketManager(max_rate_limit)
         # We've been told in DAPI that this is per token.
         self.global_rate_limit = rate_limits.ManualRateLimiter()
@@ -537,7 +538,7 @@ class RESTClientImpl(rest_api.RESTClient):
 
     @typing.final
     async def _fetch_application_id(self) -> snowflakes.Snowflake:
-        async with self._application_id_lock:
+        async with self._application_fetch_lock:
             if self._application_id is not None:
                 return self._application_id
 
