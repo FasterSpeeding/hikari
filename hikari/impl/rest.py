@@ -30,13 +30,16 @@ from __future__ import annotations
 
 __all__: typing.List[str] = [
     "BasicLazyCachedTCPConnectorFactory",
+    "ClientCredentialsStrategy",
     "RESTApp",
     "RESTClientImpl",
 ]
 
 import asyncio
+import base64
 import collections
 import contextlib
+import copy
 import datetime
 import http
 import logging
@@ -132,6 +135,75 @@ class BasicLazyCachedTCPConnectorFactory(rest_api.ConnectorFactory):
             self.connector = net.create_tcp_connector(self.http_settings)
 
         return self.connector
+
+
+class ClientCredentialsStrategy(rest_api.TokenStrategy):
+    """Strategy class for handling client credential OAuth2 authorization.
+
+    Other Parameters
+    ----------------
+    scopes : typing.Sequence[str]
+        The scopes to authorize for.
+    """
+
+    __slots__: typing.Sequence[str] = (
+        "_exception",
+        "_expire_at",
+        "_lock",
+        "_scopes",
+        "_token",
+    )
+
+    def __init__(
+        self,
+        *,
+        scopes: typing.Sequence[str] = ("applications.commands.update", "identify"),
+    ) -> None:
+        self._exception: typing.Optional[errors.ClientHTTPResponseError] = None
+        self._expire_at = 0.0
+        self._lock = asyncio.Lock()
+        self._scopes = scopes
+        self._token: typing.Optional[str] = None
+
+    @property
+    def _is_expired(self) -> bool:
+        return time.monotonic() >= self._expire_at
+
+    async def acquire(self, client: rest_api.RESTClient) -> str:
+        if self._token and not self._is_expired:
+            return self._token
+
+        async with self._lock:
+            if self._token and not self._is_expired:
+                return self._token
+
+            if self._exception:
+                # If we don't copy the exception then python keeps adding onto the stack each time it's raised.
+                raise copy.copy(self._exception) from None
+
+            try:
+                response = await client.authorize_client_credentials_token(scopes=self._scopes)
+
+            # TODO: can't merge this until RateLimitedError is removed
+            except errors.ClientHTTPResponseError as exc:
+                # If we don't copy the exception then python keeps adding onto the stack each time it's raised.
+                self._exception = copy.copy(exc)
+                raise
+
+            self._expire_at = time.monotonic() + response.expires_in.total_seconds() - 60
+            # TODO: fix str overloads on str enums
+            self._token = f"{applications.TokenType.BEARER.value} {response.access_token}"
+            return self._token
+
+    async def close(self) -> None:
+        return None
+
+    def invalidate(self, token: typing.Optional[str]) -> None:
+        if token is not None and token != self._token:
+            return
+
+        self._expire_at = 0.0
+        self._token = None
 
 
 class _RESTProvider(traits.RESTAware):
@@ -281,11 +353,12 @@ class RESTApp(traits.ExecutorAware):
 
     def acquire(
         self,
-        token: typing.Optional[str] = None,
+        token: typing.Union[str, rest_api.TokenStrategy, None] = None,
         # TODO: can we be more smart about this default for token_type?
         token_type: typing.Union[str, applications.TokenType] = applications.TokenType.BEARER,
         *,
         application: typing.Optional[snowflakes.SnowflakeishOr[guilds.PartialApplication]] = None,
+        client_secret: typing.Optional[str] = None,
     ) -> rest_api.RESTClient:
         loop = asyncio.get_running_loop()
 
@@ -307,6 +380,7 @@ class RESTApp(traits.ExecutorAware):
 
         rest_client = RESTClientImpl(
             application=application,
+            client_secret=client_secret,
             connector_factory=self._connector_factory,
             connector_owner=self._connector_owner,
             entity_factory=entity_factory,
@@ -400,6 +474,7 @@ class RESTClientImpl(rest_api.RESTClient):
         "_application_fetch_lock",
         "_application_id",
         "buckets",
+        "_client_authorization",
         "global_rate_limit",
         "_client_session",
         "_closed_event",
@@ -428,6 +503,7 @@ class RESTClientImpl(rest_api.RESTClient):
         self,
         *,
         application: typing.Optional[snowflakes.SnowflakeishOr[guilds.PartialApplication]],
+        client_secret: typing.Optional[str],
         connector_factory: rest_api.ConnectorFactory,
         connector_owner: bool,
         entity_factory: entity_factory_.EntityFactory,
@@ -435,15 +511,15 @@ class RESTClientImpl(rest_api.RESTClient):
         http_settings: config.HTTPSettings,
         max_rate_limit: float,
         proxy_settings: config.ProxySettings,
-        token: typing.Optional[str],
-        token_type: typing.Union[applications.TokenType, str],
+        token: typing.Union[str, None, rest_api.TokenStrategy],
+        token_type: typing.Union[applications.TokenType, str, None],
         rest_url: typing.Optional[str],
     ) -> None:
         # TODO: test coverage
         if application is not None:
             application = snowflakes.Snowflake(application)
 
-        elif token_type == applications.TokenType.BOT and token is not None:
+        elif token_type == applications.TokenType.BOT and isinstance(token, str):
             try:
                 application = applications.get_token_id(token)
 
@@ -453,6 +529,16 @@ class RESTClientImpl(rest_api.RESTClient):
         self._application_fetch_lock = asyncio.Lock()
         self._application_id = application
         self.buckets = buckets_.RESTBucketManager(max_rate_limit)
+
+        self._client_authorization: typing.Optional[str] = None
+        if client_secret and self._application_id:
+            # TODO: fix dunder method overload handling on enums
+            authorization = base64.b64encode(f"{int(self._application_id)}:{client_secret}".encode()).decode("utf-8")
+            self._client_authorization = f"{applications.TokenType.BASIC.value} {authorization}"
+
+        elif client_secret:
+            raise ValueError("Application must also be passed when client_secret is provided")
+
         # We've been told in DAPI that this is per token.
         self.global_rate_limit = rate_limits.ManualRateLimiter()
 
@@ -466,12 +552,16 @@ class RESTClientImpl(rest_api.RESTClient):
         self._proxy_settings = proxy_settings
         self._lock = asyncio.Lock()
 
-        if token is None:
-            full_token = None
-        else:
-            full_token = f"{token_type.title()} {token}"
+        self._token: typing.Union[str, rest_api.TokenStrategy, None]
+        if isinstance(token, str):
+            self._token = f"{token_type.title()} {token}" if token_type else token
 
-        self._token: typing.Optional[str] = full_token
+
+        elif isinstance(token, rest_api.TokenStrategy) and token_type:
+            raise ValueError("Token type should be handled by the token strategy")
+
+        else:
+            self._token = token
 
         self._rest_url = rest_url if rest_url is not None else urls.REST_API_URL
 
@@ -492,6 +582,8 @@ class RESTClientImpl(rest_api.RESTClient):
         self.global_rate_limit.close()
         self.buckets.close()
         self._closed_event.set()
+        if isinstance(self._token, rest_api.TokenStrategy):
+            await self._token.close()
         # We have to sleep to allow aiohttp time to close SSL transports...
         # https://github.com/aio-libs/aiohttp/issues/1925
         # https://docs.aiohttp.org/en/stable/client_advanced.html#graceful-shutdown
@@ -562,18 +654,32 @@ class RESTClientImpl(rest_api.RESTClient):
         json: typing.Union[data_binding.JSONObjectBuilder, data_binding.JSONArray, None] = None,
         reason: undefined.UndefinedOr[str] = undefined.UNDEFINED,
         no_auth: bool = False,
+        use_client_auth: bool = False,
     ) -> typing.Union[None, data_binding.JSONObject, data_binding.JSONArray]:
         # Make a ratelimit-protected HTTP request to a JSON endpoint and expect some form
         # of JSON response.
-
         if not self.buckets.is_started:
             self.buckets.start()
 
         headers = data_binding.StringMapBuilder()
         headers.setdefault(_USER_AGENT_HEADER, _HTTP_USER_AGENT)
 
-        if self._token is not None and not no_auth:
-            headers[_AUTHORIZATION_HEADER] = self._token
+        retried = False
+        token: typing.Optional[str] = None
+        if use_client_auth:
+            if not self._client_authorization:
+                # TODO: better error message
+                raise RuntimeError("Cannot make this request in a client that's missing the client ID and secret")
+
+            headers[_AUTHORIZATION_HEADER] = self._client_authorization
+
+        elif not no_auth:
+            if isinstance(self._token, str):
+                headers[_AUTHORIZATION_HEADER] = self._token
+
+            elif self._token is not None:
+                token = await self._token.acquire(self)
+                headers[_AUTHORIZATION_HEADER] = token
 
         headers.put(_X_AUDIT_LOG_REASON_HEADER, reason)
 
@@ -646,6 +752,15 @@ class RESTClientImpl(rest_api.RESTClient):
 
                     real_url = str(response.real_url)
                     raise errors.HTTPError(f"Expected JSON [{response.content_type=}, {real_url=}]")
+
+                can_retry = response.status == 401 and not (use_client_auth or no_auth or retried)
+                if can_retry and isinstance(self._token, rest_api.TokenStrategy):
+                    assert token is not None
+                    self._token.invalidate(token)
+                    token = await self._token.acquire(self)
+                    headers[_AUTHORIZATION_HEADER] = token
+                    retried = True
+                    continue
 
                 await self._handle_error_response(response)
 
@@ -1693,9 +1808,74 @@ class RESTClientImpl(rest_api.RESTClient):
         assert isinstance(response, dict)
         return self._entity_factory.deserialize_authorization_information(response)
 
+    async def authorize_client_credentials_token(
+        self,
+        scopes: typing.Sequence[typing.Union[applications.OAuth2Scope, str]],
+    ) -> applications.PartialOAuth2Token:
+        route = routes.POST_TOKEN.compile()
+        form = data_binding.URLEncodedForm()
+        form.add_field("grant_type", "client_credentials")
+        form.add_field("scope", " ".join(scopes))
+
+        response = await self._request(route, form=form, use_client_auth=True)
+        assert isinstance(response, dict)
+        return self._entity_factory.deserialize_partial_token(response)
+
+    async def authorize_access_token(
+        self,
+        code: str,
+        redirect_uri: str,
+        *,
+        scopes: undefined.UndefinedOr[
+            typing.Sequence[typing.Union[applications.OAuth2Scope, str]]
+        ] = undefined.UNDEFINED,
+    ) -> applications.OAuth2AuthorizationToken:
+        route = routes.POST_TOKEN.compile()
+        form = data_binding.URLEncodedForm()
+        form.add_field("grant_type", "authorization_code")
+        form.add_field("code", code)
+
+        if scopes is not undefined.UNDEFINED:
+            form.add_field("scope", " ".join(scopes))
+
+        form.add_field("redirect_uri", redirect_uri)
+
+        response = await self._request(route, form=form, use_client_auth=True)
+        assert isinstance(response, dict)
+        return self._entity_factory.deserialize_authorization_token(response)
+
+    async def refresh_access_token(
+        self,
+        refresh_token: str,
+        redirect_uri: str,
+        *,
+        scopes: undefined.UndefinedOr[
+            typing.Sequence[typing.Union[applications.OAuth2Scope, str]]
+        ] = undefined.UNDEFINED,
+    ) -> applications.OAuth2AuthorizationToken:
+        route = routes.POST_TOKEN.compile()
+        form = data_binding.URLEncodedForm()
+        form.add_field("grant_type", "refresh_token")
+        form.add_field("refresh_token", refresh_token)
+        form.add_field("redirect_uri", redirect_uri)
+
+        if scopes is not undefined.UNDEFINED:
+            form.add_field("scope", " ".join(scopes))
+
+
+        response = await self._request(route, form=form, use_client_auth=True)
+        assert isinstance(response, dict)
+        return self._entity_factory.deserialize_authorization_token(response)
+
+    async def revoke_access_token(self, token: str) -> None:
+        route = routes.POST_TOKEN_REVOKE.compile()
+        form = data_binding.URLEncodedForm()
+        form.add_field("token", token)
+        await self._request(route, form=form, use_client_auth=True)
+
     async def add_user_to_guild(
         self,
-        access_token: str,
+        access_token: typing.Union[str, applications.PartialOAuth2Token],
         guild: snowflakes.SnowflakeishOr[guilds.PartialGuild],
         user: snowflakes.SnowflakeishOr[users.PartialUser],
         *,
@@ -1706,7 +1886,7 @@ class RESTClientImpl(rest_api.RESTClient):
     ) -> typing.Optional[guilds.Member]:
         route = routes.PUT_GUILD_MEMBER.compile(guild=guild, user=user)
         body = data_binding.JSONObjectBuilder()
-        body.put("access_token", access_token)
+        body.put("access_token", access_token if isinstance(access_token, str) else access_token.access_token)
         body.put("nick", nick)
         body.put("mute", mute)
         body.put("deaf", deaf)

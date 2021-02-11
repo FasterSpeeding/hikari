@@ -240,6 +240,7 @@ class BotApp(traits.BotAware):
         allow_color: bool = True,
         application: typing.Optional[snowflakes.SnowflakeishOr[guilds.PartialApplication]] = None,
         banner: typing.Optional[str] = "hikari",
+        client_secret: typing.Optional[str] = None,
         executor: typing.Optional[concurrent.futures.Executor] = None,
         force_color: bool = False,
         cache_settings: typing.Optional[config.CacheSettings] = None,
@@ -293,6 +294,7 @@ class BotApp(traits.BotAware):
         # RESTful API.
         self._rest = rest_impl.RESTClientImpl(
             application=application,
+            client_secret=client_secret,
             connector_factory=rest_impl.BasicLazyCachedTCPConnectorFactory(self._http_settings),
             connector_owner=True,
             entity_factory=self._entity_factory,

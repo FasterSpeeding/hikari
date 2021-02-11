@@ -71,6 +71,7 @@ from hikari.files import Resourceish
 from hikari.guilds import *
 from hikari.impl.bot import BotApp
 from hikari.impl.interaction_server import InteractionServer
+from hikari.impl.rest import ClientCredentialsStrategy
 from hikari.impl.rest import RESTApp
 from hikari.impl.rest_bot import RESTBot
 from hikari.intents import *

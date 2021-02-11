@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-"""Application and entities related to discord's Oauth2 flow."""
+"""Application and entities related to discord's OAuth2 flow."""
 
 from __future__ import annotations
 
@@ -30,9 +30,12 @@ __all__: typing.List[str] = [
     "AuthorizationApplication",
     "AuthorizationInformation",
     "ConnectionVisibility",
+    "OAuth2AuthorizationToken",
+    "OAuth2ImplicitToken",
     "OAuth2Scope",
     "OwnConnection",
     "OwnGuild",
+    "PartialOAuth2Token",
     "Team",
     "TeamMember",
     "TeamMembershipState",
@@ -60,6 +63,7 @@ if typing.TYPE_CHECKING:
     from hikari import channels
     from hikari import permissions as permissions_
     from hikari import traits
+    from hikari import webhooks
 
 
 @typing.final
@@ -442,7 +446,7 @@ class Team(snowflakes.Unique):
 @attr_extensions.with_copy
 @attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
 class Application(guilds.PartialApplication):
-    """Represents the information of an Oauth2 Application."""
+    """Represents the information of an OAuth2 Application."""
 
     app: traits.RESTAware = attr.ib(repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True})
     """The client application that models may use for procedures."""
@@ -567,21 +571,51 @@ class AuthorizationInformation:
     expires_at: datetime.datetime = attr.ib(eq=True, hash=False, repr=True)
     """When the access token this data was retrieved with expires."""
 
-    scopes: typing.Sequence[str] = attr.ib(eq=True, hash=False, repr=True)
+    scopes: typing.Sequence[typing.Union[OAuth2Scope, str]] = attr.ib(eq=True, hash=False, repr=True)
     """A sequence of the scopes the current user has authorized the application for."""
 
     user: typing.Optional[users.User] = attr.ib(eq=True, hash=False, repr=True)
     """The user who has authorized this token if they included the `identify` scope."""
 
 
+@attr_extensions.with_copy
+@attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
+class PartialOAuth2Token:
+    access_token: str = attr.ib(eq=True, hash=True, repr=False)
+    token_type: typing.Union[TokenType, str] = attr.ib(eq=False, hash=False, repr=True)
+    expires_in: datetime.timedelta = attr.ib(eq=False, hash=False, repr=True)
+    scopes: typing.Sequence[typing.Union[OAuth2Scope, str]] = attr.ib(eq=False, hash=False, repr=True)
+
+
+@attr_extensions.with_copy
+@attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
+class OAuth2AuthorizationToken(PartialOAuth2Token):
+    refresh_token: int = attr.ib(eq=False, hash=False, repr=False)
+    webhook: typing.Optional[webhooks.Webhook] = attr.ib(eq=False, hash=False, repr=True)
+    guild: typing.Optional[guilds.RESTGuild] = attr.ib(eq=False, hash=False, repr=True)
+
+
+@attr_extensions.with_copy
+@attr.s(eq=True, hash=True, init=True, kw_only=True, slots=True, weakref_slot=False)
+class OAuth2ImplicitToken(PartialOAuth2Token):
+    state: typing.Optional[str] = attr.ib(eq=False, hash=False, repr=False)
+
+
+@typing.final
 class TokenType(str, enums.Enum):
     """Token types used within Hikari clients."""
 
     BOT = "Bot"
     """Bot token type."""
 
+    BASIC = "Basic"
+    """OAuth2 basic token type."""
+
     BEARER = "Bearer"
-    """Oauth2 bearer token type."""
+    """OAuth2 bearer token type."""
+
+    def __str__(self) -> str:
+        return "42"
 
 
 def get_token_id(token: str) -> snowflakes.Snowflake:

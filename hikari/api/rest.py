@@ -23,7 +23,7 @@
 """Provides an interface for REST API implementations to follow."""
 from __future__ import annotations
 
-__all__: typing.List[str] = ["ConnectorFactory", "RESTClient"]
+__all__: typing.List[str] = ["ConnectorFactory", "RESTClient", "TokenStrategy"]
 
 import abc
 import typing
@@ -70,6 +70,43 @@ class ConnectorFactory(abc.ABC):
     @abc.abstractmethod
     def acquire(self) -> aiohttp.BaseConnector:
         """Acquire the connector."""
+
+
+class TokenStrategy(abc.ABC):
+    """Interface of an object used for managing an OAuth2 access token."""
+
+    __slots__: typing.Sequence[str] = ()
+
+    @abc.abstractmethod
+    async def acquire(self, client: RESTClient) -> str:
+        """Acquire an authorization token (with the prefix).
+
+        Returns
+        -------
+        builtins.str
+            The current authorization token to use for this client and it's
+            prefix.
+        """
+
+    @abc.abstractmethod
+    async def close(self) -> None:
+        """Close this access token handler."""
+
+    def invalidate(self, token: typing.Optional[str]) -> None:
+        """Invalidate the cached token in this handler.
+
+        !!! note
+            `token` may be provided in-order to avoid newly generated tokens
+            from being invalidated due to multiple calls being made by separate
+            subroutines which handling the same token.
+
+        Parameters
+        ----------
+        token : typing.Optional[builtins.str]
+            The token to specifically invalidate. If provided then this will only
+            invalidate the cached token if it matches this, otherwise it'll be
+            invalidated regardless.
+        """
 
 
 class RESTClient(traits.NetworkSettingsAware, abc.ABC):
@@ -2649,11 +2686,47 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
             If an internal error occurs on Discord while handling the request.
         """
 
+    @abc.abstractmethod
+    async def authorize_client_credentials_token(
+        self,
+        # While according to the spec scopes are optional here, Discord requires that "valid" scopes are passed here.
+        scopes: typing.Sequence[typing.Union[applications.OAuth2Scope, str]],
+    ) -> applications.PartialOAuth2Token:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def authorize_access_token(
+        self,
+        code: str,
+        redirect_uri: str,
+        *,
+        scopes: undefined.UndefinedOr[
+            typing.Sequence[typing.Union[applications.OAuth2Scope, str]]
+        ] = undefined.UNDEFINED,
+    ) -> applications.OAuth2AuthorizationToken:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def refresh_access_token(
+        self,
+        refresh_token: str,
+        redirect_uri: str,
+        *,
+        scopes: undefined.UndefinedOr[
+            typing.Sequence[typing.Union[applications.OAuth2Scope, str]]
+        ] = undefined.UNDEFINED,
+    ) -> applications.OAuth2AuthorizationToken:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def revoke_access_token(self, token: str) -> None:
+        raise NotImplementedError
+
     # THIS IS AN OAUTH2 FLOW ONLY
     @abc.abstractmethod
     async def add_user_to_guild(
         self,
-        access_token: str,
+        access_token: typing.Union[str, applications.PartialOAuth2Token],
         guild: snowflakes.SnowflakeishOr[guilds.PartialGuild],
         user: snowflakes.SnowflakeishOr[users.PartialUser],
         *,
@@ -2666,10 +2739,14 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
 
         !!! note
             This requires the `access_token` to have the
-            `hikari.applications.OAuth2Scope.GUILDS_JOIN` scope enabled.
+            `hikari.applications.OAuth2Scope.GUILDS_JOIN` scope enabled along
+            with the authorization of a Bot which has `MANAGE_INVITES`
+            permission within the target guild.
 
         Parameters
         ----------
+        access_token : typing.Union[builtins.str, hikari.applications.PartialOAuth2Token]
+            Object or string of the access token to use for this request.
         guild : hikari.snowflakes.SnowflakeishOr[hikari.guilds.PartialGuild]
             The guild to add the user to. This may be the object
             or the ID of an existing guild.
