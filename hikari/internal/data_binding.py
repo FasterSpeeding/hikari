@@ -145,7 +145,7 @@ class StringMapBuilder(multidict.MultiDict[str]):
         value: undefined.UndefinedOr[typing.Any],
         /,
         *,
-        conversion: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
+        conversion: typing.Optional[typing.Callable[[typing.Any], Stringish]] = None,
     ) -> None:
         """Add a key and value to the string map.
 

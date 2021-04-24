@@ -43,30 +43,30 @@ class TestRESTBucket:
 
     @pytest.mark.parametrize("name", ["spaghetti", buckets.UNKNOWN_HASH])
     def test_is_unknown(self, name, compiled_route):
-        with buckets.RESTBucket(name, compiled_route) as rl:
-            assert rl.is_unknown is (name == buckets.UNKNOWN_HASH)
+        rl = buckets.RESTBucket(name, compiled_route)
+        assert rl.is_unknown is (name == buckets.UNKNOWN_HASH)
 
     def test_update_rate_limit(self, compiled_route):
-        with buckets.RESTBucket(__name__, compiled_route) as rl:
-            rl.remaining = 1
-            rl.limit = 2
-            rl.reset_at = 3
-            rl.period = 2
+        rl = buckets.RESTBucket(__name__, compiled_route)
+        rl.remaining = 1
+        rl.limit = 2
+        rl.reset_at = 3
+        rl.period = 2
 
-            with mock.patch.object(hikari_date, "monotonic", return_value=4.20):
-                rl.update_rate_limit(9, 18, 27)
+        with mock.patch.object(hikari_date, "monotonic", return_value=4.20):
+            rl.update_rate_limit(9, 18, 27)
 
-            assert rl.remaining == 9
-            assert rl.limit == 18
-            assert rl.reset_at == 27
-            assert rl.period == 27 - 4.20
+        assert rl.remaining == 9
+        assert rl.limit == 18
+        assert rl.reset_at == 27
+        assert rl.period == 27 - 4.20
 
     @pytest.mark.parametrize("name", ["spaghetti", buckets.UNKNOWN_HASH])
     def test_drip(self, name, compiled_route):
-        with buckets.RESTBucket(name, compiled_route) as rl:
-            rl.remaining = 1
-            rl.drip()
-            assert rl.remaining == 0 if name != buckets.UNKNOWN_HASH else 1
+        rl = buckets.RESTBucket(name, compiled_route)
+        rl.remaining = 1
+        rl.drip()
+        assert rl.remaining == 0 if name != buckets.UNKNOWN_HASH else 1
 
 
 class TestRESTBucketManager:

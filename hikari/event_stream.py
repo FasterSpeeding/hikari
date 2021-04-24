@@ -157,6 +157,7 @@ class EventStream(Streamer[EventT]):
     """
 
     __slots__ = (
+        "__weakref__",
         "_active",
         "_event_manager",
         "_event_type",

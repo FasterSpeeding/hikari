@@ -816,10 +816,8 @@ class RESTClientImpl(rest_api.RESTClient):
         # "remaining" header to be zeroed, or even negative as I don't trust that there
         # isn't some weird edge case here somewhere in Discord's implementation.
         # We can safely retry if this happens.
-        if remaining <= 0:
-            _LOGGER.warning(
-                "rate limited on bucket %s, maybe you are running more than one bot on this token?", bucket or "None"
-            )
+        if remaining <= 0 and bucket:
+            _LOGGER.warning("rate limited on bucket %s, maybe you are running more than one bot on this token?", bucket)
             raise self._RetryRequest
 
         if response.content_type != _APPLICATION_JSON:

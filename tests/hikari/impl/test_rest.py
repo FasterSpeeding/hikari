@@ -462,7 +462,7 @@ def rest_client(rest_client_class):
         entity_factory=mock.Mock(),
     )
     obj.buckets = mock.Mock()
-    obj.global_rate_limit = mock.Mock()
+    obj.global_rate_limit = mock.Mock(acquire=mock.AsyncMock())
     return obj
 
 
