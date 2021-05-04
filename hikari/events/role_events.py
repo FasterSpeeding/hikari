@@ -80,9 +80,6 @@ class RoleEvent(shard_events.ShardEvent, abc.ABC):
 class RoleCreateEvent(RoleEvent):
     """Event fired when a role is created."""
 
-    app: traits.RESTAware = attr.field(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
-
     shard: gateway_shard.GatewayShard = attr.field(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
 
@@ -94,6 +91,11 @@ class RoleCreateEvent(RoleEvent):
     hikari.guilds.Role
         The created role.
     """
+
+    @property
+    def app(self) -> traits.RESTAware:
+        # <<inherited docstring from Event>>.
+        return self.role.app
 
     @property
     def guild_id(self) -> snowflakes.Snowflake:
@@ -112,9 +114,6 @@ class RoleCreateEvent(RoleEvent):
 class RoleUpdateEvent(RoleEvent):
     """Event fired when a role is updated."""
 
-    app: traits.RESTAware = attr.field(metadata={attr_extensions.SKIP_DEEP_COPY: True})
-    # <<inherited docstring from Event>>.
-
     shard: gateway_shard.GatewayShard = attr.field(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>.
 
@@ -132,6 +131,11 @@ class RoleUpdateEvent(RoleEvent):
     hikari.guilds.Role
         The created role.
     """
+
+    @property
+    def app(self) -> traits.RESTAware:
+        # <<inherited docstring from Event>>.
+        return self.role.app
 
     @property
     def guild_id(self) -> snowflakes.Snowflake:
