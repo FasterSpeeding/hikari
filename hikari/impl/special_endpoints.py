@@ -517,7 +517,7 @@ class OwnGuildIterator(iterators.BufferedLazyIterator["applications.OwnGuild"]):
     async def _next_chunk(self) -> typing.Optional[typing.Generator[applications.OwnGuild, typing.Any, None]]:
         query = data_binding.StringMapBuilder()
         query.put("before" if self._newest_first else "after", self._first_id)
-        query.put("limit", 100)
+        query.put("limit", 200)
 
         chunk = await self._request_call(compiled_route=self._route, query=query)
         assert isinstance(chunk, list)
