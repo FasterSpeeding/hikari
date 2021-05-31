@@ -56,6 +56,22 @@ NO_RECURSIVE_THROW_ATTR: typing.Final[str] = "___norecursivethrow___"
 class Event(abc.ABC):
     """Base event type that all Hikari events should subclass."""
 
+    __subclasses: typing.ClassVar[typing.Set[typing.Type[Event]]]
+
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        # For convenience's sake we include a class in the set of it's subclasses.
+        # This also matches how issubclass(Foo, Foo) returns True
+        cls.__subclasses = {cls}
+
+        for parent_cls in cls.mro():
+            if parent_cls is not cls and issubclass(parent_cls, Event):
+                try:
+                    parent_cls.__subclasses.add(cls)
+                except AttributeError:
+                    # This should only ever apply to the base Event class
+                    parent_cls.__subclasses = {parent_cls, cls}
+
     @property
     @abc.abstractmethod
     def app(self) -> traits.RESTAware:
@@ -66,6 +82,10 @@ class Event(abc.ABC):
         hikari.traits.RESTAware
             The REST-aware app trait.
         """
+
+    @classmethod
+    def subclasses(cls) -> typing.Set[typing.Type[Event]]:
+        return cls.__subclass
 
 
 def get_required_intents_for(event_type: typing.Type[Event]) -> typing.Collection[intents.Intents]:

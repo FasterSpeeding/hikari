@@ -76,14 +76,6 @@ def _default_predicate(_: event_manager.EventT_inv) -> bool:
     return True
 
 
-def _get_mro(cls: typing.Type[base_events.Event]) -> typing.List[typing.Type[base_events.Event]]:
-    # We only need to iterate through the MRO until we hit Event, as
-    # anything after that is random garbage we don't care about, as they do
-    # not describe event types. This improves efficiency as well.
-    mro = cls.mro()
-    return mro[: mro.index(base_events.Event) + 1]
-
-
 _CACHE_RESOURCE_ATTRIBUTE = "__CACHE_RESOURCE__"
 _EVENT_TYPES_ATTRIBUTE = "__EVENT_TYPES__"
 
@@ -201,7 +193,7 @@ class EventManagerBase(event_manager.EventManager):
         except KeyError:
             self._listeners_non_poly[event_type] = [callback]  # type: ignore[list-item]
 
-        for cls in _get_mro(event_type):
+        for cls in event_type.subclasses():
             try:
                 self._listeners[cls].append(callback)  # type: ignore[arg-type]
             except KeyError:
@@ -265,7 +257,7 @@ class EventManagerBase(event_manager.EventManager):
             if not listeners:
                 del self._listeners_non_poly[event_type]
 
-            for cls in _get_mro(event_type):
+            for cls in event_type.subclasses():
                 if listeners := self._listeners.get(cls):
                     listeners.remove(callback)  # type: ignore[arg-type]
 
@@ -356,9 +348,9 @@ class EventManagerBase(event_manager.EventManager):
 
         future: asyncio.Future[event_manager.EventT_co] = asyncio.get_event_loop().create_future()
         pair = (predicate, future)
-        mro = _get_mro(event_type)
+        subclasses = event_type.subclasses()
 
-        for cls in mro:
+        for cls in subclasses:
             try:
                 self._waiters[cls].add(pair)  # type: ignore[arg-type]
             except KeyError:
@@ -367,7 +359,7 @@ class EventManagerBase(event_manager.EventManager):
         try:
             return await asyncio.wait_for(future, timeout=timeout)
         finally:
-            for cls in mro:
+            for cls in subclasses:
                 try:
                     self._waiters[cls].remove(pair)  # type: ignore[arg-type]
                 except KeyError:
