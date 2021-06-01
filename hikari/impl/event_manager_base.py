@@ -34,6 +34,7 @@ import warnings
 
 import attr
 
+from hikari import config
 from hikari import errors
 from hikari import event_stream
 from hikari import traits
@@ -45,7 +46,6 @@ from hikari.internal import data_binding
 from hikari.internal import reflect
 
 if typing.TYPE_CHECKING:
-    from hikari import config
     from hikari.api import shard as gateway_shard
 
 _LOGGER: typing.Final[logging.Logger] = logging.getLogger("hikari.event_manager")
@@ -82,7 +82,7 @@ _EVENT_TYPES_ATTRIBUTE = "__EVENT_TYPES__"
 
 def as_listener(
     event_types: typing.Union[typing.Type[base_events.Event], typing.Sequence[typing.Type[base_events.Event]]],
-    cache_resource: typing.Optional[config.CacheComponents] = None,
+    cache_resource: config.CacheComponents = config.CacheComponents.NONE,
     /,
 ) -> typing.Callable[[UnboundMethodT[EventManagerBaseT]], UnboundMethodT[EventManagerBaseT]]:
     """Add metadata to a listener method to indicate when it should be unmarshalled and dispatched."""
@@ -99,7 +99,7 @@ def as_listener(
 @attr.define()
 class _Consumer:
     callback: ConsumerT
-    cache: typing.Union[config.CacheComponents, None, undefined.UndefinedType]
+    cache: undefined.UndefinedOr[config.CacheComponents]
     event_types: undefined.UndefinedOr[typing.Sequence[typing.Type[base_events.Event]]]
 
 
@@ -120,20 +120,16 @@ class EventManagerBase(event_manager.EventManager):
         self._waiters: WaiterMapT[base_events.Event] = {}
 
         for name, member in inspect.getmembers(self):
-            if not name.startswith("on_"):
-                continue
+            if name.startswith("on_"):
+                member = typing.cast("MethodT", member)
+                cache_resource = getattr(member, _CACHE_RESOURCE_ATTRIBUTE, undefined.UNDEFINED)
+                event_types = getattr(member, _EVENT_TYPES_ATTRIBUTE, undefined.UNDEFINED)
 
-            member = typing.cast("MethodT", member)
-            cache_resource = getattr(member, _CACHE_RESOURCE_ATTRIBUTE, undefined.UNDEFINED)
-            event_types = getattr(member, _EVENT_TYPES_ATTRIBUTE, undefined.UNDEFINED)
-
-            cache_resource = typing.cast(
-                "typing.Union[config.CacheComponents, None, undefined.UndefinedType]", cache_resource
-            )
-            event_types = typing.cast(
-                "undefined.UndefinedOr[typing.Sequence[typing.Type[base_events.Event]]]", event_types
-            )
-            self._consumers[name[3:]] = _Consumer(member, cache_resource, event_types)
+                cache_resource = typing.cast("undefined.UndefinedOr[config.CacheComponents]", cache_resource)
+                event_types = typing.cast(
+                    "undefined.UndefinedOr[typing.Sequence[typing.Type[base_events.Event]]]", event_types
+                )
+                self._consumers[name[3:]] = _Consumer(member, cache_resource, event_types)
 
         base_events.Event.on_new_subclass(self._on_new_event_cls)
 
@@ -145,6 +141,9 @@ class EventManagerBase(event_manager.EventManager):
 
             if waiters := self._waiters.get(parent_cls):
                 self._waiters[event_type] = waiters.copy()
+
+    def _cache_enabled_for_any(self, components: config.CacheComponents, /) -> bool:
+        return bool(self._app.cache.settings.components & components)
 
     def _enabled_for(self, event_type: typing.Type[base_events.Event], /) -> bool:
         return event_type in self._listeners or event_type in self._waiters
@@ -164,12 +163,11 @@ class EventManagerBase(event_manager.EventManager):
 
             else:
                 # None here indicates that the function doesn't do any cache altering.
-                if consumer.cache is None:
+                if consumer.cache == config.CacheComponents.NONE:
                     return
 
                 # Whereas UNDEFINED indicates that it wasn't specified and we should therefore assume it does to be safe
-                components = self._app.cache.settings.components
-                if consumer.cache is not undefined.UNDEFINED and not components & consumer.cache:
+                if consumer.cache is not undefined.UNDEFINED and not self._cache_enabled_for_any(consumer.cache):
                     return
 
         asyncio.create_task(self._handle_dispatch(consumer.callback, shard, payload), name=f"dispatch {event_name}")
@@ -263,7 +261,6 @@ class EventManagerBase(event_manager.EventManager):
                 event_type.__module__,
                 event_type.__qualname__,
             )
-
             listeners.remove(callback)  # type: ignore[arg-type]
             if not listeners:
                 del self._listeners_non_poly[event_type]

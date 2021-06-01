@@ -146,18 +146,17 @@ class EventManagerImpl(event_manager_base.EventManagerBase):
     )
     async def on_guild_create(self, shard: gateway_shard.GatewayShard, payload: data_binding.JSONObject) -> None:
         """See https://discord.com/developers/docs/topics/gateway#guild-create for more info."""
-        cache_settings = self._cache.settings.components if self._cache else None
         event: typing.Optional[guild_events.GuildAvailableEvent] = None
 
         if not self._enabled_for(guild_events.GuildAvailableEvent):
             guild_definition = self._app.entity_factory.deserialize_gateway_guild(
                 payload,
-                include_channels=bool(cache_settings and cache_settings & config.CacheComponents.GUILD_CHANNELS),
-                include_emojis=bool(cache_settings and cache_settings & config.CacheComponents.EMOJIS),
-                include_members=bool(cache_settings and cache_settings & config.CacheComponents.MEMBERS),
-                include_presences=bool(cache_settings and cache_settings & config.CacheComponents.PRESENCES),
-                include_roles=bool(cache_settings and cache_settings & config.CacheComponents.ROLES),
-                include_voice_states=bool(cache_settings and cache_settings & config.CacheComponents.VOICE_STATES),
+                include_channels=self._cache_enabled_for_any(config.CacheComponents.GUILD_CHANNELS),
+                include_emojis=self._cache_enabled_for_any(config.CacheComponents.EMOJIS),
+                include_members=self._cache_enabled_for_any(config.CacheComponents.MEMBERS),
+                include_presences=self._cache_enabled_for_any(config.CacheComponents.PRESENCES),
+                include_roles=self._cache_enabled_for_any(config.CacheComponents.ROLES),
+                include_voice_states=self._cache_enabled_for_any(config.CacheComponents.VOICE_STATES),
             )
             guild = guild_definition.guild
             channels = guild_definition.channels
@@ -211,8 +210,8 @@ class EventManagerImpl(event_manager_base.EventManagerBase):
                 for voice_state in voice_states.values():
                     self._cache.set_voice_state(voice_state)
 
-        recv_chunks = self._enabled_for(shard_events.MemberChunkEvent) or (
-            cache_settings & config.CacheComponents.MEMBERS if cache_settings else False
+        recv_chunks = self._enabled_for(shard_events.MemberChunkEvent) or self._cache_enabled_for_any(
+            config.CacheComponents.MEMBERS
         )
         members_declared = self._app.intents & intents_.Intents.GUILD_MEMBERS
         presences_declared = self._app.intents & intents_.Intents.GUILD_PRESENCES
@@ -241,11 +240,10 @@ class EventManagerImpl(event_manager_base.EventManagerBase):
         """See https://discord.com/developers/docs/topics/gateway#guild-update for more info."""
         event: typing.Optional[guild_events.GuildUpdateEvent] = None
         if not self._enabled_for(guild_events.GuildUpdateEvent):
-            cache_settings = self._cache.settings.components if self._cache else None
             guild_definition = self._app.entity_factory.deserialize_gateway_guild(
                 payload,
-                include_emojis=bool(cache_settings and cache_settings & config.CacheComponents.EMOJIS),
-                include_roles=bool(cache_settings and cache_settings & config.CacheComponents.ROLES),
+                include_emojis=self._cache_enabled_for_any(config.CacheComponents.EMOJIS),
+                include_roles=self._cache_enabled_for_any(config.CacheComponents.ROLES),
             )
             guild = guild_definition.guild
             emojis = guild_definition.emojis
