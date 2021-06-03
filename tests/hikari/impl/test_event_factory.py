@@ -243,7 +243,6 @@ class TestEventFactoryImpl:
         mock_payload = object()
 
         event = event_factory.deserialize_guild_create_event(mock_shard, mock_payload)
-
         mock_app.entity_factory.deserialize_gateway_guild.assert_called_once_with(
             mock_payload,
             include_guild=True,
