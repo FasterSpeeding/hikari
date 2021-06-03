@@ -247,16 +247,21 @@ class TestEventFactoryImpl:
         assert isinstance(event, guild_events.GuildAvailableEvent)
         assert event.app is mock_app
         assert event.shard is mock_shard
-        assert event.guild is mock_app.entity_factory.deserialize_gateway_guild.return_value.guild.return_value
-        assert event.emojis is mock_app.entity_factory.deserialize_gateway_guild.return_value.emojis.return_value
-        assert event.roles is mock_app.entity_factory.deserialize_gateway_guild.return_value.roles.return_value
-        assert event.channels is mock_app.entity_factory.deserialize_gateway_guild.return_value.channels.return_value
-        assert event.members is mock_app.entity_factory.deserialize_gateway_guild.return_value.members.return_value
-        assert event.presences is mock_app.entity_factory.deserialize_gateway_guild.return_value.presences.return_value
-        assert (
-            event.voice_states
-            is mock_app.entity_factory.deserialize_gateway_guild.return_value.voice_states.return_value
-        )
+        guild_definition = mock_app.entity_factory.deserialize_gateway_guild.return_value
+        assert event.guild is guild_definition.guild.return_value
+        assert event.emojis is guild_definition.emojis.return_value
+        assert event.roles is guild_definition.roles.return_value
+        assert event.channels is guild_definition.channels.return_value
+        assert event.members is guild_definition.members.return_value
+        assert event.presences is guild_definition.presences.return_value
+        assert event.voice_states is guild_definition.voice_states.return_value
+        guild_definition.guild.assert_called_once_with()
+        guild_definition.emojis.assert_called_once_with()
+        guild_definition.roles.assert_called_once_with()
+        guild_definition.channels.assert_called_once_with()
+        guild_definition.members.assert_called_once_with()
+        guild_definition.presences.assert_called_once_with()
+        guild_definition.voice_states.assert_called_once_with()
 
     def test_deserialize_guild_update_event(self, event_factory, mock_app, mock_shard):
         mock_payload = object()
@@ -268,10 +273,14 @@ class TestEventFactoryImpl:
         assert isinstance(event, guild_events.GuildUpdateEvent)
         assert event.app is mock_app
         assert event.shard is mock_shard
-        assert event.guild is mock_app.entity_factory.deserialize_gateway_guild.return_value.guild.return_value
-        assert event.emojis is mock_app.entity_factory.deserialize_gateway_guild.return_value.emojis.return_value
-        assert event.roles is mock_app.entity_factory.deserialize_gateway_guild.return_value.roles.return_value
+        guild_definition = mock_app.entity_factory.deserialize_gateway_guild.return_value
+        assert event.guild is guild_definition.guild.return_value
+        assert event.emojis is guild_definition.emojis.return_value
+        assert event.roles is guild_definition.roles.return_value
         assert event.old_guild is mock_old_guild
+        guild_definition.guild.assert_called_once_with()
+        guild_definition.emojis.assert_called_once_with()
+        guild_definition.roles.assert_called_once_with()
 
     def test_deserialize_guild_leave_event(self, event_factory, mock_app, mock_shard):
         mock_payload = {"id": "43123123"}
