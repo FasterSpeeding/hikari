@@ -34,7 +34,6 @@ from hikari import traits
 from hikari import undefined
 
 if typing.TYPE_CHECKING:
-
     from hikari import applications
     from hikari import audit_logs
     from hikari import channels as channels_
@@ -4749,6 +4748,8 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
         message: snowflakes.SnowflakeishOr[messages_.PartialMessage],
         name: str,
         *,
+        # While there is a "default archive duration" setting this doesn't seem to effect this context
+        # Since it always defaults to 1440 minutes if auto_archive_duration is left undefined.
         auto_archive_duration: typing.Union[undefined.UndefinedType, int, datetime.timedelta] = datetime.timedelta(
             minutes=60
         ),
@@ -4763,6 +4764,8 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
         type: typing.Union[channels_.ChannelType, int],  # TODO: more specific type?
         name: str,
         *,
+        # While there is a "default archive duration" setting this doesn't seem to effect this context
+        # Since it always defaults to 1440 minutes if auto_archive_duration is left undefined.
         auto_archive_duration: typing.Union[undefined.UndefinedType, int, datetime.timedelta] = datetime.timedelta(
             minutes=60
         ),
