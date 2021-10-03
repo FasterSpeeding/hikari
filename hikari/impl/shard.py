@@ -97,7 +97,7 @@ _TOTAL_RATELIMIT: typing.Final[typing.Tuple[float, int]] = (60.0, 120)
 # ratelimit window).
 _CHUNKING_RATELIMIT: typing.Final[typing.Tuple[float, int]] = (60.0, 60)
 # Supported gateway version
-_VERSION: int = 8
+_VERSION: int = 9
 # Used to identify the end of a ZLIB payload
 _ZLIB_SUFFIX: typing.Final[bytes] = b"\x00\x00\xff\xff"
 # Close codes which don't invalidate the current session.
