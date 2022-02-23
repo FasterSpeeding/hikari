@@ -553,6 +553,12 @@ class GatewayShardImpl(shard.GatewayShard):
             raise RuntimeError("user_id was not known, this is probably a bug")
         return self._user_id
 
+    def user_id(self) -> snowflakes.Snowflake:
+        if not self._user_id:
+            raise RuntimeError("User ID not known yet")
+
+        return self._user_id
+
     def _get_ws(self) -> _GatewayTransport:
         if not self._ws:
             raise errors.ComponentStateConflictError("Shard is shutting down")

@@ -882,16 +882,29 @@ class TestGatewayShardImplAsync:
         client._total_rate_limit.close.assert_called_once_with()
         client._closed_event.wait.assert_awaited_once_with()
 
-    async def test_when__user_id_is_None(self, client):
+    async def test_get_user_id_when_user_id_is_None(self, client):
         client._handshake_completed = mock.Mock(wait=mock.AsyncMock())
         client._user_id = None
         with pytest.raises(RuntimeError):
             assert await client.get_user_id()
 
-    async def test_when__user_id_is_not_None(self, client):
+        client._handshake_completed.wait.assert_awaited_once_with()
+
+    async def test_get_user_id_when_user_id_is_not_None(self, client):
         client._handshake_completed = mock.Mock(wait=mock.AsyncMock())
         client._user_id = 123
         assert await client.get_user_id() == 123
+
+    async def test_user_id_when_user_id_is_None(self, client):
+        client._handshake_completed = mock.Mock(wait=mock.AsyncMock())
+        client._user_id = None
+        with pytest.raises(RuntimeError, match="User ID not known yet"):
+            assert client.user_id()
+
+    async def test_user_id_when_user_id_is_not_None(self, client):
+        client._handshake_completed = mock.Mock(wait=mock.AsyncMock())
+        client._user_id = 123
+        assert client.user_id() == 123
 
     async def test_join(self, client):
         client._check_if_alive = mock.Mock()
