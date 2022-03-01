@@ -555,7 +555,7 @@ class GatewayShardImpl(shard.GatewayShard):
 
     def user_id(self) -> snowflakes.Snowflake:
         if not self._user_id:
-            raise RuntimeError("User ID not known yet")
+            raise errors.ComponentStateConflictError("User ID not known yet")
 
         return self._user_id
 
