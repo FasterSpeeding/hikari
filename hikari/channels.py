@@ -1267,6 +1267,10 @@ class GuildCategory(PermissibleGuildChannel):
     """
 
     parent_id: None
+    """The ID of the parent channel the channel belongs to.
+
+    This is always `builtins.None` for categories.
+    """
 
 
 @attr.define(hash=True, kw_only=True, weakref_slot=False)
