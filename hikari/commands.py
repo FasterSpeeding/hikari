@@ -147,7 +147,7 @@ class CommandOption:
     """Whether this command option is required."""
 
     choices: typing.Optional[typing.Sequence[CommandChoice]] = attr.field(default=None, repr=False)
-    """A sequence of up to (and including) 25 choices for this command.
+    """A sequence of up to (and including) 25 choices for this option.
 
     This will be `builtins.None` if the input values for this option aren't
     limited to specific values or if it's a subcommand or subcommand-group type

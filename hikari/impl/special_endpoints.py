@@ -77,7 +77,6 @@ if typing.TYPE_CHECKING:
     from hikari import voices
     from hikari.api import entity_factory as entity_factory_
 
-    _T = typing.TypeVar("_T")
     _CommandBuilderT = typing.TypeVar("_CommandBuilderT", bound="CommandBuilder")
     _SlashCommandBuilderT = typing.TypeVar("_SlashCommandBuilderT", bound="SlashCommandBuilder")
     _InteractionMessageBuilderT = typing.TypeVar("_InteractionMessageBuilderT", bound="InteractionMessageBuilder")
@@ -86,17 +85,12 @@ if typing.TYPE_CHECKING:
         "_InteractionAutocompleteBuilderT", bound="InteractionAutocompleteBuilder"
     )
     _ActionRowBuilderT = typing.TypeVar("_ActionRowBuilderT", bound="ActionRowBuilder")
-    _ButtonBuilderT = typing.TypeVar("_ButtonBuilderT", bound="_ButtonBuilder[typing.Any]")
-    _SelectOptionBuilderT = typing.TypeVar("_SelectOptionBuilderT", bound="_SelectOptionBuilder[typing.Any]")
+    _ButtonBuilderT = typing.TypeVar("_ButtonBuilderT", bound="_ButtonBuilder")
+    _SelectOptionBuilderT = typing.TypeVar("_SelectOptionBuilderT", bound="_SelectOptionBuilder")
     _SelectMenuBuilderT = typing.TypeVar("_SelectMenuBuilderT", bound="SelectMenuBuilder[typing.Any]")
 
-    # Hack around used to avoid recursive generic types leading to type checker issues in builders
-    class _ContainerProto(typing.Protocol):
-        def add_component(self: _T, component: special_endpoints.ComponentBuilder, /) -> _T:
-            raise NotImplementedError
 
-
-_ContainerProtoT = typing.TypeVar("_ContainerProtoT", bound="_ContainerProto")
+_ParentT = typing.TypeVar("_ParentT")
 
 
 @typing.final
@@ -1044,8 +1038,7 @@ def _build_emoji(
 
 @attr_extensions.with_copy
 @attr.define(kw_only=True, weakref_slot=False)
-class _ButtonBuilder(special_endpoints.ButtonBuilder[_ContainerProtoT]):
-    _container: _ContainerProtoT = attr.field()
+class _ButtonBuilder(special_endpoints.ButtonBuilder):
     _style: typing.Union[int, messages.ButtonStyle] = attr.field()
     _custom_id: undefined.UndefinedOr[str] = attr.field(default=undefined.UNDEFINED)
     _url: undefined.UndefinedOr[str] = attr.field(default=undefined.UNDEFINED)
@@ -1090,10 +1083,6 @@ class _ButtonBuilder(special_endpoints.ButtonBuilder[_ContainerProtoT]):
         self._is_disabled = state
         return self
 
-    def add_to_container(self) -> _ContainerProtoT:
-        self._container.add_component(self)
-        return self._container
-
     def build(self) -> data_binding.JSONObject:
         data = data_binding.JSONObjectBuilder()
 
@@ -1115,7 +1104,7 @@ class _ButtonBuilder(special_endpoints.ButtonBuilder[_ContainerProtoT]):
 
 
 @attr.define(kw_only=True, weakref_slot=False)
-class LinkButtonBuilder(_ButtonBuilder[_ContainerProtoT], special_endpoints.LinkButtonBuilder[_ContainerProtoT]):
+class LinkButtonBuilder(_ButtonBuilder, special_endpoints.LinkButtonBuilder):
     """Builder class for link buttons."""
 
     _url: str = attr.field()
@@ -1126,9 +1115,7 @@ class LinkButtonBuilder(_ButtonBuilder[_ContainerProtoT], special_endpoints.Link
 
 
 @attr.define(kw_only=True, weakref_slot=False)
-class InteractiveButtonBuilder(
-    _ButtonBuilder[_ContainerProtoT], special_endpoints.InteractiveButtonBuilder[_ContainerProtoT]
-):
+class InteractiveButtonBuilder(_ButtonBuilder, special_endpoints.InteractiveButtonBuilder):
     """Builder class for interactive buttons."""
 
     _custom_id: str = attr.field()
@@ -1140,10 +1127,9 @@ class InteractiveButtonBuilder(
 
 @attr_extensions.with_copy
 @attr.define(kw_only=True, weakref_slot=False)
-class _SelectOptionBuilder(special_endpoints.SelectOptionBuilder["_SelectMenuBuilderT"]):
+class _SelectOptionBuilder(special_endpoints.SelectOptionBuilder):
     """Builder class for select menu options."""
 
-    _menu: _SelectMenuBuilderT = attr.field()
     _label: str = attr.field()
     _value: str = attr.field()
     _description: undefined.UndefinedOr[str] = attr.field(default=undefined.UNDEFINED)
@@ -1191,10 +1177,6 @@ class _SelectOptionBuilder(special_endpoints.SelectOptionBuilder["_SelectMenuBui
         self._is_default = state
         return self
 
-    def add_to_menu(self) -> _SelectMenuBuilderT:
-        self._menu.add_raw_option(self)
-        return self._menu
-
     def build(self) -> data_binding.JSONObject:
         data = data_binding.JSONObjectBuilder()
 
@@ -1214,17 +1196,20 @@ class _SelectOptionBuilder(special_endpoints.SelectOptionBuilder["_SelectMenuBui
 
 @attr_extensions.with_copy
 @attr.define(kw_only=True, weakref_slot=False)
-class SelectMenuBuilder(special_endpoints.SelectMenuBuilder[_ContainerProtoT]):
+class SelectMenuBuilder(special_endpoints.SelectMenuBuilder[_ParentT]):
     """Builder class for select menus."""
 
-    _container: _ContainerProtoT = attr.field()
+    _parent: _ParentT = attr.field()
     _custom_id: str = attr.field()
-    # Any has to be used here as we can't access Self type in this context
-    _options: typing.List[special_endpoints.SelectOptionBuilder[typing.Any]] = attr.field(factory=list)
+    _options: typing.List[special_endpoints.SelectOptionBuilder] = attr.field(factory=list)
     _placeholder: undefined.UndefinedOr[str] = attr.field(default=undefined.UNDEFINED)
     _min_values: int = attr.field(default=0)
     _max_values: int = attr.field(default=1)
     _is_disabled: bool = attr.field(default=False)
+
+    @property
+    def parent(self) -> _ParentT:
+        return self._parent
 
     @property
     def custom_id(self) -> str:
@@ -1236,8 +1221,8 @@ class SelectMenuBuilder(special_endpoints.SelectMenuBuilder[_ContainerProtoT]):
 
     @property
     def options(
-        self: _SelectMenuBuilderT,
-    ) -> typing.Sequence[special_endpoints.SelectOptionBuilder[_SelectMenuBuilderT]]:
+        self,
+    ) -> typing.Sequence[special_endpoints.SelectOptionBuilder]:
         return self._options.copy()
 
     @property
@@ -1253,12 +1238,31 @@ class SelectMenuBuilder(special_endpoints.SelectMenuBuilder[_ContainerProtoT]):
         return self._max_values
 
     def add_option(
-        self: _SelectMenuBuilderT, label: str, value: str, /
-    ) -> special_endpoints.SelectOptionBuilder[_SelectMenuBuilderT]:
-        return _SelectOptionBuilder(menu=self, label=label, value=value)
+        self: _SelectMenuBuilderT,
+        label: str,
+        value: str,
+        /,
+        *,
+        description: undefined.UndefinedOr[str],
+        default: bool = False,
+        emoji: typing.Union[snowflakes.Snowflakeish, emojis.Emoji, str, undefined.UndefinedType] = undefined.UNDEFINED,
+    ) -> _SelectMenuBuilderT:
+        emoji_id, emoji_name = _build_emoji(emoji)
+        self._options.append(
+            _SelectOptionBuilder(
+                label=label,
+                value=value,
+                description=description,
+                is_default=default,
+                emoji=emoji,
+                emoji_id=emoji_id,
+                emoji_name=emoji_name,
+            )
+        )
+        return self
 
     def add_raw_option(
-        self: _SelectMenuBuilderT, option: special_endpoints.SelectOptionBuilder[_SelectMenuBuilderT], /
+        self: _SelectMenuBuilderT, option: special_endpoints.SelectOptionBuilder, /
     ) -> _SelectMenuBuilderT:
         self._options.append(option)
         return self
@@ -1278,10 +1282,6 @@ class SelectMenuBuilder(special_endpoints.SelectMenuBuilder[_ContainerProtoT]):
     def set_max_values(self: _SelectMenuBuilderT, value: int, /) -> _SelectMenuBuilderT:
         self._max_values = value
         return self
-
-    def add_to_container(self) -> _ContainerProtoT:
-        self._container.add_component(self)
-        return self._container
 
     def build(self) -> data_binding.JSONObject:
         data = data_binding.JSONObjectBuilder()
@@ -1319,47 +1319,65 @@ class ActionRowBuilder(special_endpoints.ActionRowBuilder):
         self._components.append(component)
         return self
 
-    @typing.overload
-    def add_button(
-        self: _ActionRowBuilderT, style: messages.InteractiveButtonTypesT, custom_id: str, /
-    ) -> special_endpoints.InteractiveButtonBuilder[_ActionRowBuilderT]:
-        ...
-
-    @typing.overload
     def add_button(
         self: _ActionRowBuilderT,
-        style: typing.Literal[messages.ButtonStyle.LINK, 5],
-        url: str,
+        style: typing.Union[int, messages.ButtonStyle],
+        url_or_custom_id: str,
         /,
-    ) -> special_endpoints.LinkButtonBuilder[_ActionRowBuilderT]:
-        ...
-
-    @typing.overload
-    def add_button(
-        self: _ActionRowBuilderT, style: typing.Union[int, messages.ButtonStyle], url_or_custom_id: str, /
-    ) -> typing.Union[
-        special_endpoints.LinkButtonBuilder[_ActionRowBuilderT],
-        special_endpoints.InteractiveButtonBuilder[_ActionRowBuilderT],
-    ]:
-        ...
-
-    def add_button(
-        self: _ActionRowBuilderT, style: typing.Union[int, messages.ButtonStyle], url_or_custom_id: str, /
-    ) -> typing.Union[
-        special_endpoints.LinkButtonBuilder[_ActionRowBuilderT],
-        special_endpoints.InteractiveButtonBuilder[_ActionRowBuilderT],
-    ]:
+        *,
+        disabled: bool = False,
+        label: undefined.UndefinedOr[str] = undefined.UNDEFINED,
+        emoji: typing.Union[snowflakes.Snowflakeish, emojis.Emoji, str, undefined.UndefinedType] = undefined.UNDEFINED,
+    ) -> _ActionRowBuilderT:
         self._assert_can_add_type(messages.ComponentType.BUTTON)
+        emoji_id, emoji_name = _build_emoji(emoji)
         if style in messages.InteractiveButtonTypes:
-            return InteractiveButtonBuilder(container=self, style=style, custom_id=url_or_custom_id)
+            self.add_component(
+                InteractiveButtonBuilder(
+                    style=style,
+                    custom_id=url_or_custom_id,
+                    is_disabled=disabled,
+                    label=label,
+                    emoji_id=emoji_id,
+                    emoji_name=emoji_name,
+                    emoji=emoji,
+                )
+            )
 
-        return LinkButtonBuilder(container=self, style=style, url=url_or_custom_id)
+        else:
+            self.add_component(
+                LinkButtonBuilder(
+                    style=style,
+                    url=url_or_custom_id,
+                    is_disabled=disabled,
+                    label=label,
+                    emoji_id=emoji_id,
+                    emoji_name=emoji_name,
+                    emoji=emoji,
+                )
+            )
+
+        return self
 
     def add_select_menu(
-        self: _ActionRowBuilderT, custom_id: str, /
+        self: _ActionRowBuilderT,
+        custom_id: str,
+        /,
+        *,
+        max_value: int = 1,
+        min_values: int = 1,
+        placeholder: undefined.UndefinedOr[str] = undefined.UNDEFINED,
+        disabled: bool = False,
     ) -> special_endpoints.SelectMenuBuilder[_ActionRowBuilderT]:
         self._assert_can_add_type(messages.ComponentType.SELECT_MENU)
-        return SelectMenuBuilder(container=self, custom_id=custom_id)
+        return SelectMenuBuilder(
+            parent=self,
+            custom_id=custom_id,
+            max_values=max_value,
+            min_values=min_values,
+            placeholder=placeholder,
+            is_disabled=disabled,
+        )
 
     def build(self) -> data_binding.JSONObject:
         return {

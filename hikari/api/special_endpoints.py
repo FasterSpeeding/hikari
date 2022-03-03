@@ -69,8 +69,8 @@ if typing.TYPE_CHECKING:
 
     _T = typing.TypeVar("_T")
 
-_SelectMenuBuilderT = typing.TypeVar("_SelectMenuBuilderT", bound="SelectMenuBuilder[typing.Any]")
-_ContainerT = typing.TypeVar("_ContainerT")
+
+_ParentT = typing.TypeVar("_ParentT")
 
 
 class TypingIndicator(abc.ABC):
@@ -1088,7 +1088,7 @@ class ComponentBuilder(abc.ABC):
         """
 
 
-class ButtonBuilder(ComponentBuilder, abc.ABC, typing.Generic[_ContainerT]):
+class ButtonBuilder(ComponentBuilder, abc.ABC):
     """Builder class for a message button component."""
 
     __slots__: typing.Sequence[str] = ()
@@ -1195,20 +1195,8 @@ class ButtonBuilder(ComponentBuilder, abc.ABC, typing.Generic[_ContainerT]):
             The builder object to enable chained calls.
         """
 
-    @abc.abstractmethod
-    def add_to_container(self) -> _ContainerT:
-        """Add this button to the container component it belongs to.
 
-        This is used as the finalising call during chained calls.
-
-        Returns
-        -------
-        _ContainerT
-            The container component that owns this button.
-        """
-
-
-class LinkButtonBuilder(ButtonBuilder[_ContainerT], abc.ABC):
+class LinkButtonBuilder(ButtonBuilder, abc.ABC):
     """Builder interface for link buttons."""
 
     __slots__: typing.Sequence[str] = ()
@@ -1225,7 +1213,7 @@ class LinkButtonBuilder(ButtonBuilder[_ContainerT], abc.ABC):
         """
 
 
-class InteractiveButtonBuilder(ButtonBuilder[_ContainerT], abc.ABC):
+class InteractiveButtonBuilder(ButtonBuilder, abc.ABC):
     """Builder interface for interactive buttons."""
 
     __slots__: typing.Sequence[str] = ()
@@ -1242,7 +1230,7 @@ class InteractiveButtonBuilder(ButtonBuilder[_ContainerT], abc.ABC):
         """
 
 
-class SelectOptionBuilder(ComponentBuilder, abc.ABC, typing.Generic[_SelectMenuBuilderT]):
+class SelectOptionBuilder(ComponentBuilder, abc.ABC):
     """Builder class for select menu options."""
 
     __slots__: typing.Sequence[str] = ()
@@ -1354,23 +1342,16 @@ class SelectOptionBuilder(ComponentBuilder, abc.ABC, typing.Generic[_SelectMenuB
             The builder object to enable chained calls.
         """
 
-    @abc.abstractmethod
-    def add_to_menu(self) -> _SelectMenuBuilderT:
-        """Add this option to the menu component it belongs to.
 
-        This is used as the finalising call during chained calls.
-
-        Returns
-        -------
-        _SelectMenuBuilderT
-            The menu component that owns this button.
-        """
-
-
-class SelectMenuBuilder(ComponentBuilder, abc.ABC, typing.Generic[_ContainerT]):
+class SelectMenuBuilder(ComponentBuilder, abc.ABC, typing.Generic[_ParentT]):
     """Builder class for select menu options."""
 
     __slots__: typing.Sequence[str] = ()
+
+    @property
+    @abc.abstractmethod
+    def parent(self) -> _ParentT:
+        """Parent container this select menu belongs to."""
 
     @property
     @abc.abstractmethod
@@ -1399,12 +1380,12 @@ class SelectMenuBuilder(ComponentBuilder, abc.ABC, typing.Generic[_ContainerT]):
 
     @property
     @abc.abstractmethod
-    def options(self: _SelectMenuBuilderT) -> typing.Sequence[SelectOptionBuilder[_SelectMenuBuilderT]]:
+    def options(self) -> typing.Sequence[SelectOptionBuilder]:
         """Sequence of the options set for this select menu.
 
         Returns
         -------
-        typing.Sequence[SelectOptionBuilder[Self]]
+        typing.Sequence[SelectOptionBuilder]
             Sequence of the options set for this select menu.
         """
 
@@ -1450,7 +1431,16 @@ class SelectMenuBuilder(ComponentBuilder, abc.ABC, typing.Generic[_ContainerT]):
         """
 
     @abc.abstractmethod
-    def add_option(self: _SelectMenuBuilderT, label: str, value: str, /) -> SelectOptionBuilder[_SelectMenuBuilderT]:
+    def add_option(
+        self: _T,
+        label: str,
+        value: str,
+        /,
+        *,
+        description: undefined.UndefinedOr[str],
+        default: bool = False,
+        emoji: typing.Union[snowflakes.Snowflakeish, emojis.Emoji, str, undefined.UndefinedType] = undefined.UNDEFINED,
+    ) -> _T:
         """Add an option to this menu.
 
         Parameters
@@ -1460,11 +1450,22 @@ class SelectMenuBuilder(ComponentBuilder, abc.ABC, typing.Generic[_ContainerT]):
         value : builtins.str
             The developer defined value of this option, max 100 characters.
 
+        Other Parameters
+        ----------------
+        description : builtins.str
+            The description of the option, max 100 characters.
+        default : builtins.bool
+            Whether this option should be marked as selected by default.
+
+            Defaults to `builtins.False`.
+        emoji : typing.Union[hikari.snowflakes.Snowflakeish, hikari.emojis.Emoji, builtins.str, hikari.undefined.UndefinedType]
+            Object or ID or raw string of the emoji which should be displayed
+            on this option if set.
+
         Returns
         -------
-        SelectOptionBuilder[Self]
-            Option builder object.
-            This should be finalised by calling `SelectOptionBuilder.add_to_menu`.
+        SelectMenuBuilder
+            The select menu builder to enable chained calls.
         """
 
     @abc.abstractmethod
@@ -1538,16 +1539,6 @@ class SelectMenuBuilder(ComponentBuilder, abc.ABC, typing.Generic[_ContainerT]):
             The builder object to enable chained calls.
         """
 
-    @abc.abstractmethod
-    def add_to_container(self) -> _ContainerT:
-        """Finalise this builder by adding it to its parent container component.
-
-        Returns
-        -------
-        _ContainerT
-            The parent container component builder.
-        """
-
 
 class ActionRowBuilder(ComponentBuilder, abc.ABC):
     """Builder class for action row components."""
@@ -1566,17 +1557,13 @@ class ActionRowBuilder(ComponentBuilder, abc.ABC):
         """
 
     @abc.abstractmethod
-    def add_component(
-        self: _T,
-        component: ComponentBuilder,
-        /,
-    ) -> _T:
+    def add_component(self: _T, component: ComponentBuilder, /) -> _T:
         """Add a component to this action row builder.
 
         !!! warning
             It is generally better to use `ActionRowBuilder.add_button`
             and `ActionRowBuilder.add_select_menu` to add your
-            component to the builder. Those methods utilize this one.
+            component to the builder.
 
         Parameters
         ----------
@@ -1589,29 +1576,17 @@ class ActionRowBuilder(ComponentBuilder, abc.ABC):
             The builder object to enable chained calls.
         """
 
-    @typing.overload
     @abc.abstractmethod
     def add_button(
-        self: _T, style: messages.InteractiveButtonTypesT, custom_id: str, /
-    ) -> InteractiveButtonBuilder[_T]:
-        ...
-
-    @typing.overload
-    @abc.abstractmethod
-    def add_button(self: _T, style: typing.Literal[messages.ButtonStyle.LINK, 5], url: str, /) -> LinkButtonBuilder[_T]:
-        ...
-
-    @typing.overload
-    @abc.abstractmethod
-    def add_button(
-        self: _T, style: typing.Union[int, messages.ButtonStyle], url_or_custom_id: str, /
-    ) -> typing.Union[LinkButtonBuilder[_T], InteractiveButtonBuilder[_T]]:
-        ...
-
-    @abc.abstractmethod
-    def add_button(
-        self: _T, style: typing.Union[int, messages.ButtonStyle], url_or_custom_id: str, /
-    ) -> typing.Union[LinkButtonBuilder[_T], InteractiveButtonBuilder[_T]]:
+        self: _T,
+        style: typing.Union[int, messages.ButtonStyle],
+        url_or_custom_id: str,
+        /,
+        *,
+        disabled: bool = False,
+        label: undefined.UndefinedOr[str] = undefined.UNDEFINED,
+        emoji: typing.Union[snowflakes.Snowflakeish, emojis.Emoji, str, undefined.UndefinedType] = undefined.UNDEFINED,
+    ) -> _T:
         """Add a button component to this action row builder.
 
         Parameters
@@ -1625,16 +1600,37 @@ class ActionRowBuilder(ComponentBuilder, abc.ABC):
             For Link button styles this is the URL the link button should redirect
             to.
 
+        Other Parameters
+        ----------------
+        disabled : bool
+            Whether this button should be disabled.
+
+            Defaults to `False`.
+        label : hikari.undefined.UndefinedOr[builtins.str]
+            The text label to show on this button.
+
+            This may be up to 80 characters long.
+        emoji : typing.Union[hikari.snowflakes.Snowflakeish, hikari.emojis.Emoji, builtins.str, hikari.undefined.UndefinedType]
+            Object, ID or raw string of the emoji which should be displayed on
+            this button.
+
         Returns
         -------
-        typing.Union[LinkButtonBuilder[Self], InteractiveButtonBuilder[Self]]
-            Button builder object.
-            `ButtonBuilder.add_to_container` should be called to finalise the
-            button.
+        ActionRowBuilder
+            The action row builder to enable chained calls.
         """
 
     @abc.abstractmethod
-    def add_select_menu(self: _T, custom_id: str, /) -> SelectMenuBuilder[_T]:
+    def add_select_menu(
+        self: _T,
+        custom_id: str,
+        /,
+        *,
+        max_value: int = 1,
+        min_values: int = 1,
+        placeholder: undefined.UndefinedOr[str] = undefined.UNDEFINED,
+        disabled: bool = False,
+    ) -> SelectMenuBuilder[_T]:
         """Add a select menu component to this action row builder.
 
         Parameters
@@ -1643,10 +1639,32 @@ class ActionRowBuilder(ComponentBuilder, abc.ABC):
             A developer-defined custom identifier used to identify which menu
             triggered component interactions.
 
+        Other Parameters
+        ----------------
+        max_values : builtins.int
+            The maximum amount of options which can be selected for this menu.
+
+            This defaults to 1 if not set and must be less than or equal to 25
+            and greater than or equal to `SelectMenuBuilder.min_values`.
+        min_values : builtins.int
+            The minimum amount of options which need to be selected for this menu.
+
+            This defaults to 1 if not set and must be greater than or equal to 0
+            and less than or equal to `SelectMenuBuilder.max_values`.
+        placeholder : hikari.undefined.UndefinedOr[builtins.str]
+            Placeholder text to be displayed when no option is selected.
+            Max 100 characters.
+        disabled : builtins.bool
+            Whether this option is disabled.
+
+            Defaults to `builtins.False`.
+
         Returns
         -------
-        SelectMenuBuilder[Self]
-            Select menu builder object.
-            `SelectMenuBuilder.add_to_container` should be called to finalise the
-            button.
+        SelectMenuBuilder
+            The select menu builder to let you add options to it
+            using `SelectMenuBuilder.add_option`.
+
+            `SelectMenuBuilder.parent` may be used to return to this row builder
+            during chained calls.
         """
