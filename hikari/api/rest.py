@@ -4835,6 +4835,7 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
         channel: snowflakes.SnowflakeishOr[channels_.PermissibleGuildChannel],
         message: snowflakes.SnowflakeishOr[messages_.PartialMessage],
         name: str,
+        /,
         *,
         # While there is a "default archive duration" setting this doesn't seem to effect this context
         # since it always defaults to 1440 minutes if auto_archive_duration is left undefined.
@@ -4905,6 +4906,7 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
         channel: snowflakes.SnowflakeishOr[channels_.PermissibleGuildChannel],
         type: typing.Union[channels_.ChannelType, int],
         name: str,
+        /,
         *,
         # While there is a "default archive duration" setting this doesn't seem to effect this context
         # since it always defaults to 1440 minutes if auto_archive_duration is left undefined.
@@ -4973,7 +4975,7 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
         """
 
     @abc.abstractmethod
-    async def join_thread(self, channel: snowflakes.SnowflakeishOr[channels_.GuildTextChannel]) -> None:
+    async def join_thread(self, channel: snowflakes.SnowflakeishOr[channels_.GuildTextChannel], /) -> None:
         """Join a thread channel.
 
         Parameters
@@ -5011,6 +5013,7 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
         self,
         channel: snowflakes.SnowflakeishOr[channels_.GuildThreadChannel],
         user: snowflakes.SnowflakeishOr[users.PartialUser],
+        /,
     ) -> None:
         """Add a user to a thread channel.
 
@@ -5047,7 +5050,7 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
         """
 
     @abc.abstractmethod
-    async def leave_thread(self, channel: snowflakes.SnowflakeishOr[channels_.GuildThreadChannel]) -> None:
+    async def leave_thread(self, channel: snowflakes.SnowflakeishOr[channels_.GuildThreadChannel], /) -> None:
         """Leave a thread channel.
 
         Parameters
@@ -5083,6 +5086,7 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
         self,
         channel: snowflakes.SnowflakeishOr[channels_.GuildThreadChannel],
         user: snowflakes.SnowflakeishOr[users.PartialUser],
+        /,
     ) -> None:
         """Remove a user from a thread.
 
@@ -5123,6 +5127,7 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
         self,
         channel: snowflakes.SnowflakeishOr[channels_.GuildThreadChannel],
         user: snowflakes.SnowflakeishOr[users.PartialUser],
+        /,
     ) -> channels_.ThreadMember:
         """Fetch a thread member.
 
@@ -5165,7 +5170,7 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
 
     @abc.abstractmethod
     async def fetch_thread_members(
-        self, channel: snowflakes.SnowflakeishOr[channels_.GuildThreadChannel]
+        self, channel: snowflakes.SnowflakeishOr[channels_.GuildThreadChannel], /
     ) -> typing.Sequence[channels_.ThreadMember]:
         """Fetch a thread's members.
 
@@ -5206,7 +5211,7 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
 
     @abc.abstractmethod
     async def fetch_active_threads(
-        self, guild: snowflakes.SnowflakeishOr[guilds.Guild]
+        self, guild: snowflakes.SnowflakeishOr[guilds.Guild], /
     ) -> typing.Sequence[channels_.GuildThreadChannel]:
         """Fetch a guild's active threads.
 
@@ -5249,6 +5254,7 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
     def fetch_public_archived_threads(
         self,
         channel: snowflakes.SnowflakeishOr[channels_.PermissibleGuildChannel],
+        /,
         *,
         before: undefined.UndefinedOr[datetime.datetime] = undefined.UNDEFINED,
     ) -> iterators.LazyIterator[typing.Union[channels_.GuildNewsThread, channels_.GuildPublicThread]]:
@@ -5308,6 +5314,7 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
     def fetch_private_archived_threads(
         self,
         channel: snowflakes.SnowflakeishOr[channels_.PermissibleGuildChannel],
+        /,
         *,
         before: undefined.UndefinedOr[datetime.datetime] = undefined.UNDEFINED,
     ) -> iterators.LazyIterator[channels_.GuildPrivateThread]:
@@ -5367,6 +5374,7 @@ class RESTClient(traits.NetworkSettingsAware, abc.ABC):
     def fetch_joined_private_archived_threads(
         self,
         channel: snowflakes.SnowflakeishOr[channels_.PermissibleGuildChannel],
+        /,
         *,
         before: undefined.UndefinedOr[
             snowflakes.SearchableSnowflakeishOr[channels_.GuildThreadChannel]
