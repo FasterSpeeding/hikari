@@ -81,6 +81,7 @@ def guild_text_channel_payload(permission_overwrite_payload):
         "last_message_id": "123456",
         "last_pin_timestamp": "2020-05-27T15:58:51.545252+00:00",
         "parent_id": "987",
+        "default_auto_archive_duration": 10080,
     }
 
 
@@ -117,6 +118,95 @@ def guild_news_channel_payload(permission_overwrite_payload):
         "last_message_id": "456",
         "parent_id": "654",
         "last_pin_timestamp": "2020-05-27T15:58:51.545252+00:00",
+        "default_auto_archive_duration": 4320,
+    }
+
+
+@pytest.fixture()
+def thread_member_payload() -> typing.Dict[str, typing.Any]:
+    return {
+        "id": "123321",
+        "user_id": "494949494",
+        "join_timestamp": "2022-02-28T01:49:03.599821+00:00",
+        "flags": 696969,
+        "mute_config": None,
+        "muted": False,
+    }
+
+
+@pytest.fixture()
+def guild_news_thread_payload(thread_member_payload: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
+    return {
+        "id": "946900871160164393",
+        "guild_id": "574921006817476608",
+        "parent_id": "881729820747268137",
+        "owner_id": "115590097100865541",
+        "type": 10,
+        "name": "meow",
+        "last_message_id": "947692646883803166",
+        "thread_metadata": {
+            "archived": True,
+            "archive_timestamp": "2022-02-28T03:15:04.379000+00:00",
+            "auto_archive_duration": 10080,
+            "locked": False,
+            "create_timestamp": "2022-02-28T03:12:04.379000+00:00",
+        },
+        "message_count": 1,
+        "member_count": 3,
+        "rate_limit_per_user": 53,
+        "flags": 0,
+        "member": thread_member_payload,
+    }
+
+
+@pytest.fixture()
+def guild_public_thread_payload(thread_member_payload: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
+    return {
+        "id": "947643783913308301",
+        "guild_id": "574921006817476608",
+        "parent_id": "744183190998089820",
+        "owner_id": "115590097100865541",
+        "type": 11,
+        "name": "e",
+        "last_message_id": "947690877000753252",
+        "thread_metadata": {
+            "archived": False,
+            "archive_timestamp": "2022-02-28T03:05:10.529000+00:00",
+            "auto_archive_duration": 1440,
+            "locked": False,
+            "create_timestamp": "2022-02-28T03:05:09.529000+00:00",
+        },
+        "message_count": 1,
+        "member_count": 3,
+        "rate_limit_per_user": 23,
+        "flags": 0,
+        "member": thread_member_payload,
+    }
+
+
+@pytest.fixture()
+def guild_private_thread_payload(thread_member_payload: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
+    return {
+        "id": "947690637610844210",
+        "guild_id": "574921006817476608",
+        "parent_id": "744183190998089820",
+        "owner_id": "115590097100865541",
+        "type": 12,
+        "name": "ea",
+        "last_message_id": "947690683144237128",
+        "thread_metadata": {
+            "archived": False,
+            "archive_timestamp": "2022-02-28T03:04:56.247000+00:00",
+            "auto_archive_duration": 4320,
+            "locked": False,
+            "create_timestamp": "2022-02-28T03:04:15.247000+00:00",
+            "invitable": True,
+        },
+        "message_count": 2,
+        "member_count": 3,
+        "rate_limit_per_user": 0,
+        "flags": 0,
+        "member": thread_member_payload,
     }
 
 
@@ -288,7 +378,9 @@ class TestGatewayGuildDefinition:
         return hikari_test_helpers.mock_class_namespace(entity_factory.EntityFactoryImpl, slots_=False)(mock_app)
 
     def test_id_property(self, entity_factory_impl):
-        guild_definition = entity_factory_impl.deserialize_gateway_guild({"id": "123123451234"})
+        guild_definition = entity_factory_impl.deserialize_gateway_guild(
+            {"id": "123123451234"}, user_id=snowflakes.Snowflake(43123)
+        )
 
         assert guild_definition.id == 123123451234
 
@@ -299,7 +391,8 @@ class TestGatewayGuildDefinition:
             {
                 "id": "265828729970753537",
                 "channels": [guild_text_channel_payload, guild_voice_channel_payload, guild_news_channel_payload],
-            }
+            },
+            user_id=snowflakes.Snowflake(43123),
         )
 
         assert guild_definition.channels() == {
@@ -315,7 +408,9 @@ class TestGatewayGuildDefinition:
         }
 
     def test_channels_returns_cached_values(self, entity_factory_impl):
-        guild_definition = entity_factory_impl.deserialize_gateway_guild({"id": "265828729970753537"})
+        guild_definition = entity_factory_impl.deserialize_gateway_guild(
+            {"id": "265828729970753537"}, user_id=snowflakes.Snowflake(43123)
+        )
         mock_channel = object()
         guild_definition._channels = {"123321": mock_channel}
         entity_factory_impl.deserialize_guild_text_channel = mock.Mock()
@@ -330,14 +425,14 @@ class TestGatewayGuildDefinition:
 
     def test_channels_ignores_unrecognised_channels(self, entity_factory_impl):
         guild_definition = entity_factory_impl.deserialize_gateway_guild(
-            {"id": "9494949", "channels": [{"id": 123, "type": 1000}]}
+            {"id": "9494949", "channels": [{"id": 123, "type": 1000}]}, user_id=snowflakes.Snowflake(43123)
         )
 
         assert guild_definition.channels() == {}
 
     def test_emojis(self, entity_factory_impl, known_custom_emoji_payload):
         guild_definition = entity_factory_impl.deserialize_gateway_guild(
-            {"id": "265828729970753537", "emojis": [known_custom_emoji_payload]},
+            {"id": "265828729970753537", "emojis": [known_custom_emoji_payload]}, user_id=snowflakes.Snowflake(43123)
         )
 
         assert guild_definition.emojis() == {
@@ -349,7 +444,9 @@ class TestGatewayGuildDefinition:
     def test_emojis_returns_cached_values(self, entity_factory_impl):
         mock_emoji = object()
         entity_factory_impl.deserialize_known_custom_emoji = mock.Mock()
-        guild_definition = entity_factory_impl.deserialize_gateway_guild({"id": "265828729970753537"})
+        guild_definition = entity_factory_impl.deserialize_gateway_guild(
+            {"id": "265828729970753537"}, user_id=snowflakes.Snowflake(43123)
+        )
         guild_definition._emojis = {"21323232": mock_emoji}
 
         assert guild_definition.emojis() == {"21323232": mock_emoji}
@@ -395,7 +492,8 @@ class TestGatewayGuildDefinition:
                 "widget_channel_id": "9439394949",
                 "widget_enabled": True,
                 "nsfw_level": 0,
-            }
+            },
+            user_id=snowflakes.Snowflake(43123),
         )
 
         guild = guild_definition.guild()
@@ -467,6 +565,7 @@ class TestGatewayGuildDefinition:
                 "verification_level": 4,
                 "nsfw_level": 0,
             },
+            user_id=snowflakes.Snowflake(43123),
         )
         guild = guild_definition.guild()
         assert guild.joined_at is None
@@ -524,6 +623,7 @@ class TestGatewayGuildDefinition:
                 "widget_enabled": True,
                 "nsfw_level": 0,
             },
+            user_id=snowflakes.Snowflake(43123),
         )
         guild = guild_definition.guild()
         assert guild.icon_hash is None
@@ -543,7 +643,9 @@ class TestGatewayGuildDefinition:
     def test_guild_returns_cached_values(self, entity_factory_impl):
         mock_guild = object()
         entity_factory_impl.set_guild_attributes = mock.Mock()
-        guild_definition = entity_factory_impl.deserialize_gateway_guild({"id": "9393939"})
+        guild_definition = entity_factory_impl.deserialize_gateway_guild(
+            {"id": "9393939"}, user_id=snowflakes.Snowflake(43123)
+        )
         guild_definition._guild = mock_guild
 
         assert guild_definition.guild() is mock_guild
@@ -552,7 +654,7 @@ class TestGatewayGuildDefinition:
 
     def test_members(self, entity_factory_impl, member_payload):
         guild_definition = entity_factory_impl.deserialize_gateway_guild(
-            {"id": "265828729970753537", "members": [member_payload]}
+            {"id": "265828729970753537", "members": [member_payload]}, user_id=snowflakes.Snowflake(43123)
         )
 
         assert guild_definition.members() == {
@@ -564,7 +666,9 @@ class TestGatewayGuildDefinition:
     def test_members_returns_cached_values(self, entity_factory_impl):
         mock_member = object()
         entity_factory_impl.deserialize_member = mock.Mock()
-        guild_definition = entity_factory_impl.deserialize_gateway_guild({"id": "92929292"})
+        guild_definition = entity_factory_impl.deserialize_gateway_guild(
+            {"id": "92929292"}, user_id=snowflakes.Snowflake(43123)
+        )
         guild_definition._members = {"93939393": mock_member}
 
         assert guild_definition.members() == {"93939393": mock_member}
@@ -573,7 +677,7 @@ class TestGatewayGuildDefinition:
 
     def test_presences(self, entity_factory_impl, member_presence_payload):
         guild_definition = entity_factory_impl.deserialize_gateway_guild(
-            {"id": "265828729970753537", "presences": [member_presence_payload]}
+            {"id": "265828729970753537", "presences": [member_presence_payload]}, user_id=snowflakes.Snowflake(43123)
         )
 
         assert guild_definition.presences() == {
@@ -585,7 +689,9 @@ class TestGatewayGuildDefinition:
     def test_presences_returns_cached_values(self, entity_factory_impl):
         mock_presence = object()
         entity_factory_impl.deserialize_member_presence = mock.Mock()
-        guild_definition = entity_factory_impl.deserialize_gateway_guild({"id": "29292992"})
+        guild_definition = entity_factory_impl.deserialize_gateway_guild(
+            {"id": "29292992"}, user_id=snowflakes.Snowflake(43123)
+        )
         guild_definition._presences = {"3939393993": mock_presence}
 
         assert guild_definition.presences() == {"3939393993": mock_presence}
@@ -594,7 +700,7 @@ class TestGatewayGuildDefinition:
 
     def test_roles(self, entity_factory_impl, guild_role_payload):
         guild_definition = entity_factory_impl.deserialize_gateway_guild(
-            {"id": "265828729970753537", "roles": [guild_role_payload]}
+            {"id": "265828729970753537", "roles": [guild_role_payload]}, user_id=snowflakes.Snowflake(43123)
         )
 
         assert guild_definition.roles() == {
@@ -606,16 +712,75 @@ class TestGatewayGuildDefinition:
     def test_roles_returns_cached_values(self, entity_factory_impl):
         mock_role = object()
         entity_factory_impl.deserialize_role = mock.Mock()
-        guild_definition = entity_factory_impl.deserialize_gateway_guild({"id": "9292929"})
+        guild_definition = entity_factory_impl.deserialize_gateway_guild(
+            {"id": "9292929"}, user_id=snowflakes.Snowflake(43123)
+        )
         guild_definition._roles = {"32132123123": mock_role}
 
         assert guild_definition.roles() == {"32132123123": mock_role}
 
         entity_factory_impl.deserialize_role.assert_not_called()
 
+    def test_threads(
+        self,
+        entity_factory_impl: entity_factory.EntityFactoryImpl,
+        guild_news_thread_payload: typing.Dict[str, typing.Any],
+        guild_public_thread_payload: typing.Dict[str, typing.Any],
+        guild_private_thread_payload: typing.Dict[str, typing.Any],
+    ):
+        guild_definition = entity_factory_impl.deserialize_gateway_guild(
+            {
+                "id": "4312312312",
+                "threads": [guild_news_thread_payload, guild_public_thread_payload, guild_private_thread_payload],
+            },
+            user_id=snowflakes.Snowflake(43123443223),
+        )
+
+        assert guild_definition.threads() == {
+            947643783913308301: entity_factory_impl.deserialize_guild_public_thread(
+                guild_public_thread_payload,
+                guild_id=snowflakes.Snowflake(4312312312),
+                user_id=snowflakes.Snowflake(43123443223),
+            ),
+            947690637610844210: entity_factory_impl.deserialize_guild_private_thread(
+                guild_private_thread_payload,
+                guild_id=snowflakes.Snowflake(4312312312),
+                user_id=snowflakes.Snowflake(43123443223),
+            ),
+            946900871160164393: entity_factory_impl.deserialize_guild_news_thread(
+                guild_news_thread_payload,
+                guild_id=snowflakes.Snowflake(4312312312),
+                user_id=snowflakes.Snowflake(43123443223),
+            ),
+        }
+
+    def test_threads_returns_cached_values(self, entity_factory_impl: entity_factory.EntityFactoryImpl):
+        mock_thread = object()
+        entity_factory_impl.deserialize_guild_thread = mock.Mock()
+        guild_definition = entity_factory_impl.deserialize_gateway_guild(
+            {"id": "92929292"}, user_id=snowflakes.Snowflake(43123)
+        )
+        guild_definition._threads = {54312312: mock_thread}
+
+        assert guild_definition.threads() == {54312312: mock_thread}
+
+        entity_factory_impl.deserialize_guild_thread.assert_not_called()
+
+    def test_threads_when_no_threads_field(self, entity_factory_impl: entity_factory.EntityFactoryImpl):
+        entity_factory_impl.deserialize_guild_thread = mock.Mock()
+        guild_definition = entity_factory_impl.deserialize_gateway_guild(
+            {"id": "92929292"}, user_id=snowflakes.Snowflake(43123)
+        )
+
+        with pytest.raises(LookupError, match="'threads' not in payload"):
+            guild_definition.threads()
+
+        entity_factory_impl.deserialize_guild_thread.assert_not_called()
+
     def test_voice_states(self, entity_factory_impl, member_payload, voice_state_payload):
         guild_definition = entity_factory_impl.deserialize_gateway_guild(
-            {"id": "265828729970753537", "voice_states": [voice_state_payload], "members": [member_payload]}
+            {"id": "265828729970753537", "voice_states": [voice_state_payload], "members": [member_payload]},
+            user_id=snowflakes.Snowflake(43123),
         )
         assert guild_definition.voice_states() == {
             115590097100865541: entity_factory_impl.deserialize_voice_state(
@@ -631,7 +796,9 @@ class TestGatewayGuildDefinition:
     def test_voice_states_returns_cached_values(self, entity_factory_impl):
         mock_voice_state = object()
         entity_factory_impl.deserialize_voice_state = mock.Mock()
-        guild_definition = entity_factory_impl.deserialize_gateway_guild({"id": "292929"})
+        guild_definition = entity_factory_impl.deserialize_gateway_guild(
+            {"id": "292929"}, user_id=snowflakes.Snowflake(43123)
+        )
         guild_definition._voice_states = {"9393939393": mock_voice_state}
 
         assert guild_definition.voice_states() == {"9393939393": mock_voice_state}
@@ -1631,23 +1798,6 @@ class TestEntityFactoryImpl:
         assert news_channel.parent_id is None
         assert news_channel.last_pin_timestamp is None
 
-    @pytest.fixture()
-    def guild_voice_channel_payload(self, permission_overwrite_payload):
-        return {
-            "id": "555",
-            "guild_id": "789",
-            "name": "Secret Developer Discussions",
-            "type": 2,
-            "nsfw": True,
-            "position": 4,
-            "permission_overwrites": [permission_overwrite_payload],
-            "bitrate": 64000,
-            "user_limit": 3,
-            "rtc_region": "europe",
-            "parent_id": "456",
-            "video_quality_mode": 1,
-        }
-
     def test_deserialize_guild_voice_channel(
         self, entity_factory_impl, mock_app, guild_voice_channel_payload, permission_overwrite_payload
     ):
@@ -1777,17 +1927,6 @@ class TestEntityFactoryImpl:
         assert voice_channel.parent_id is None
         assert voice_channel.is_nsfw is None
 
-    @pytest.fixture()
-    def thread_member_payload(self) -> typing.Dict[str, typing.Any]:
-        return {
-            "id": "123321",
-            "user_id": "494949494",
-            "join_timestamp": "2022-02-28T01:49:03.599821+00:00",
-            "flags": 696969,
-            "mute_config": None,
-            "muted": False,
-        }
-
     def test_deserialize_thread_member(
         self, entity_factory_impl: entity_factory.EntityFactoryImpl, thread_member_payload: typing.Dict[str, typing.Any]
     ):
@@ -1871,32 +2010,6 @@ class TestEntityFactoryImpl:
     ):
         with pytest.raises(errors.UnrecognisedEntityError):
             entity_factory_impl.deserialize_guild_thread({"type": channel_type})
-
-    @pytest.fixture()
-    def guild_news_thread_payload(
-        self, thread_member_payload: typing.Dict[str, typing.Any]
-    ) -> typing.Dict[str, typing.Any]:
-        return {
-            "id": "946900871160164393",
-            "guild_id": "574921006817476608",
-            "parent_id": "881729820747268137",
-            "owner_id": "115590097100865541",
-            "type": 10,
-            "name": "meow",
-            "last_message_id": "947692646883803166",
-            "thread_metadata": {
-                "archived": True,
-                "archive_timestamp": "2022-02-28T03:15:04.379000+00:00",
-                "auto_archive_duration": 10080,
-                "locked": False,
-                "create_timestamp": "2022-02-28T03:12:04.379000+00:00",
-            },
-            "message_count": 1,
-            "member_count": 3,
-            "rate_limit_per_user": 53,
-            "flags": 0,
-            "member": thread_member_payload,
-        }
 
     def test_deserialize_guild_news_thread(
         self,
@@ -1987,32 +2100,6 @@ class TestEntityFactoryImpl:
 
         assert thread.member.user_id == 763423454
 
-    @pytest.fixture()
-    def guild_public_thread_payload(
-        self, thread_member_payload: typing.Dict[str, typing.Any]
-    ) -> typing.Dict[str, typing.Any]:
-        return {
-            "id": "947643783913308301",
-            "guild_id": "574921006817476608",
-            "parent_id": "744183190998089820",
-            "owner_id": "115590097100865541",
-            "type": 11,
-            "name": "e",
-            "last_message_id": "947690877000753252",
-            "thread_metadata": {
-                "archived": False,
-                "archive_timestamp": "2022-02-28T03:05:10.529000+00:00",
-                "auto_archive_duration": 1440,
-                "locked": False,
-                "create_timestamp": "2022-02-28T03:05:09.529000+00:00",
-            },
-            "message_count": 1,
-            "member_count": 3,
-            "rate_limit_per_user": 23,
-            "flags": 0,
-            "member": thread_member_payload,
-        }
-
     def test_deserialize_guild_public_thread(
         self,
         entity_factory_impl: entity_factory.EntityFactoryImpl,
@@ -2098,33 +2185,6 @@ class TestEntityFactoryImpl:
         )
 
         assert thread.member.user_id == 22123
-
-    @pytest.fixture()
-    def guild_private_thread_payload(
-        self, thread_member_payload: typing.Dict[str, typing.Any]
-    ) -> typing.Dict[str, typing.Any]:
-        return {
-            "id": "947690637610844210",
-            "guild_id": "574921006817476608",
-            "parent_id": "744183190998089820",
-            "owner_id": "115590097100865541",
-            "type": 12,
-            "name": "ea",
-            "last_message_id": "947690683144237128",
-            "thread_metadata": {
-                "archived": False,
-                "archive_timestamp": "2022-02-28T03:04:56.247000+00:00",
-                "auto_archive_duration": 4320,
-                "locked": False,
-                "create_timestamp": "2022-02-28T03:04:15.247000+00:00",
-                "invitable": True,
-            },
-            "message_count": 2,
-            "member_count": 3,
-            "rate_limit_per_user": 0,
-            "flags": 0,
-            "member": thread_member_payload,
-        }
 
     def test_deserialize_guild_private_thread(
         self,
@@ -2223,7 +2283,6 @@ class TestEntityFactoryImpl:
         guild_category_payload: typing.Dict[str, typing.Any],
         guild_text_channel_payload: typing.Dict[str, typing.Any],
         guild_news_channel_payload: typing.Dict[str, typing.Any],
-        guild_store_channel_payload: typing.Dict[str, typing.Any],
         guild_voice_channel_payload: typing.Dict[str, typing.Any],
         guild_stage_channel_payload: typing.Dict[str, typing.Any],
         guild_news_thread_payload: typing.Dict[str, typing.Any],
@@ -2250,7 +2309,6 @@ class TestEntityFactoryImpl:
         guild_category_payload: typing.Dict[str, typing.Any],
         guild_text_channel_payload: typing.Dict[str, typing.Any],
         guild_news_channel_payload: typing.Dict[str, typing.Any],
-        guild_store_channel_payload: typing.Dict[str, typing.Any],
         guild_voice_channel_payload: typing.Dict[str, typing.Any],
         guild_stage_channel_payload: typing.Dict[str, typing.Any],
         guild_news_thread_payload: typing.Dict[str, typing.Any],
@@ -2261,7 +2319,6 @@ class TestEntityFactoryImpl:
             guild_category_payload,
             guild_text_channel_payload,
             guild_news_channel_payload,
-            guild_store_channel_payload,
             guild_voice_channel_payload,
             guild_stage_channel_payload,
             guild_news_thread_payload,
@@ -3684,7 +3741,7 @@ class TestEntityFactoryImpl:
         guild_definition = entity_factory_impl.deserialize_gateway_guild(gateway_guild_payload, user_id=123321)
 
         assert guild_definition.channels() == {}
-        assert guild_definition.threads == {}
+        assert guild_definition.threads() == {}
 
     ######################
     # INTERACTION MODELS #

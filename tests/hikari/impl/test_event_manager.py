@@ -246,18 +246,17 @@ class TestEventManagerImpl:
             event_factory.deserialize_channel_pins_update_event.return_value
         )
 
-    @pytest.mark.parametrize("unavailable", [True, False])
     @pytest.mark.asyncio()
     async def test_on_thread_create_when_create(
         self,
-        event_manager: event_manager_.EventManagerImpl,
+        event_manager_impl: event_manager.EventManagerImpl,
         shard: mock.Mock,
         event_factory: mock.Mock,
     ):
         mock_payload = {"id": "123321", "newly_created": True}
-        await event_manager.on_thread_create(shard, mock_payload)
+        await event_manager_impl.on_thread_create(shard, mock_payload)
 
-        event_manager.dispatch.assert_awaited_once_with(
+        event_manager_impl.dispatch.assert_awaited_once_with(
             event_factory.deserialize_guild_thread_create_event.return_value
         )
         event_factory.deserialize_guild_thread_create_event.assert_called_once_with(shard, mock_payload)
@@ -265,14 +264,14 @@ class TestEventManagerImpl:
     @pytest.mark.asyncio()
     async def test_on_thread_create_for_access(
         self,
-        event_manager: event_manager_.EventManagerImpl,
+        event_manager_impl: event_manager.EventManagerImpl,
         shard: mock.Mock,
         event_factory: mock.Mock,
     ):
         mock_payload = {"id": "123321"}
-        await event_manager.on_thread_create(shard, mock_payload)
+        await event_manager_impl.on_thread_create(shard, mock_payload)
 
-        event_manager.dispatch.assert_awaited_once_with(
+        event_manager_impl.dispatch.assert_awaited_once_with(
             event_factory.deserialize_guild_thread_access_event.return_value
         )
         event_factory.deserialize_guild_thread_access_event.assert_called_once_with(shard, mock_payload)
@@ -280,14 +279,14 @@ class TestEventManagerImpl:
     @pytest.mark.asyncio()
     async def test_on_thread_update(
         self,
-        event_manager: event_manager_.EventManagerImpl,
+        event_manager_impl: event_manager.EventManagerImpl,
         shard: mock.Mock,
         event_factory: mock.Mock,
     ):
         mock_payload = mock.Mock()
-        await event_manager.on_thread_update(shard, mock_payload)
+        await event_manager_impl.on_thread_update(shard, mock_payload)
 
-        event_manager.dispatch.assert_awaited_once_with(
+        event_manager_impl.dispatch.assert_awaited_once_with(
             event_factory.deserialize_guild_thread_update_event.return_value
         )
         event_factory.deserialize_guild_thread_update_event.assert_called_once_with(shard, mock_payload)
@@ -295,14 +294,14 @@ class TestEventManagerImpl:
     @pytest.mark.asyncio()
     async def test_on_thread_delete(
         self,
-        event_manager: event_manager_.EventManagerImpl,
+        event_manager_impl: event_manager.EventManagerImpl,
         shard: mock.Mock,
         event_factory: mock.Mock,
     ):
         mock_payload = mock.Mock()
-        await event_manager.on_thread_delete(shard, mock_payload)
+        await event_manager_impl.on_thread_delete(shard, mock_payload)
 
-        event_manager.dispatch.assert_awaited_once_with(
+        event_manager_impl.dispatch.assert_awaited_once_with(
             event_factory.deserialize_guild_thread_delete_event.return_value
         )
         event_factory.deserialize_guild_thread_delete_event.assert_called_once_with(shard, mock_payload)
@@ -310,27 +309,29 @@ class TestEventManagerImpl:
     @pytest.mark.asyncio()
     async def test_on_thread_list_sync(
         self,
-        event_manager: event_manager_.EventManagerImpl,
+        event_manager_impl: event_manager.EventManagerImpl,
         shard: mock.Mock,
         event_factory: mock.Mock,
     ):
         mock_payload = mock.Mock()
-        await event_manager.on_thread_list_sync(shard, mock_payload)
+        await event_manager_impl.on_thread_list_sync(shard, mock_payload)
 
-        event_manager.dispatch.assert_awaited_once_with(event_factory.deserialize_thread_list_sync_event.return_value)
+        event_manager_impl.dispatch.assert_awaited_once_with(
+            event_factory.deserialize_thread_list_sync_event.return_value
+        )
         event_factory.deserialize_thread_list_sync_event.assert_called_once_with(shard, mock_payload)
 
     @pytest.mark.asyncio()
     async def test_on_thread_member_update(
         self,
-        event_manager: event_manager_.EventManagerImpl,
+        event_manager_impl: event_manager.EventManagerImpl,
         shard: mock.Mock,
         event_factory: mock.Mock,
     ):
         mock_payload = mock.Mock()
-        await event_manager.on_thread_member_update(shard, mock_payload)
+        await event_manager_impl.on_thread_member_update(shard, mock_payload)
 
-        event_manager.dispatch.assert_awaited_once_with(
+        event_manager_impl.dispatch.assert_awaited_once_with(
             event_factory.deserialize_own_thread_member_update_event.return_value
         )
         event_factory.deserialize_own_thread_member_update_event.assert_called_once_with(shard, mock_payload)
@@ -338,31 +339,20 @@ class TestEventManagerImpl:
     @pytest.mark.asyncio()
     async def test_on_thread_members_update(
         self,
-        event_manager: event_manager_.EventManagerImpl,
+        event_manager_impl: event_manager.EventManagerImpl,
         shard: mock.Mock,
         event_factory: mock.Mock,
     ):
         mock_payload = mock.Mock()
-        await event_manager.on_thread_members_update(shard, mock_payload)
+        await event_manager_impl.on_thread_members_update(shard, mock_payload)
 
-        event_manager.dispatch.assert_awaited_once_with(
+        event_manager_impl.dispatch.assert_awaited_once_with(
             event_factory.deserialize_thread_members_update_event.return_value
         )
         event_factory.deserialize_thread_members_update_event.assert_called_once_with(shard, mock_payload)
 
     @pytest.mark.asyncio()
-    async def test_on_guild_create_stateful_with_unavailable_field(self, event_manager, shard, event_factory):
-        payload = {"unavailable": False}
-        event = mock.Mock(
-            guild=mock.Mock(id=123, is_large=False),
-            channels={"TestChannel": 456},
-            emojis={"TestEmoji": 789},
-            roles={"TestRole": 1234},
-            members={"TestMember": 5678},
-            presences={"TestPresence": 9012},
-            voice_states={"TestState": 345},
-            chunk_nonce=None,
-        )
+    @pytest.mark.parametrize("unavailable", [True, False])
     async def test_on_guild_create_when_dispatching_and_not_caching(
         self, event_manager_impl, shard, event_factory, entity_factory, unavailable
     ):
@@ -422,7 +412,7 @@ class TestEventManagerImpl:
 
         event_factory.deserialize_guild_join_event.assert_not_called()
         event_factory.deserialize_guild_available_event.assert_not_called()
-        entity_factory.deserialize_gateway_guild.assert_called_once_with(payload)
+        entity_factory.deserialize_gateway_guild.assert_called_once_with(payload, user_id=shard.user_id.return_value)
         event_manager_impl._cache.update_guild.assert_not_called()
         event_manager_impl._cache.clear_guild_channels_for_guild.assert_not_called()
         event_manager_impl._cache.set_guild_channel.assert_not_called()
@@ -438,6 +428,7 @@ class TestEventManagerImpl:
         event_manager_impl._cache.set_presence.assert_not_called()
         event_manager_impl._cache.clear_voice_states_for_guild.assert_not_called()
         event_manager_impl._cache.set_voice_state.assert_not_called()
+        shard.user_id.assert_called_once_with()
         request_guild_members.assert_not_called()
 
         event_manager_impl.dispatch.assert_not_called()
@@ -470,7 +461,7 @@ class TestEventManagerImpl:
 
         event_factory.deserialize_guild_join_event.assert_not_called()
         event_factory.deserialize_guild_available_event.assert_not_called()
-        entity_factory.deserialize_gateway_guild.assert_called_once_with(payload)
+        entity_factory.deserialize_gateway_guild.assert_called_once_with(payload, user_id=shard.user_id.return_value)
         event_manager_impl._cache.update_guild.assert_called_once_with(gateway_guild.guild.return_value)
         event_manager_impl._cache.clear_guild_channels_for_guild.assert_called_once_with(gateway_guild.id)
         event_manager_impl._cache.set_guild_channel.assert_has_calls([mock.call("channel1"), mock.call("channel2")])
@@ -487,6 +478,7 @@ class TestEventManagerImpl:
         event_manager_impl._cache.clear_voice_states_for_guild.assert_called_once_with(gateway_guild.id)
         event_manager_impl._cache.set_voice_state.assert_has_calls([mock.call("voice1"), mock.call("voice2")])
         request_guild_members.assert_not_called()
+        shard.user_id.assert_called_once_with()
 
         event_manager_impl.dispatch.assert_not_called()
 
@@ -640,6 +632,7 @@ class TestEventManagerImpl:
         entity_factory.deserialize_gateway_guild.assert_not_called()
         event_factory.deserialize_guild_update_event.assert_called_once_with(shard, payload, old_guild=old_guild)
         event_manager_impl.dispatch.assert_awaited_once_with(event)
+        shard.user_id.assert_not_called()
 
     @pytest.mark.asyncio()
     async def test_on_guild_update_all_cache_components_and_not_dispatching(
@@ -658,7 +651,9 @@ class TestEventManagerImpl:
 
         await event_manager_impl.on_guild_update(shard, payload)
 
-        entity_factory.deserialize_gateway_guild.assert_called_once_with({"id": 123})
+        entity_factory.deserialize_gateway_guild.assert_called_once_with(
+            {"id": 123}, user_id=shard.user_id.return_value
+        )
         event_manager_impl._enabled_for_event.assert_called_once_with(guild_events.GuildUpdateEvent)
         event_manager_impl._cache.update_guild.assert_called_once_with(guild_definition.guild.return_value)
         event_manager_impl._cache.clear_emojis_for_guild.assert_called_once_with(123)
@@ -667,6 +662,7 @@ class TestEventManagerImpl:
         event_manager_impl._cache.set_sticker.assert_called_once_with(mock_sticker)
         event_manager_impl._cache.clear_roles_for_guild.assert_called_once_with(123)
         event_manager_impl._cache.set_role.assert_called_once_with(mock_role)
+        shard.user_id.assert_called_once_with()
         event_factory.deserialize_guild_update_event.assert_not_called()
         event_manager_impl.dispatch.assert_not_called()
         guild_definition.emojis.assert_called_once_with()
@@ -684,7 +680,9 @@ class TestEventManagerImpl:
 
         await event_manager_impl.on_guild_update(shard, payload)
 
-        entity_factory.deserialize_gateway_guild.assert_called_once_with({"id": 123})
+        entity_factory.deserialize_gateway_guild.assert_called_once_with(
+            {"id": 123}, user_id=shard.user_id.return_value
+        )
         event_manager_impl._enabled_for_event.assert_called_once_with(guild_events.GuildUpdateEvent)
         event_manager_impl._cache.update_guild.assert_not_called()
         event_manager_impl._cache.clear_emojis_for_guild.assert_not_called()
@@ -698,6 +696,7 @@ class TestEventManagerImpl:
         guild_definition.emojis.assert_not_called()
         guild_definition.roles.assert_not_called()
         guild_definition.guild.assert_not_called()
+        shard.user_id.assert_called_once_with()
 
     @pytest.mark.asyncio()
     async def test_on_guild_update_stateless_and_dispatching(
@@ -710,6 +709,7 @@ class TestEventManagerImpl:
 
         stateless_event_manager_impl._enabled_for_event.assert_called_once_with(guild_events.GuildUpdateEvent)
         entity_factory.deserialize_gateway_guild.assert_not_called()
+        shard.user_id.assert_not_called()
         event_factory.deserialize_guild_update_event.assert_called_once_with(shard, payload, old_guild=None)
         stateless_event_manager_impl.dispatch.assert_awaited_once_with(
             event_factory.deserialize_guild_update_event.return_value
