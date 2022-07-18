@@ -618,6 +618,7 @@ class EntityFactory(abc.ABC):
         guild_id : hikari.undefined.UndefinedOr[hikari.snowflakes.Snowflake]
             The ID of the guild this channel belongs to. This will be
             prioritised over `"guild_id"` in the payload when passed.
+
             !!! note
                 `guild_id` currently only covers the gateway GUILD_CREATE event
                 where `"guild_id"` is not included in the channel's payload.
@@ -657,6 +658,7 @@ class EntityFactory(abc.ABC):
         guild_id : hikari.undefined.UndefinedOr[hikari.snowflakes.Snowflake]
             The ID of the guild this channel belongs to. This will be
             prioritised over `"guild_id"` in the payload when passed.
+
             !!! note
                 `guild_id` currently only covers the gateway GUILD_CREATE event
                 where `"guild_id"` is not included in the channel's payload.
@@ -696,6 +698,7 @@ class EntityFactory(abc.ABC):
         guild_id : hikari.undefined.UndefinedOr[hikari.snowflakes.Snowflake]
             The ID of the guild this channel belongs to. This will be
             prioritised over `"guild_id"` in the payload when passed.
+
             !!! note
                 `guild_id` currently only covers the gateway GUILD_CREATE event
                 where `"guild_id"` is not included in the channel's payload.
