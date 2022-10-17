@@ -5079,7 +5079,7 @@ class TestEntityFactoryImpl:
         assert menu.type is message_models.ComponentType.SELECT_MENU
         assert menu.custom_id == "Not an ID"
 
-        # SelectMenuOption
+        # StringSelectOption
         assert len(menu.options) == 1
         option = menu.options[0]
         assert option.label == "Trans"
@@ -5087,7 +5087,7 @@ class TestEntityFactoryImpl:
         assert option.description == "queen"
         assert option.emoji == entity_factory_impl.deserialize_emoji(custom_emoji_payload)
         assert option.is_default is True
-        assert isinstance(option, message_models.SelectMenuOption)
+        assert isinstance(option, message_models.StringSelectOption)
 
         assert menu.placeholder == "Imagine a place"
         assert menu.min_values == 69
@@ -5103,7 +5103,7 @@ class TestEntityFactoryImpl:
             }
         )
 
-        # SelectMenuOption
+        # StringSelectOption
         assert len(menu.options) == 1
         option = menu.options[0]
         assert option.description is None

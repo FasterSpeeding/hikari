@@ -39,8 +39,14 @@ __all__: typing.Sequence[str] = (
     "ActionRowComponent",
     "ButtonComponent",
     "ButtonStyle",
-    "SelectMenuOption",
+    "StringSelectOption",
     "SelectMenuComponent",
+    "PartialSelectComponent",
+    "StringSelectComponent",
+    "UserSelectComponent",
+    "RoleSelectComponent",
+    "MentionableSelectComponent",
+    "ChannelSelectComponent",
     "InteractiveButtonTypes",
     "InteractiveButtonTypesT",
     "ComponentType",
@@ -529,8 +535,43 @@ class ComponentType(int, enums.Enum):
         as `ComponentType.ACTION_ROW`.
     """
 
-    SELECT_MENU = 3
-    """A select menu component.
+    STRING_SELECT = 3
+    """A string select menu component.
+
+    !!! note
+        This cannot be top-level and must be within a container component such
+        as `ComponentType.ACTION_ROW`.
+    """
+
+    SELECT_MENU = STRING_SELECT
+    """Deprecated alias of `ComponentType.STRING_SELECT`."""
+
+    USER_SELECT = 5
+    """A user select menu component.
+
+    !!! note
+        This cannot be top-level and must be within a container component such
+        as `ComponentType.ACTION_ROW`.
+    """
+
+    ROLE_SELECT = 6
+    """A role select menu component.
+
+    !!! note
+        This cannot be top-level and must be within a container component such
+        as `ComponentType.ACTION_ROW`.
+    """
+
+    MENTIONABLE_SELECT = 7
+    """A mentionable (user and role) select menu component.
+
+    !!! note
+        This cannot be top-level and must be within a container component such
+        as `ComponentType.ACTION_ROW`.
+    """
+
+    CHANNEL_SELECT = 8
+    """A channel select menu component.
 
     !!! note
         This cannot be top-level and must be within a container component such
@@ -647,7 +688,7 @@ class ButtonComponent(PartialComponent):
 
 
 @attr.define(kw_only=True, weakref_slot=False)
-class SelectMenuOption:
+class StringSelectOption:
     """Represents an option for a `SelectMenuComponent`."""
 
     label: str = attr.field()
@@ -667,8 +708,8 @@ class SelectMenuOption:
 
 
 @attr.define(hash=True, kw_only=True, weakref_slot=False)
-class SelectMenuComponent(PartialComponent):
-    """Represents a message button component.
+class PartialSelectComponent(PartialComponent):
+    """Partial representation of a select menu component.
 
     !!! note
         This is an embedded component and will only ever be found within
@@ -677,9 +718,6 @@ class SelectMenuComponent(PartialComponent):
 
     custom_id: str = attr.field(hash=True)
     """Developer defined identifier for this menu (will be <= 100 characters)."""
-
-    options: typing.Sequence[SelectMenuOption] = attr.field(eq=False)
-    """Sequence of up to 25 of the options set for this menu."""
 
     placeholder: typing.Optional[str] = attr.field(eq=False)
     """Custom placeholder text shown if nothing is selected, max 100 characters."""
@@ -700,6 +738,71 @@ class SelectMenuComponent(PartialComponent):
 
     is_disabled: bool = attr.field(eq=False)
     """Whether the select menu is disabled."""
+
+
+@attr.define(hash=True, kw_only=True, weakref_slot=False)
+class StringSelectComponent(PartialSelectComponent):
+    """Represents a string select menu component.
+
+    !!! note
+        This is an embedded component and will only ever be found within
+        top-level container components such as `ActionRowComponent`.
+    """
+
+    options: typing.Sequence[StringSelectOption] = attr.field(eq=False)
+    """Sequence of up to 25 of the options set for this menu."""
+
+
+SelectMenuComponent = StringSelectComponent
+"""Deprecated alias of `StringSelectComponent`."""
+
+
+@attr.define(hash=True, kw_only=True, weakref_slot=False)
+class UserSelectComponent(PartialComponent):
+    """Represents a user select menu component.
+
+    !!! note
+        This is an embedded component and will only ever be found within
+        top-level container components such as `ActionRowComponent`.
+    """
+
+
+@attr.define(hash=True, kw_only=True, weakref_slot=False)
+class RoleSelectComponent(PartialComponent):
+    """Represents a role select menu component.
+
+    !!! note
+        This is an embedded component and will only ever be found within
+        top-level container components such as `ActionRowComponent`.
+    """
+
+
+@attr.define(hash=True, kw_only=True, weakref_slot=False)
+class MentionableSelectComponent(PartialComponent):
+    """Represents a mentionable select menu component.
+
+    !!! note
+        This is an embedded component and will only ever be found within
+        top-level container components such as `ActionRowComponent`.
+    """
+
+
+@attr.define(hash=True, kw_only=True, weakref_slot=False)
+class ChannelSelectComponent(PartialComponent):
+    """Represents a channel select menu component.
+
+    !!! note
+        This is an embedded component and will only ever be found within
+        top-level container components such as `ActionRowComponent`.
+    """
+
+    channel_types: typing.Optional[typing.Sequence[typing.Union[channels_.ChannelType, int]]] = attr.field(
+        default=None, repr=False
+    )
+    """The channel types that this select menu will accept.
+
+    If `builtins.None`, then all channel types will be accepted.
+    """
 
 
 @attr.define(weakref_slot=False)

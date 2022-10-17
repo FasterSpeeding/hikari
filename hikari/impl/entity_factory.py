@@ -2586,14 +2586,14 @@ class EntityFactoryImpl(entity_factory.EntityFactory):
         )
 
     def _deserialize_select_menu(self, payload: data_binding.JSONObject) -> message_models.SelectMenuComponent:
-        options: typing.List[message_models.SelectMenuOption] = []
+        options: typing.List[message_models.StringSelectOption] = []
         for option_payload in payload["options"]:
             emoji = None
             if emoji_payload := option_payload.get("emoji"):
                 emoji = self.deserialize_emoji(emoji_payload)
 
             options.append(
-                message_models.SelectMenuOption(
+                message_models.StringSelectOption(
                     label=option_payload["label"],
                     value=option_payload["value"],
                     description=option_payload.get("description"),
