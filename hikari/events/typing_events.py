@@ -37,9 +37,12 @@ from hikari.api import special_endpoints
 from hikari.events import base_events
 from hikari.events import shard_events
 from hikari.internal import attr_extensions
+from hikari.internal import model_methods
 
 if typing.TYPE_CHECKING:
     import datetime
+
+    from typing_extensions import Self
 
     from hikari import guilds
     from hikari import snowflakes
@@ -67,18 +70,6 @@ class TypingEvent(shard_events.ShardEvent, abc.ABC):
     @abc.abstractmethod
     def timestamp(self) -> datetime.datetime:
         """Timestamp of when this typing event started."""
-
-    async def fetch_channel(self) -> channels.TextableChannel:
-        """Perform an API call to fetch an up-to-date image of this channel.
-
-        Returns
-        -------
-        hikari.channels.TextableChannel
-            The channel.
-        """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
-        assert isinstance(channel, channels.TextableChannel)
-        return channel
 
     def get_user(self) -> typing.Optional[users.User]:
         """Get the cached user that is typing, if known.
@@ -126,6 +117,10 @@ class TypingEvent(shard_events.ShardEvent, abc.ABC):
         """
         return self.app.rest.trigger_typing(self.channel_id)
 
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.TextableChannel]
+    ] = model_methods.make_fetch_channel(types=channels.TextableChannel)
+
 
 @base_events.requires_intents(intents.Intents.GUILD_MESSAGE_TYPING)
 @attr_extensions.with_copy
@@ -158,30 +153,6 @@ class GuildTypingEvent(TypingEvent):
         # <<inherited docstring from TypingEvent>>.
         return self.member.id
 
-    async def fetch_channel(self) -> channels.TextableGuildChannel:
-        """Perform an API call to fetch an up-to-date image of this channel.
-
-        Returns
-        -------
-        hikari.channels.TextableGuildChannel
-            The channel.
-        """
-        channel = await super().fetch_channel()
-        assert isinstance(
-            channel, channels.TextableGuildChannel
-        ), f"expected TextableGuildChannel from API, got {channel}"
-        return channel
-
-    async def fetch_guild(self) -> guilds.Guild:
-        """Perform an API call to fetch an up-to-date image of this guild.
-
-        Returns
-        -------
-        hikari.guilds.Guild
-            The guild.
-        """
-        return await self.app.rest.fetch_guild(self.guild_id)
-
     async def fetch_guild_preview(self) -> guilds.GuildPreview:
         """Perform an API call to fetch an up-to-date preview of this guild.
 
@@ -202,37 +173,16 @@ class GuildTypingEvent(TypingEvent):
         """
         return await self.app.rest.fetch_member(self.guild_id, self.user_id)
 
-    def get_channel(self) -> typing.Optional[channels.TextableGuildChannel]:
-        """Get the cached channel object this typing event occurred in.
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
 
-        Returns
-        -------
-        typing.Optional[hikari.channels.TextableGuildChannel]
-            The channel.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        channel = self.app.cache.get_guild_channel(self.channel_id)
-        assert channel is None or isinstance(
-            channel, channels.TextableGuildChannel
-        ), f"expected TextableGuildChannel from cache, got {channel}"
-        return channel
-
-    def get_guild(self) -> typing.Optional[guilds.GatewayGuild]:
-        """Get the cached object of the guild this typing event occurred in.
-
-        If the guild is not found then this will return `None`.
-
-        Returns
-        -------
-        typing.Optional[hikari.guilds.GatewayGuild]
-            The object of the gateway guild if found else `None`.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        return self.app.cache.get_available_guild(self.guild_id) or self.app.cache.get_unavailable_guild(self.guild_id)
+    # TODO: never return None from fetch_guild
+    fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
 
 
 @base_events.requires_intents(intents.Intents.DM_MESSAGES)
@@ -256,31 +206,6 @@ class DMTypingEvent(TypingEvent):
     timestamp: datetime.datetime = attr.field(repr=False)
     # <<inherited docstring from TypingEvent>>.
 
-    async def fetch_channel(self) -> channels.DMChannel:
-        """Perform an API call to fetch an up-to-date image of this channel.
-
-        Returns
-        -------
-        hikari.channels.DMChannel
-            The channel.
-
-        Raises
-        ------
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.ForbiddenError
-            If you are missing the `READ_MESSAGES` permission in the channel.
-        hikari.errors.NotFoundError
-            If the channel is not found.
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        channel = await super().fetch_channel()
-        assert isinstance(channel, channels.DMChannel), f"expected DMChannel from API, got {channel}"
-        return channel
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.DMChannel]
+    ] = model_methods.make_fetch_channel(types=channels.DMChannel)

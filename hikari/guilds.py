@@ -67,11 +67,14 @@ from hikari import urls
 from hikari import users
 from hikari.internal import attr_extensions
 from hikari.internal import enums
+from hikari.internal import model_methods
 from hikari.internal import routes
 from hikari.internal import time
 
 if typing.TYPE_CHECKING:
     import datetime
+
+    from typing_extensions import Self
 
     from hikari import colors
     from hikari import colours
@@ -489,18 +492,9 @@ class Member(users.User):
             return self.raw_communication_disabled_until
         return None
 
-    def get_guild(self) -> typing.Optional[Guild]:
-        """Return the guild associated with this member.
-
-        Returns
-        -------
-        typing.Optional[hikari.guilds.Guild]
-            The linked guild object or `None` if it's not cached.
-        """
-        if not isinstance(self.user.app, traits.CacheAware):
-            return None
-
-        return self.user.app.cache.get_guild(self.guild_id)
+    # TODO: never return None from fetch
+    fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
 
     def get_presence(self) -> typing.Optional[presences_.MemberPresence]:
         """Get the cached presence for this member, if known.

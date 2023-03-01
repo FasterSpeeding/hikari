@@ -44,9 +44,12 @@ from hikari import undefined
 from hikari import urls
 from hikari.internal import attr_extensions
 from hikari.internal import enums
+from hikari.internal import model_methods
 from hikari.internal import routes
 
 if typing.TYPE_CHECKING:
+    from typing_extensions import Self
+
     from hikari import embeds as embeds_
     from hikari import files
     from hikari import files as files_
@@ -716,31 +719,13 @@ class IncomingWebhook(PartialWebhook, ExecutableWebhook):
         assert isinstance(webhook, IncomingWebhook)
         return webhook
 
-    async def fetch_channel(self) -> channels_.WebhookChannelT:
-        """Fetch the channel this webhook is for.
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels_.WebhookChannelT]
+    ] = model_methods.make_fetch_channel(types=channels_.WebhookChannelTypes)
 
-        Returns
-        -------
-        hikari.channels.WebhookChannelT
-            The object of the channel this webhook targets.
-
-        Raises
-        ------
-        hikari.errors.ForbiddenError
-            If you don't have access to the channel this webhook belongs to.
-        hikari.errors.NotFoundError
-            If the channel this message was created in does not exist.
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
-        assert isinstance(channel, channels_.WebhookChannelTypes)
-        return channel
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels_.WebhookChannelT]
+    ] = model_methods.make_get_channel(types=channels_.WebhookChannelTypes)
 
     async def fetch_self(self, *, use_token: undefined.UndefinedOr[bool] = undefined.UNDEFINED) -> IncomingWebhook:
         """Fetch this webhook.
@@ -892,31 +877,13 @@ class ChannelFollowerWebhook(PartialWebhook):
         assert isinstance(webhook, ChannelFollowerWebhook)
         return webhook
 
-    async def fetch_channel(self) -> channels_.WebhookChannelT:
-        """Fetch the channel this webhook is for.
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels_.WebhookChannelT]
+    ] = model_methods.make_fetch_channel(types=channels_.WebhookChannelTypes)
 
-        Returns
-        -------
-        hikari.channels.WebhookChannelT
-            The object of the channel this webhook targets.
-
-        Raises
-        ------
-        hikari.errors.ForbiddenError
-            If you don't have access to the channel this webhook belongs to.
-        hikari.errors.NotFoundError
-            If the channel this message was created in does not exist.
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
-        assert isinstance(channel, channels_.WebhookChannelTypes)
-        return channel
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels_.WebhookChannelT]
+    ] = model_methods.make_get_channel(types=channels_.WebhookChannelTypes)
 
     async def fetch_self(self) -> ChannelFollowerWebhook:
         """Fetch this webhook.

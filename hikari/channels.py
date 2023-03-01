@@ -70,10 +70,13 @@ from hikari import urls
 from hikari import webhooks
 from hikari.internal import attr_extensions
 from hikari.internal import enums
+from hikari.internal import model_methods
 from hikari.internal import routes
 
 if typing.TYPE_CHECKING:
     import datetime
+
+    from typing_extensions import Self
 
     from hikari import embeds as embeds_
     from hikari import files
@@ -161,105 +164,6 @@ class VideoQualityMode(int, enums.Enum):
 
     FULL = 2
     """Video quality will be set to 720p."""
-
-
-@attr_extensions.with_copy
-@attr.define(hash=True, kw_only=True, weakref_slot=False)
-class ChannelFollow:
-    """Relationship between a news channel and a subscriber channel.
-
-    The subscriber channel will receive crosspost messages that correspond
-    to any "broadcast" announcements that the news channel creates.
-    """
-
-    app: traits.RESTAware = attr.field(
-        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
-    )
-    """Client application that models may use for procedures."""
-
-    channel_id: snowflakes.Snowflake = attr.field(hash=True, repr=True)
-    """Return the channel ID of the channel being followed."""
-
-    webhook_id: snowflakes.Snowflake = attr.field(hash=True, repr=True)
-    """Return the ID of the webhook for this follow."""
-
-    async def fetch_channel(self) -> typing.Union[GuildNewsChannel, GuildTextChannel]:
-        """Fetch the object of the guild channel being followed.
-
-        Returns
-        -------
-        typing.Union[hikari.channels.GuildNewsChannel, hikari.channels.GuildTextChannel]
-            The channel being followed.
-
-            While this will usually be `GuildNewsChannel`, if the channel's
-            news status has been removed then this will be a `GuildTextChannel`.
-
-        Raises
-        ------
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.ForbiddenError
-            If you are missing the `READ_MESSAGES` permission in the channel.
-        hikari.errors.NotFoundError
-            If the channel is not found.
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
-        assert isinstance(channel, (GuildTextChannel, GuildNewsChannel))
-        return channel
-
-    async def fetch_webhook(self) -> webhooks.ChannelFollowerWebhook:
-        """Fetch the webhook attached to this follow.
-
-        Returns
-        -------
-        hikari.webhooks.ChannelFollowerWebhook
-            The webhook attached to this follow.
-
-        Raises
-        ------
-        hikari.errors.ForbiddenError
-            If you are missing the `MANAGE_WEBHOOKS` permission in the guild or
-            channel this follow is targeting.
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.NotFoundError
-            If the webhook is not found.
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        webhook = await self.app.rest.fetch_webhook(self.webhook_id)
-        assert isinstance(webhook, webhooks.ChannelFollowerWebhook)
-        return webhook
-
-    def get_channel(self) -> typing.Union[GuildNewsChannel, GuildTextChannel, None]:
-        """Get the channel being followed from the cache.
-
-        .. warning::
-            This will always be `None` if you are not
-            in the guild that this channel exists in.
-
-        Returns
-        -------
-        typing.Union[hikari.channels.GuildNewsChannel, hikari.channels.GuildTextChannel, None]
-            The object of the guild channel that was found in the cache or
-            `None`. While this will usually be `GuildNewsChannel` or
-            `None`, if the channel referenced has since lost it's news
-            status then this will return a `GuildTextChannel`.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        channel = self.app.cache.get_guild_channel(self.channel_id)
-        assert channel is None or isinstance(channel, (GuildNewsChannel, GuildTextChannel))
-        return channel
 
 
 @typing.final
@@ -1687,3 +1591,58 @@ class GuildPrivateThread(GuildThreadChannel):
 
     is_invitable: bool = attr.field(eq=False, hash=False, repr=True)
     """Whether non-moderators can add other non-moderators to a private thread."""
+
+
+@attr_extensions.with_copy
+@attr.define(hash=True, kw_only=True, weakref_slot=False)
+class ChannelFollow:
+    """Relationship between a news channel and a subscriber channel.
+
+    The subscriber channel will receive crosspost messages that correspond
+    to any "broadcast" announcements that the news channel creates.
+    """
+
+    app: traits.RESTAware = attr.field(
+        repr=False, eq=False, hash=False, metadata={attr_extensions.SKIP_DEEP_COPY: True}
+    )
+    """Client application that models may use for procedures."""
+
+    channel_id: snowflakes.Snowflake = attr.field(hash=True, repr=True)
+    """Return the channel ID of the channel being followed."""
+
+    webhook_id: snowflakes.Snowflake = attr.field(hash=True, repr=True)
+    """Return the ID of the webhook for this follow."""
+
+    async def fetch_webhook(self) -> webhooks.ChannelFollowerWebhook:
+        """Fetch the webhook attached to this follow.
+
+        Returns
+        -------
+        hikari.webhooks.ChannelFollowerWebhook
+            The webhook attached to this follow.
+
+        Raises
+        ------
+        hikari.errors.ForbiddenError
+            If you are missing the `MANAGE_WEBHOOKS` permission in the guild or
+            channel this follow is targeting.
+        hikari.errors.UnauthorizedError
+            If you are unauthorized to make the request (invalid/missing token).
+        hikari.errors.NotFoundError
+            If the webhook is not found.
+        hikari.errors.RateLimitTooLongError
+            Raised in the event that a rate limit occurs that is
+            longer than `max_rate_limit` when making a request.
+        hikari.errors.InternalServerError
+            If an internal error occurs on Discord while handling the request.
+        """
+        webhook = await self.app.rest.fetch_webhook(self.webhook_id)
+        assert isinstance(webhook, webhooks.ChannelFollowerWebhook)
+        return webhook
+
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, typing.Union[GuildNewsChannel, GuildTextChannel]]
+    ] = model_methods.make_get_channel(types=(GuildNewsChannel, GuildTextChannel))
+    fetch_channels: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, typing.Union[GuildNewsChannel, GuildTextChannel]]
+    ] = model_methods.make_fetch_channel(types=(GuildNewsChannel, GuildTextChannel))

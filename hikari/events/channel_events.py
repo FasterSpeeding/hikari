@@ -61,9 +61,12 @@ from hikari import traits
 from hikari.events import base_events
 from hikari.events import shard_events
 from hikari.internal import attr_extensions
+from hikari.internal import model_methods
 
 if typing.TYPE_CHECKING:
     import datetime
+
+    from typing_extensions import Self
 
     from hikari import guilds
     from hikari import invites
@@ -126,93 +129,15 @@ class GuildChannelEvent(ChannelEvent, abc.ABC):
     def guild_id(self) -> snowflakes.Snowflake:
         """ID of the guild that this event relates to."""
 
-    def get_guild(self) -> typing.Optional[guilds.GatewayGuild]:
-        """Get the cached guild that this event relates to, if known.
+    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
+    fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
 
-        If not, return `None`.
-
-        Returns
-        -------
-        typing.Optional[hikari.guilds.GatewayGuild]
-            The gateway guild this event relates to, if known. Otherwise
-            this will return `None`.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        return self.app.cache.get_available_guild(self.guild_id) or self.app.cache.get_unavailable_guild(self.guild_id)
-
-    async def fetch_guild(self) -> guilds.RESTGuild:
-        """Perform an API call to fetch the guild that this event relates to.
-
-        Returns
-        -------
-        hikari.guilds.RESTGuild
-            The guild that this event occurred in.
-
-        Raises
-        ------
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.ForbiddenError
-            If you are not part of the guild.
-        hikari.errors.NotFoundError
-            If the guild is not found.
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        return await self.app.rest.fetch_guild(self.guild_id)
-
-    def get_channel(self) -> typing.Optional[channels.PermissibleGuildChannel]:
-        """Get the cached channel that this event relates to, if known.
-
-        If not, return `None`.
-
-        Returns
-        -------
-        typing.Optional[hikari.channels.GuildChannel]
-            The cached channel this event relates to. If not known, this
-            will return `None` instead.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        return self.app.cache.get_guild_channel(self.channel_id)
-
-    async def fetch_channel(self) -> channels.GuildChannel:
-        """Perform an API call to fetch the details about this channel.
-
-        .. note::
-            For `GuildChannelDeleteEvent` events, this will always raise
-            an exception, since the channel will have already been removed.
-
-        Returns
-        -------
-        hikari.channels.GuildChannel
-            A derivative of `hikari.channels.GuildChannel`. The
-            actual type will vary depending on the type of channel this event
-            concerns.
-
-        Raises
-        ------
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.ForbiddenError
-            If you are missing the `READ_MESSAGES` permission in the channel.
-        hikari.errors.NotFoundError
-            If the channel is not found.
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
-        assert isinstance(channel, channels.GuildChannel)
-        return channel
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels.PermissibleGuildChannel]
+    ] = model_methods.make_get_channel(types=channels.PermissibleGuildChannel)
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.PermissibleGuildChannel]
+    ] = model_methods.make_fetch_channel(types=channels.PermissibleGuildChannel)
 
 
 class DMChannelEvent(ChannelEvent, abc.ABC):
@@ -220,37 +145,9 @@ class DMChannelEvent(ChannelEvent, abc.ABC):
 
     __slots__: typing.Sequence[str] = ()
 
-    async def fetch_channel(self) -> channels.PrivateChannel:
-        """Perform an API call to fetch the details about this channel.
-
-        .. note::
-            For `GuildChannelDeleteEvent` events, this will always raise
-            an exception, since the channel will have already been removed.
-
-        Returns
-        -------
-        hikari.channels.PrivateChannel
-            A derivative of `hikari.channels.PrivateChannel`. The actual
-            type will vary depending on the type of channel this event
-            concerns.
-
-        Raises
-        ------
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.ForbiddenError
-            If you are missing the `VIEW_CHANNEL` permission in the channel.
-        hikari.errors.NotFoundError
-            If the channel is not found.
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
-        assert isinstance(channel, channels.PrivateChannel)
-        return channel
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.PrivateChannel]
+    ] = model_methods.make_fetch_channel(types=channels.PrivateChannel)
 
 
 @base_events.requires_intents(intents.Intents.GUILDS)
@@ -407,48 +304,13 @@ class GuildPinsUpdateEvent(PinsUpdateEvent, GuildChannelEvent):
     last_pin_timestamp: typing.Optional[datetime.datetime] = attr.field(repr=True)
     # <<inherited docstring from ChannelPinsUpdateEvent>>.
 
-    def get_channel(self) -> typing.Optional[channels.PermissibleGuildChannel]:
-        """Get the cached channel that this event relates to, if known.
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels.PermissibleGuildChannel]
+    ] = model_methods.make_get_channel(types=channels.PermissibleGuildChannel)
 
-        If not, return `None`.
-
-        Returns
-        -------
-        typing.Optional[hikari.channels.TextableGuildChannel]
-            The cached channel this event relates to. If not known, this
-            will return `None` instead.
-        """
-        channel = super().get_channel()
-        assert channel is None or isinstance(channel, channels.PermissibleGuildChannel)
-        return channel
-
-    async def fetch_channel(self) -> channels.TextableGuildChannel:
-        """Perform an API call to fetch the details about this channel.
-
-        Returns
-        -------
-        hikari.channels.TextableGuildChannel
-            A derivative of `hikari.channels.TextableGuildChannel`. The actual
-            type will vary depending on the type of channel this event
-            concerns.
-
-        Raises
-        ------
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.ForbiddenError
-            If you are missing the `VIEW_CHANNEL` permission in the channel.
-        hikari.errors.NotFoundError
-            If the channel is not found.
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
-        assert isinstance(channel, channels.TextableGuildChannel)
-        return channel
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
 
 
 @base_events.requires_intents(intents.Intents.DM_MESSAGES)
@@ -469,29 +331,9 @@ class DMPinsUpdateEvent(PinsUpdateEvent, DMChannelEvent):
     last_pin_timestamp: typing.Optional[datetime.datetime] = attr.field(repr=True)
     # <<inherited docstring from ChannelPinsUpdateEvent>>.
 
-    async def fetch_channel(self) -> channels.DMChannel:
-        """Perform an API call to fetch the details about this channel.
-
-        Returns
-        -------
-        hikari.channels.DMChannel
-            A derivative of `hikari.channels.DMChannel`. The actual
-            type will vary depending on the type of channel this event
-            concerns.
-
-        Raises
-        ------
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
-        assert isinstance(channel, channels.DMChannel)
-        return channel
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.DMChannel]
+    ] = model_methods.make_fetch_channel(types=channels.DMChannel)
 
 
 @base_events.requires_intents(intents.Intents.GUILD_INVITES)
@@ -685,37 +527,20 @@ class GuildThreadEvent(shard_events.ShardEvent, abc.ABC):
     def thread_id(self) -> snowflakes.Snowflake:
         """ID of the thread this event is for."""
 
-    async def fetch_channel(self) -> channels.GuildThreadChannel:
-        """Perform an API call to fetch the details about this thread.
+    @property
+    def channel_id(self) -> snowflakes.Snowflake:
+        """Alias of `thread_id`."""
+        return self.thread_id
 
-        .. note::
-            For `GuildThreadDeleteEvent` events, this will always raise
-            an exception, since the channel will have already been removed.
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.GuildThreadChannel]
+    ] = model_methods.make_fetch_channel(types=channels.GuildThreadChannel)
 
-        Returns
-        -------
-        hikari.channels.GuildThreadChannel
-            A derivative of `hikari.channels.GuildThreadChannel`. The
-            actual type will vary depending on the type of channel this event
-            concerns.
+    def get_channel(self) -> typing.Optional[channels.GuildThreadChannel]:
+        if isinstance(self.app, traits.CacheAware):
+            return self.app.cache.get_thread(self.thread_id)
 
-        Raises
-        ------
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.ForbiddenError
-            If you are missing the `READ_MESSAGES` permission in the channel.
-        hikari.errors.NotFoundError
-            If the channel is not found.
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        channel = await self.app.rest.fetch_channel(self.thread_id)
-        assert isinstance(channel, channels.GuildThreadChannel)
-        return channel
+        return None
 
 
 @base_events.requires_intents(intents.Intents.GUILDS)

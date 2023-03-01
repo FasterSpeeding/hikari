@@ -50,10 +50,13 @@ from hikari import undefined
 from hikari import urls
 from hikari.internal import attr_extensions
 from hikari.internal import enums
+from hikari.internal import model_methods
 from hikari.internal import routes
 
 if typing.TYPE_CHECKING:
     import datetime
+
+    from typing_extensions import Self
 
     from hikari import channels as channels_
     from hikari import embeds as embeds_
@@ -685,32 +688,12 @@ class PartialMessage(snowflakes.Unique):
         guild_id_str = "@me" if guild is None else str(int(guild))
         return f"{urls.BASE_URL}/channels/{guild_id_str}/{self.channel_id}/{self.id}"
 
-    async def fetch_channel(self) -> channels_.PartialChannel:
-        """Fetch the channel this message was created in.
-
-        Returns
-        -------
-        hikari.channels.PartialChannel
-            The object of the channel this message belongs to.
-
-        Raises
-        ------
-        hikari.errors.BadRequestError
-            If any invalid snowflake IDs are passed; a snowflake may be invalid
-            due to it being outside of the range of a 64 bit integer.
-        hikari.errors.ForbiddenError
-            If you don't have access to the channel this message belongs to.
-        hikari.errors.NotFoundError
-            If the channel this message was created in does not exist.
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        return await self.app.rest.fetch_channel(self.channel_id)
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels_.TextableChannel]
+    ] = model_methods.make_fetch_channel(types=channels_.TextableChannel)
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels_.TextableGuildChannel]
+    ] = model_methods.make_get_channel(types=channels_.TextableGuildChannel)
 
     async def edit(
         self,

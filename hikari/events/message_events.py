@@ -51,8 +51,11 @@ from hikari import undefined
 from hikari.events import base_events
 from hikari.events import shard_events
 from hikari.internal import attr_extensions
+from hikari.internal import model_methods
 
 if typing.TYPE_CHECKING:
+    from typing_extensions import Self
+
     from hikari import embeds as embeds_
     from hikari import guilds
     from hikari import messages
@@ -178,41 +181,16 @@ class GuildMessageCreateEvent(MessageCreateEvent):
         assert isinstance(guild_id, snowflakes.Snowflake), "no guild_id attribute set"
         return guild_id
 
-    def get_channel(self) -> typing.Optional[channels.TextableGuildChannel]:
-        """Channel that the message was sent in, if known.
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
 
-        Returns
-        -------
-        typing.Optional[hikari.channels.TextableGuildChannel]
-            The channel that the message was sent in, if known and cached,
-            otherwise, `None`.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        channel = self.app.cache.get_guild_channel(self.channel_id)
-        assert channel is None or isinstance(
-            channel, channels.TextableGuildChannel
-        ), f"Cached channel ID is not a TextableGuildChannel, but a {type(channel).__name__}!"
-        return channel
-
-    def get_guild(self) -> typing.Optional[guilds.GatewayGuild]:
-        """Get the cached guild that this event occurred in, if known.
-
-        .. note::
-            This will require the `GUILDS` intent to be specified on start-up
-            in order to be known.
-
-        Returns
-        -------
-        typing.Optional[hikari.guilds.GatewayGuild]
-            The guild that this event occurred in, if cached. Otherwise,
-            `None` instead.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        return self.app.cache.get_guild(self.guild_id)
+    # TODO: never None for fetch
+    fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
 
     def get_member(self) -> typing.Optional[guilds.Member]:
         """Get the member that sent this message from the cache if available.
@@ -415,41 +393,17 @@ class GuildMessageUpdateEvent(MessageUpdateEvent):
         assert isinstance(guild_id, snowflakes.Snowflake), f"expected guild_id, got {guild_id}"
         return guild_id
 
-    def get_channel(self) -> typing.Optional[channels.TextableGuildChannel]:
-        """Channel that the message was sent in, if known.
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
 
-        Returns
-        -------
-        typing.Optional[hikari.channels.TextableGuildChannel]
-            The channel that the message was sent in, if known and cached,
-            otherwise, `None`.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
 
-        channel = self.app.cache.get_guild_channel(self.channel_id)
-        assert channel is None or isinstance(
-            channel, channels.TextableGuildChannel
-        ), f"Cached channel ID is not a TextableGuildChannel, but a {type(channel).__name__}!"
-        return channel
-
-    def get_guild(self) -> typing.Optional[guilds.GatewayGuild]:
-        """Get the cached guild that this event occurred in, if known.
-
-        .. note::
-            This will require the `GUILDS` intent to be specified on start-up
-            in order to be known.
-
-        Returns
-        -------
-        typing.Optional[hikari.guilds.GatewayGuild]
-            The guild that this event occurred in, if cached. Otherwise,
-            `None` instead.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        return self.app.cache.get_guild(self.guild_id)
+    # TODO: never return None from fetch_guild
+    fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
 
 
 @attr_extensions.with_copy
@@ -530,41 +484,15 @@ class GuildMessageDeleteEvent(MessageDeleteEvent):
     shard: shard_.GatewayShard = attr.field(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>
 
-    def get_channel(self) -> typing.Optional[channels.TextableGuildChannel]:
-        """Get the cached channel the message were sent in, if known.
-
-        Returns
-        -------
-        typing.Optional[hikari.channels.TextableGuildChannel]
-            The channel the messages were sent in, or `None` if not
-            known/cached.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        channel = self.app.cache.get_guild_channel(self.channel_id)
-        assert channel is None or isinstance(
-            channel, channels.TextableGuildChannel
-        ), f"Cached channel ID is not a TextableGuildChannel, but a {type(channel).__name__}!"
-        return channel
-
-    def get_guild(self) -> typing.Optional[guilds.GatewayGuild]:
-        """Get the cached guild this event corresponds to, if known.
-
-        .. note::
-            You will need `hikari.intents.Intents.GUILDS` enabled to receive this
-            information.
-
-        Returns
-        -------
-        hikari.guilds.GatewayGuild
-            The gateway guild that this event corresponds to, if known and
-            cached.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        return self.app.cache.get_guild(self.guild_id)
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
+    # TODO: never return None from fetch_guild
+    fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
 
 
 @attr_extensions.with_copy
@@ -626,38 +554,12 @@ class GuildBulkMessageDeleteEvent(shard_events.ShardEvent):
     shard: shard_.GatewayShard = attr.field(metadata={attr_extensions.SKIP_DEEP_COPY: True})
     # <<inherited docstring from ShardEvent>>
 
-    def get_channel(self) -> typing.Optional[channels.TextableGuildChannel]:
-        """Get the cached channel the messages were sent in, if known.
-
-        Returns
-        -------
-        typing.Optional[hikari.channels.TextableGuildChannel]
-            The channel the messages were sent in, or `None` if not
-            known/cached.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        channel = self.app.cache.get_guild_channel(self.channel_id)
-        assert channel is None or isinstance(
-            channel, channels.TextableGuildChannel
-        ), f"Cached channel ID is not a TextableGuildChannel, but a {type(channel).__name__}!"
-        return channel
-
-    def get_guild(self) -> typing.Optional[guilds.GatewayGuild]:
-        """Get the cached guild this event corresponds to, if known.
-
-        .. note::
-            You will need `hikari.intents.Intents.GUILDS` enabled to receive this
-            information.
-
-        Returns
-        -------
-        hikari.guilds.GatewayGuild
-            The gateway guild that this event corresponds to, if known and
-            cached.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        return self.app.cache.get_guild(self.guild_id)
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
+    # TODO: never return None from fetch_guild
+    fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild

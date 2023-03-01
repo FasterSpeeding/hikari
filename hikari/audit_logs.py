@@ -50,9 +50,12 @@ from hikari import snowflakes
 from hikari.internal import attr_extensions
 from hikari.internal import collections
 from hikari.internal import enums
+from hikari.internal import model_methods
 
 if typing.TYPE_CHECKING:
     import datetime
+
+    from typing_extensions import Self
 
     from hikari import guilds
     from hikari import messages
@@ -377,31 +380,12 @@ class MessagePinEntryInfo(BaseAuditLogEntryInfo):
     message_id: snowflakes.Snowflake = attr.field(repr=True)
     """The ID of the message that's being pinned or unpinned."""
 
-    async def fetch_channel(self) -> channels.TextableChannel:
-        """Fetch The channel where this message was pinned or unpinned.
-
-        Returns
-        -------
-        hikari.channels.TextableChannel
-            The channel where this message was pinned or unpinned.
-
-        Raises
-        ------
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.ForbiddenError
-            If you are missing the `READ_MESSAGES` permission in the channel.
-        hikari.errors.NotFoundError
-            If the channel is not found.
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
-        assert isinstance(channel, channels.TextableChannel)
-        return channel
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.TextableChannel]
+    ] = model_methods.make_fetch_channel(types=channels.TextableChannel)
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
 
     async def fetch_message(self) -> messages.Message:
         """Fetch the object of the message that's being pinned or unpinned.
@@ -457,31 +441,12 @@ class MessageDeleteEntryInfo(MessageBulkDeleteEntryInfo):
     channel_id: snowflakes.Snowflake = attr.field(repr=True)
     """The ID of guild text based channel where these message(s) were deleted."""
 
-    async def fetch_channel(self) -> channels.TextableGuildChannel:
-        """Fetch the guild text based channel where these message(s) were deleted.
-
-        Returns
-        -------
-        hikari.channels.TextableGuildChannel
-            The guild text based channel where these message(s) were deleted.
-
-        Raises
-        ------
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.ForbiddenError
-            If you are missing the `READ_MESSAGES` permission in the channel.
-        hikari.errors.NotFoundError
-            If the channel is not found.
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
-        assert isinstance(channel, channels.TextableGuildChannel)
-        return channel
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
 
 
 @attr_extensions.with_copy
@@ -501,31 +466,12 @@ class MemberMoveEntryInfo(MemberDisconnectEntryInfo):
     channel_id: snowflakes.Snowflake = attr.field(repr=True)
     """The channel that the member(s) have been moved to."""
 
-    async def fetch_channel(self) -> channels.GuildVoiceChannel:
-        """Fetch the guild voice based channel where the member(s) have been moved to.
-
-        Returns
-        -------
-        hikari.channels.GuildVoiceChannel
-            The guild voice based channel where the member(s) have been moved to.
-
-        Raises
-        ------
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.ForbiddenError
-            If you are missing the `READ_MESSAGES` permission in the channel.
-        hikari.errors.NotFoundError
-            If the channel is not found.
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        channel = await self.app.rest.fetch_channel(self.channel_id)
-        assert isinstance(channel, channels.GuildVoiceChannel)
-        return channel
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.GuildVoiceChannel]
+    ] = model_methods.make_fetch_channel(types=channels.GuildVoiceChannel)
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels.GuildVoiceChannel]
+    ] = model_methods.make_get_channel(types=channels.GuildVoiceChannel)
 
 
 @attr_extensions.with_copy
