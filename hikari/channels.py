@@ -67,7 +67,6 @@ from hikari import snowflakes
 from hikari import traits
 from hikari import undefined
 from hikari import urls
-from hikari import webhooks
 from hikari.internal import attr_extensions
 from hikari.internal import enums
 from hikari.internal import model_methods
@@ -85,6 +84,7 @@ if typing.TYPE_CHECKING:
     from hikari import messages
     from hikari import users
     from hikari import voices
+    from hikari import webhooks
     from hikari.api import special_endpoints
     from hikari.internal import time
 
@@ -1636,13 +1636,16 @@ class ChannelFollow:
         hikari.errors.InternalServerError
             If an internal error occurs on Discord while handling the request.
         """
+        # This has to be in-lined to avoid a circular ref issue.
+        from hikari import webhooks
+
         webhook = await self.app.rest.fetch_webhook(self.webhook_id)
         assert isinstance(webhook, webhooks.ChannelFollowerWebhook)
         return webhook
 
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, typing.Union[GuildNewsChannel, GuildTextChannel]]
-    ] = model_methods.make_get_channel(types=(GuildNewsChannel, GuildTextChannel))
-    fetch_channels: typing.ClassVar[
+    ] = model_methods.make_get_channel(types=(GuildNewsChannel, GuildTextChannel), try_threads=False)
+    fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, typing.Union[GuildNewsChannel, GuildTextChannel]]
     ] = model_methods.make_fetch_channel(types=(GuildNewsChannel, GuildTextChannel))

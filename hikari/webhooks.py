@@ -725,7 +725,7 @@ class IncomingWebhook(PartialWebhook, ExecutableWebhook):
 
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels_.WebhookChannelT]
-    ] = model_methods.make_get_channel(types=channels_.WebhookChannelTypes)
+    ] = model_methods.make_get_channel(types=channels_.WebhookChannelTypes, try_threads=False)
 
     async def fetch_self(self, *, use_token: undefined.UndefinedOr[bool] = undefined.UNDEFINED) -> IncomingWebhook:
         """Fetch this webhook.
@@ -883,7 +883,7 @@ class ChannelFollowerWebhook(PartialWebhook):
 
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels_.WebhookChannelT]
-    ] = model_methods.make_get_channel(types=channels_.WebhookChannelTypes)
+    ] = model_methods.make_get_channel(types=channels_.WebhookChannelTypes, try_threads=False)
 
     async def fetch_self(self) -> ChannelFollowerWebhook:
         """Fetch this webhook.

@@ -58,30 +58,23 @@ FetchChannelSig = typing.Callable[[_ChannelBoundT], typing.Coroutine[typing.Any,
 
 
 @typing.overload
-def make_get_channel() -> GetChannelSig[_ChannelBoundProto, channels.GuildChannel]:
+def make_get_channel(*, try_threads: bool = True) -> GetChannelSig[_ChannelBoundProto, channels.GuildChannel]:
     ...
 
 
 @typing.overload
-def make_get_channel(*, types: _TypesT[_GuildChannelT]) -> GetChannelSig[_ChannelBoundProto, _GuildChannelT]:
+def make_get_channel(
+    *, types: _TypesT[_GuildChannelT], try_threads: bool = True
+) -> GetChannelSig[_ChannelBoundProto, _GuildChannelT]:
     ...
 
 
 def make_get_channel(
-    *, types: typing.Optional[_TypesT[channels.PartialChannel]] = None
+    *, types: typing.Optional[_TypesT[channels.PartialChannel]] = None, try_threads: bool = True
 ) -> GetChannelSig[_ChannelBoundProto, channels.GuildChannel]:
-    if types is None:
-        try_threads = False
-
-    elif isinstance(types, tuple):
-        try_threads = any(issubclass(cls, channels.GuildThreadChannel) for cls in types)
-
-    else:
-        try_threads = issubclass(types, channels.GuildThreadChannel)
-
     def get_channel(self: _ChannelBoundProto) -> typing.Optional[channels.GuildChannel]:
         if isinstance(self.app, traits.CacheAware):
-            channel = self.app.cache.get_guild_channel(self.channel_id)
+            channel: typing.Optional[channels.GuildChannel] = self.app.cache.get_guild_channel(self.channel_id)
             if not channel and try_threads:
                 channel = self.app.cache.get_thread(self.channel_id)
 

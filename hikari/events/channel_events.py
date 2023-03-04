@@ -134,7 +134,7 @@ class GuildChannelEvent(ChannelEvent, abc.ABC):
 
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.PermissibleGuildChannel]
-    ] = model_methods.make_get_channel(types=channels.PermissibleGuildChannel)
+    ] = model_methods.make_get_channel(types=channels.PermissibleGuildChannel, try_threads=False)
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.PermissibleGuildChannel]
     ] = model_methods.make_fetch_channel(types=channels.PermissibleGuildChannel)
@@ -306,7 +306,7 @@ class GuildPinsUpdateEvent(PinsUpdateEvent, GuildChannelEvent):
 
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.PermissibleGuildChannel]
-    ] = model_methods.make_get_channel(types=channels.PermissibleGuildChannel)
+    ] = model_methods.make_get_channel(types=channels.PermissibleGuildChannel, try_threads=False)
 
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]

@@ -41,6 +41,7 @@ import typing
 
 import attr
 
+from hikari import channels as channels_
 from hikari import components as component_models
 from hikari import files
 from hikari import guilds
@@ -58,7 +59,6 @@ if typing.TYPE_CHECKING:
 
     from typing_extensions import Self
 
-    from hikari import channels as channels_
     from hikari import embeds as embeds_
     from hikari import emojis as emojis_
     from hikari import stickers as stickers_

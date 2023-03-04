@@ -471,7 +471,7 @@ class MemberMoveEntryInfo(MemberDisconnectEntryInfo):
     ] = model_methods.make_fetch_channel(types=channels.GuildVoiceChannel)
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.GuildVoiceChannel]
-    ] = model_methods.make_get_channel(types=channels.GuildVoiceChannel)
+    ] = model_methods.make_get_channel(types=channels.GuildVoiceChannel, try_threads=False)
 
 
 @attr_extensions.with_copy
