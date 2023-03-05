@@ -846,42 +846,8 @@ class GuildChannel(PartialChannel):
 
         return None
 
-    def get_guild(self) -> typing.Optional[guilds.GatewayGuild]:
-        """Return the guild linked to this channel.
-
-        Returns
-        -------
-        typing.Optional[hikari.guilds.Guild]
-            The linked guild object or `None` if it's not cached.
-        """
-        if not isinstance(self.app, traits.CacheAware):
-            return None
-
-        return self.app.cache.get_guild(self.guild_id)
-
-    async def fetch_guild(self) -> guilds.PartialGuild:
-        """Fetch the guild linked to this channel.
-
-        Returns
-        -------
-        hikari.guilds.RESTGuild
-            The requested guild.
-
-        Raises
-        ------
-        hikari.errors.ForbiddenError
-            If you are not part of the guild.
-        hikari.errors.NotFoundError
-            If the guild is not found.
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
-        """
-        return await self.app.rest.fetch_guild(self.guild_id)
+    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
+    fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
 
     async def edit(
         self,
