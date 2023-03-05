@@ -89,7 +89,7 @@ class ChannelEvent(shard_events.ShardEvent, abc.ABC):
         """ID of the channel the event relates to."""
 
     @abc.abstractmethod
-    async def fetch_channel(self) -> channels.PartialChannel:
+    async def fetch_channel(self, /) -> channels.PartialChannel:
         """Perform an API call to fetch the details about this channel.
 
         .. note::
@@ -241,7 +241,7 @@ class GuildChannelDeleteEvent(GuildChannelEvent):
 
     if typing.TYPE_CHECKING:
         # Channel will never be found.
-        async def fetch_channel(self) -> typing.NoReturn:
+        async def fetch_channel(self, /) -> typing.NoReturn:
             ...
 
 
@@ -261,7 +261,7 @@ class PinsUpdateEvent(ChannelEvent, abc.ABC):
         """
 
     @abc.abstractmethod
-    async def fetch_channel(self) -> channels.TextableChannel:
+    async def fetch_channel(self, /) -> channels.TextableChannel:
         """Perform an API call to fetch the details about this channel.
 
         Returns
