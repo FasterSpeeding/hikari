@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""Helper relay methods for cache and REST operations."""
 from __future__ import annotations
 
 __all__: typing.Sequence[str] = ()
@@ -53,26 +54,42 @@ class _ChannelBoundProto(_AppBoundProto, typing.Protocol):
 
 
 _ChannelBoundT = typing.TypeVar("_ChannelBoundT", bound=_ChannelBoundProto)
+
 GetChannelSig = typing.Callable[[_ChannelBoundT], typing.Optional[_GuildChannelT]]
+"""Type-hint of a get channel method."""
+
 FetchChannelSig = typing.Callable[[_ChannelBoundT], typing.Coroutine[typing.Any, typing.Any, _PartialChannelT]]
+"""Type-hint of a fetch channel method."""
 
 
 @typing.overload
-def make_get_channel(*, try_threads: bool = True) -> GetChannelSig[_ChannelBoundProto, channels.GuildChannel]:
+def make_get_channel(  # noqa: D103
+    *, try_threads: bool = True
+) -> GetChannelSig[_ChannelBoundProto, channels.GuildChannel]:
     ...
 
 
 @typing.overload
-def make_get_channel(
+def make_get_channel(  # noqa: D103
     *, types: _TypesT[_GuildChannelT], try_threads: bool = True
 ) -> GetChannelSig[_ChannelBoundProto, _GuildChannelT]:
     ...
 
 
 def make_get_channel(
-    *, types: typing.Optional[_TypesT[channels.PartialChannel]] = None, try_threads: bool = True
+    *, types: typing.Optional[_TypesT[channels.GuildChannel]] = None, try_threads: bool = True
 ) -> GetChannelSig[_ChannelBoundProto, channels.GuildChannel]:
+    """Create a get channel method."""
+
     def get_channel(self: _ChannelBoundProto) -> typing.Optional[channels.GuildChannel]:
+        """Get the guild channel this object is associated with from the cache.
+
+        Returns
+        -------
+        typing.Optional[hikari.channels.PartialGuildChannel]
+            The object of the guild channel that was found in the cache or
+            `None`.
+        """
         if isinstance(self.app, traits.CacheAware):
             channel: typing.Optional[channels.GuildChannel] = self.app.cache.get_guild_channel(self.channel_id)
             if not channel and try_threads:
@@ -89,19 +106,62 @@ def make_get_channel(
 
 
 @typing.overload
-def make_fetch_channel() -> FetchChannelSig[_ChannelBoundProto, channels.GuildChannel]:
+def make_fetch_channel() -> FetchChannelSig[_ChannelBoundProto, channels.GuildChannel]:  # noqa: D103
     ...
 
 
 @typing.overload
-def make_fetch_channel(*, types: _TypesT[_PartialChannelT]) -> FetchChannelSig[_ChannelBoundProto, _PartialChannelT]:
+def make_fetch_channel(  # noqa: D103
+    *, types: _TypesT[_PartialChannelT]
+) -> FetchChannelSig[_ChannelBoundProto, _PartialChannelT]:
     ...
 
 
 def make_fetch_channel(
     *, types: typing.Optional[_TypesT[channels.PartialChannel]] = None
 ) -> FetchChannelSig[_ChannelBoundProto, channels.PartialChannel]:
+    """Create a fetch channel method."""
+
     async def fetch_channel(self: _ChannelBoundProto) -> channels.PartialChannel:
+        """Fetch the channel this objet is associated with.
+
+        Returns
+        -------
+        hikari.channels.PartialChannel
+            The channel. This will be a _derivative_ of
+            `hikari.channels.PartialChannel`, depending on the type of
+            channel you request for.
+
+            This means that you may get one of
+            `hikari.channels.DMChannel`,
+            `hikari.channels.GroupDMChannel`,
+            `hikari.channels.GuildTextChannel`,
+            `hikari.channels.GuildVoiceChannel`,
+            `hikari.channels.GuildStoreChannel`,
+            `hikari.channels.GuildNewsChannel`.
+
+            Likewise, the `hikari.channels.GuildChannel` can be used to
+            determine if a channel is guild-bound, and
+            `hikari.channels.TextableChannel` can be used to determine
+            if the channel provides textual functionality to the application.
+
+            You can check for these using the `isinstance`
+            builtin function.
+
+        Raises
+        ------
+        hikari.errors.UnauthorizedError
+            If you are unauthorized to make the request (invalid/missing token).
+        hikari.errors.ForbiddenError
+            If you are missing the `READ_MESSAGES` permission in the channel.
+        hikari.errors.NotFoundError
+            If the channel is not found.
+        hikari.errors.RateLimitTooLongError
+            Raised in the event that a rate limit occurs that is
+            longer than `max_rate_limit` when making a request.
+        hikari.errors.InternalServerError
+            If an internal error occurs on Discord while handling the request.
+        """
         channel = await self.app.rest.fetch_channel(self.channel_id)
 
         if types is not None:
@@ -119,11 +179,22 @@ class _GuildBoundProto(_AppBoundProto, typing.Protocol):
 
 
 _GuildBoundT = typing.TypeVar("_GuildBoundT", bound=_GuildBoundProto)
+
 GetGuildSig = typing.Callable[[_GuildBoundT], typing.Optional["guilds.GatewayGuild"]]
+"""Type-hint of a get guild method."""
+
 FetchGuildSig = typing.Callable[[_GuildBoundT], _CoroT[typing.Optional["guilds.RESTGuild"]]]
+"""Type-hint of a fetch guild method."""
 
 
 def get_guild(self: _GuildBoundProto) -> typing.Optional[guilds.GatewayGuild]:
+    """Get the guild this object is associated with from the cache.
+
+    Returns
+    -------
+    typing.Optional[hikari.guilds.GatewayGuild]
+        The object of the guild if found, else `None`.
+    """
     if self.guild_id and isinstance(self.app, traits.CacheAware):
         return self.app.cache.get_guild(self.guild_id)
 
@@ -131,6 +202,27 @@ def get_guild(self: _GuildBoundProto) -> typing.Optional[guilds.GatewayGuild]:
 
 
 async def fetch_guild(self: _GuildBoundProto) -> typing.Optional[guilds.RESTGuild]:
+    """Perform an API call to fetch the guild this object is related to.
+
+    Returns
+    -------
+    typing.Optional[hikari.guilds.RESTGuild]
+        The guild that this object is ralted to if it is guild bound.
+
+    Raises
+    ------
+    hikari.errors.ForbiddenError
+        If you are not part of the guild.
+    hikari.errors.NotFoundError
+        If the guild is not found.
+    hikari.errors.UnauthorizedError
+        If you are unauthorized to make the request (invalid/missing token).
+    hikari.errors.RateLimitTooLongError
+        Raised in the event that a rate limit occurs that is
+        longer than `max_rate_limit` when making a request.
+    hikari.errors.InternalServerError
+        If an internal error occurs on Discord while handling the request.
+    """
     if self.guild_id is None:
         return None
 
