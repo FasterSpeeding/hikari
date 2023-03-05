@@ -396,7 +396,6 @@ class GuildMessageUpdateEvent(MessageUpdateEvent):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
-
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
@@ -490,6 +489,7 @@ class GuildMessageDeleteEvent(MessageDeleteEvent):
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
+
     # TODO: never return None from fetch_guild
     fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
     get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild

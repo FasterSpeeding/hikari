@@ -129,15 +129,15 @@ class GuildChannelEvent(ChannelEvent, abc.ABC):
     def guild_id(self) -> snowflakes.Snowflake:
         """ID of the guild that this event relates to."""
 
-    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
     fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
 
-    get_channel: typing.ClassVar[
-        model_methods.GetChannelSig[Self, channels.PermissibleGuildChannel]
-    ] = model_methods.make_get_channel(types=channels.PermissibleGuildChannel, try_threads=False)
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.PermissibleGuildChannel]
     ] = model_methods.make_fetch_channel(types=channels.PermissibleGuildChannel)
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels.PermissibleGuildChannel]
+    ] = model_methods.make_get_channel(types=channels.PermissibleGuildChannel, try_threads=False)
 
 
 class DMChannelEvent(ChannelEvent, abc.ABC):
@@ -304,13 +304,12 @@ class GuildPinsUpdateEvent(PinsUpdateEvent, GuildChannelEvent):
     last_pin_timestamp: typing.Optional[datetime.datetime] = attr.field(repr=True)
     # <<inherited docstring from ChannelPinsUpdateEvent>>.
 
-    get_channel: typing.ClassVar[
-        model_methods.GetChannelSig[Self, channels.PermissibleGuildChannel]
-    ] = model_methods.make_get_channel(types=channels.PermissibleGuildChannel, try_threads=False)
-
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, channels.PermissibleGuildChannel]
+    ] = model_methods.make_get_channel(types=channels.PermissibleGuildChannel, try_threads=False)
 
 
 @base_events.requires_intents(intents.Intents.DM_MESSAGES)

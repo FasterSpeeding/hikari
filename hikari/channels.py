@@ -846,8 +846,8 @@ class GuildChannel(PartialChannel):
 
         return None
 
-    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
     fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
 
     async def edit(
         self,
@@ -1609,9 +1609,9 @@ class ChannelFollow:
         assert isinstance(webhook, webhooks.ChannelFollowerWebhook)
         return webhook
 
-    get_channel: typing.ClassVar[
-        model_methods.GetChannelSig[Self, typing.Union[GuildNewsChannel, GuildTextChannel]]
-    ] = model_methods.make_get_channel(types=(GuildNewsChannel, GuildTextChannel), try_threads=False)
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, typing.Union[GuildNewsChannel, GuildTextChannel]]
     ] = model_methods.make_fetch_channel(types=(GuildNewsChannel, GuildTextChannel))
+    get_channel: typing.ClassVar[
+        model_methods.GetChannelSig[Self, typing.Union[GuildNewsChannel, GuildTextChannel]]
+    ] = model_methods.make_get_channel(types=(GuildNewsChannel, GuildTextChannel), try_threads=False)

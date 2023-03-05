@@ -177,16 +177,15 @@ class BaseCommandInteraction(base_interactions.PartialInteraction):
     command_type: typing.Union[commands.CommandType, int] = attr.field(eq=False, hash=False, repr=True)
     """The type of the command."""
 
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.TextableChannel]
+    ] = model_methods.make_fetch_channel(types=channels.TextableChannel)
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
 
-    fetch_channel: typing.ClassVar[
-        model_methods.FetchChannelSig[Self, channels.TextableChannel]
-    ] = model_methods.make_fetch_channel(types=channels.TextableChannel)
-
-    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
     fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
 
     async def fetch_command(self) -> commands.PartialCommand:
         """Fetch the command which triggered this interaction.

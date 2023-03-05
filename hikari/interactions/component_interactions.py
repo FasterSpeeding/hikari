@@ -222,13 +222,12 @@ class ComponentInteraction(
 
         return self.app.rest.interaction_deferred_builder(type_)
 
+    fetch_channel: typing.ClassVar[
+        model_methods.FetchChannelSig[Self, channels.TextableChannel]
+    ] = model_methods.make_fetch_channel(types=channels.TextableChannel)
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
 
-    fetch_channel: typing.ClassVar[
-        model_methods.FetchChannelSig[Self, channels.TextableChannel]
-    ] = model_methods.make_fetch_channel(types=channels.TextableChannel)
-
-    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
     fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
