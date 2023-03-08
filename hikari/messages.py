@@ -691,9 +691,15 @@ class PartialMessage(snowflakes.Unique):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels_.TextableChannel]
     ] = model_methods.make_fetch_channel(types=channels_.TextableChannel)
+    """Fetch the channel this message is in.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
+
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels_.TextableGuildChannel]
     ] = model_methods.make_get_channel(types=channels_.TextableGuildChannel)
+    """Get the guild channel this message is in from the cache."""
 
     async def edit(
         self,

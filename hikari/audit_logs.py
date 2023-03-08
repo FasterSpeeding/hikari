@@ -383,9 +383,15 @@ class MessagePinEntryInfo(BaseAuditLogEntryInfo):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.TextableChannel]
     ] = model_methods.make_fetch_channel(types=channels.TextableChannel)
+    """Fetch the channel this pin entry is in.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
+
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
+    """Get the guild channel this pin entry is in from the cache."""
 
     async def fetch_message(self) -> messages.Message:
         """Fetch the object of the message that's being pinned or unpinned.
@@ -444,9 +450,15 @@ class MessageDeleteEntryInfo(MessageBulkDeleteEntryInfo):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
+    """Fetch the channel this message was deleted in.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
+
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
+    """Get the guild channel this message was deleted in from the cache."""
 
 
 @attr_extensions.with_copy
@@ -469,9 +481,15 @@ class MemberMoveEntryInfo(MemberDisconnectEntryInfo):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.GuildVoiceChannel]
     ] = model_methods.make_fetch_channel(types=channels.GuildVoiceChannel)
+    """Fetch the channel this member was moved to.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
+
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.GuildVoiceChannel]
     ] = model_methods.make_get_channel(types=channels.GuildVoiceChannel, try_threads=False)
+    """Get the guild channel this member was moved to from the cache."""
 
 
 @attr_extensions.with_copy

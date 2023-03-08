@@ -184,13 +184,25 @@ class GuildMessageCreateEvent(MessageCreateEvent):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
+    """Fetch the channel this message was created in.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
+
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
+    """Get the guild channel this message was created in from the cache."""
 
     # TODO: never None for fetch
     fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    """Perform an API call to fetch the guild this message was created in.
+
+    This raises the same exceptions as `hikari.api.rest.fetch_guild`.
+    """
+
     get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
+    """Get the guild this message was created in from the cache."""
 
     def get_member(self) -> typing.Optional[guilds.Member]:
         """Get the member that sent this message from the cache if available.
@@ -396,13 +408,25 @@ class GuildMessageUpdateEvent(MessageUpdateEvent):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
+    """Fetch the channel this message was updated in.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
+
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
+    """Get the guild channel this message was updated in from the cache."""
 
     # TODO: never return None from fetch_guild
     fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    """Perform an API call to fetch the guild this message was updated in.
+
+    This raises the same exceptions as `hikari.api.rest.fetch_guild`.
+    """
+
     get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
+    """Get the guild this message was updated in from the cache."""
 
 
 @attr_extensions.with_copy
@@ -486,13 +510,25 @@ class GuildMessageDeleteEvent(MessageDeleteEvent):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
+    """Fetch the channel this message was deleted in.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
+
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
+    """Get the guild channel this message was deleted in from the cache."""
 
     # TODO: never return None from fetch_guild
     fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    """Perform an API call to fetch the guild this message was deleted in.
+
+    This raises the same exceptions as `hikari.api.rest.fetch_guild`.
+    """
+
     get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
+    """Get the guild this message was deleted in from the cache."""
 
 
 @attr_extensions.with_copy
@@ -557,9 +593,22 @@ class GuildBulkMessageDeleteEvent(shard_events.ShardEvent):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
+    """Fetch the channel these messages were deleted in.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
+
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
+    """Get the guild channel these messages were deleted in from the cache."""
+
     # TODO: never return None from fetch_guild
     fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    """Perform an API call to fetch the guild these messages were deleted in.
+
+    This raises the same exceptions as `hikari.api.rest.fetch_guild`.
+    """
+
     get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
+    """Get the guild these messages were deleted in from the cache."""

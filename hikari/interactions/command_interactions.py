@@ -180,12 +180,24 @@ class BaseCommandInteraction(base_interactions.PartialInteraction):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.TextableChannel]
     ] = model_methods.make_fetch_channel(types=channels.TextableChannel)
+    """Fetch the channel this interaction was created in.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
+
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
+    """Get the guild channel this command interaction was created in from the cache."""
 
     fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    """Perform an API call to fetch the guild this interaction was created in.
+
+    This raises the same exceptions as `hikari.api.rest.fetch_guild`.
+    """
+
     get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
+    """Get the guild this command interaction was created in from the cache."""
 
     async def fetch_command(self) -> commands.PartialCommand:
         """Fetch the command which triggered this interaction.

@@ -847,7 +847,13 @@ class GuildChannel(PartialChannel):
         return None
 
     fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    """Perform an API call to fetch the guild this channel is in.
+
+    This raises the same exceptions as `hikari.api.rest.fetch_guild`.
+    """
+
     get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
+    """Get the guild this channel is in from the cache."""
 
     async def edit(
         self,
@@ -1612,6 +1618,12 @@ class ChannelFollow:
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, typing.Union[GuildNewsChannel, GuildTextChannel]]
     ] = model_methods.make_fetch_channel(types=(GuildNewsChannel, GuildTextChannel))
+    """Fetch the channel that's being followed.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
+
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, typing.Union[GuildNewsChannel, GuildTextChannel]]
     ] = model_methods.make_get_channel(types=(GuildNewsChannel, GuildTextChannel), try_threads=False)
+    """Get the guild channel that's being followed from the cache."""

@@ -722,10 +722,15 @@ class IncomingWebhook(PartialWebhook, ExecutableWebhook):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels_.WebhookChannelT]
     ] = model_methods.make_fetch_channel(types=channels_.WebhookChannelTypes)
+    """Fetch the channel this webhook targets.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
 
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels_.WebhookChannelT]
     ] = model_methods.make_get_channel(types=channels_.WebhookChannelTypes, try_threads=False)
+    """Get the guild channel this webhook targets from the cache."""
 
     async def fetch_self(self, *, use_token: undefined.UndefinedOr[bool] = undefined.UNDEFINED) -> IncomingWebhook:
         """Fetch this webhook.
@@ -880,10 +885,15 @@ class ChannelFollowerWebhook(PartialWebhook):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels_.WebhookChannelT]
     ] = model_methods.make_fetch_channel(types=channels_.WebhookChannelTypes)
+    """Fetch the channel this webhook targets.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
 
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels_.WebhookChannelT]
     ] = model_methods.make_get_channel(types=channels_.WebhookChannelTypes, try_threads=False)
+    """Get the guild channel this webhook targets from the cache."""
 
     async def fetch_self(self) -> ChannelFollowerWebhook:
         """Fetch this webhook.

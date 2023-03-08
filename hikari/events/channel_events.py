@@ -130,14 +130,26 @@ class GuildChannelEvent(ChannelEvent, abc.ABC):
         """ID of the guild that this event relates to."""
 
     fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    """Perform an API call to fetch the guild this channel is in.
+
+    This raises the same exceptions as `hikari.api.rest.fetch_guild`.
+    """
+
     get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
+    """Get the guild this guild channel is in from the cache."""
 
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.PermissibleGuildChannel]
     ] = model_methods.make_fetch_channel(types=channels.PermissibleGuildChannel)
+    """Fetch the channel this event is for.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
+
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.PermissibleGuildChannel]
     ] = model_methods.make_get_channel(types=channels.PermissibleGuildChannel, try_threads=False)
+    """Get the guild channel this event is for the cache."""
 
 
 class DMChannelEvent(ChannelEvent, abc.ABC):
@@ -148,6 +160,10 @@ class DMChannelEvent(ChannelEvent, abc.ABC):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.PrivateChannel]
     ] = model_methods.make_fetch_channel(types=channels.PrivateChannel)
+    """Fetch the channel this event is for.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
 
 
 @base_events.requires_intents(intents.Intents.GUILDS)
@@ -307,9 +323,15 @@ class GuildPinsUpdateEvent(PinsUpdateEvent, GuildChannelEvent):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
+    """Fetch the channel this message was pinned/unpinned in.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
+
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.PermissibleGuildChannel]
     ] = model_methods.make_get_channel(types=channels.PermissibleGuildChannel, try_threads=False)
+    """Get the guild channel this message was pinned/unpinned in from the cache."""
 
 
 @base_events.requires_intents(intents.Intents.DM_MESSAGES)
@@ -333,6 +355,10 @@ class DMPinsUpdateEvent(PinsUpdateEvent, DMChannelEvent):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.DMChannel]
     ] = model_methods.make_fetch_channel(types=channels.DMChannel)
+    """Fetch the channel this message was pinned/unpinned in.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
 
 
 @base_events.requires_intents(intents.Intents.GUILD_INVITES)
@@ -534,12 +560,27 @@ class GuildThreadEvent(shard_events.ShardEvent, abc.ABC):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.GuildThreadChannel]
     ] = model_methods.make_fetch_channel(types=channels.GuildThreadChannel)
+    """Fetch the thread channel this event is for.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
 
     def get_channel(self) -> typing.Optional[channels.GuildThreadChannel]:
+        """Get the thread channel this event is for."""
         if isinstance(self.app, traits.CacheAware):
             return self.app.cache.get_thread(self.thread_id)
 
         return None
+
+    # TODO: never NONE
+    fetch_guild: model_methods.FetchGuildSig[Self] = model_methods.fetch_guild
+    """Perform an API call to fetch the guild this thread channel is in.
+
+    This raises the same exceptions as `hikari.api.rest.fetch_guild`.
+    """
+
+    get_guild: model_methods.GetGuildSig[Self] = model_methods.get_guild
+    """Get the guild this thread channel is in from the cache."""
 
 
 @base_events.requires_intents(intents.Intents.GUILDS)

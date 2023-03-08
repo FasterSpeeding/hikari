@@ -120,6 +120,10 @@ class TypingEvent(shard_events.ShardEvent, abc.ABC):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.TextableChannel]
     ] = model_methods.make_fetch_channel(types=channels.TextableChannel)
+    """Fetch the channel this user is typing in.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
 
 
 @base_events.requires_intents(intents.Intents.GUILD_MESSAGE_TYPING)
@@ -176,13 +180,25 @@ class GuildTypingEvent(TypingEvent):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_fetch_channel(types=channels.TextableGuildChannel)
+    """Fetch the channel this user is typing in.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """
+
     get_channel: typing.ClassVar[
         model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
     ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
+    """Get the guild channel the user is typing in from the cache."""
 
     # TODO: never return None from fetch_guild
     fetch_guild: typing.ClassVar[model_methods.FetchGuildSig[Self]] = model_methods.fetch_guild
+    """Perform an API call to fetch the guild this user is typing in.
+
+    This raises the same exceptions as `hikari.api.rest.fetch_guild`.
+    """
+
     get_guild: typing.ClassVar[model_methods.GetGuildSig[Self]] = model_methods.get_guild
+    """Get the guild this user is typing in from the cache."""
 
 
 @base_events.requires_intents(intents.Intents.DM_MESSAGES)
@@ -209,3 +225,7 @@ class DMTypingEvent(TypingEvent):
     fetch_channel: typing.ClassVar[
         model_methods.FetchChannelSig[Self, channels.DMChannel]
     ] = model_methods.make_fetch_channel(types=channels.DMChannel)
+    """Fetch the channel this user is typing in.
+
+    Raises the same exception as `hikari.api.rest.fetch_channel`.
+    """

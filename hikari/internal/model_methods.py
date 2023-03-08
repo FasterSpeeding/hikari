@@ -82,14 +82,7 @@ def make_get_channel(
     """Create a get channel method."""
 
     def get_channel(self: _ChannelBoundProto) -> typing.Optional[channels.GuildChannel]:
-        """Get the guild channel this object is associated with from the cache.
-
-        Returns
-        -------
-        typing.Optional[hikari.channels.PartialGuildChannel]
-            The object of the guild channel that was found in the cache or
-            `None`.
-        """
+        """Get the guild channel this object is associated with from the cache."""
         if isinstance(self.app, traits.CacheAware):
             channel: typing.Optional[channels.GuildChannel] = self.app.cache.get_guild_channel(self.channel_id)
             if not channel and try_threads:
@@ -123,44 +116,9 @@ def make_fetch_channel(
     """Create a fetch channel method."""
 
     async def fetch_channel(self: _ChannelBoundProto) -> channels.PartialChannel:
-        """Fetch the channel this objet is associated with.
+        """Fetch the channel this object is associated with.
 
-        Returns
-        -------
-        hikari.channels.PartialChannel
-            The channel. This will be a _derivative_ of
-            `hikari.channels.PartialChannel`, depending on the type of
-            channel you request for.
-
-            This means that you may get one of
-            `hikari.channels.DMChannel`,
-            `hikari.channels.GroupDMChannel`,
-            `hikari.channels.GuildTextChannel`,
-            `hikari.channels.GuildVoiceChannel`,
-            `hikari.channels.GuildStoreChannel`,
-            `hikari.channels.GuildNewsChannel`.
-
-            Likewise, the `hikari.channels.GuildChannel` can be used to
-            determine if a channel is guild-bound, and
-            `hikari.channels.TextableChannel` can be used to determine
-            if the channel provides textual functionality to the application.
-
-            You can check for these using the `isinstance`
-            builtin function.
-
-        Raises
-        ------
-        hikari.errors.UnauthorizedError
-            If you are unauthorized to make the request (invalid/missing token).
-        hikari.errors.ForbiddenError
-            If you are missing the `READ_MESSAGES` permission in the channel.
-        hikari.errors.NotFoundError
-            If the channel is not found.
-        hikari.errors.RateLimitTooLongError
-            Raised in the event that a rate limit occurs that is
-            longer than `max_rate_limit` when making a request.
-        hikari.errors.InternalServerError
-            If an internal error occurs on Discord while handling the request.
+        Raises the same exception as `hikari.api.rest.fetch_channel`.
         """
         channel = await self.app.rest.fetch_channel(self.channel_id)
 
@@ -188,13 +146,7 @@ FetchGuildSig = typing.Callable[[_GuildBoundT], _CoroT[typing.Optional["guilds.R
 
 
 def get_guild(self: _GuildBoundProto) -> typing.Optional[guilds.GatewayGuild]:
-    """Get the guild this object is associated with from the cache.
-
-    Returns
-    -------
-    typing.Optional[hikari.guilds.GatewayGuild]
-        The object of the guild if found, else `None`.
-    """
+    """Get the guild this object is associated with from the cache."""
     if self.guild_id and isinstance(self.app, traits.CacheAware):
         return self.app.cache.get_guild(self.guild_id)
 
@@ -204,24 +156,7 @@ def get_guild(self: _GuildBoundProto) -> typing.Optional[guilds.GatewayGuild]:
 async def fetch_guild(self: _GuildBoundProto) -> typing.Optional[guilds.RESTGuild]:
     """Perform an API call to fetch the guild this object is related to.
 
-    Returns
-    -------
-    typing.Optional[hikari.guilds.RESTGuild]
-        The guild that this object is ralted to if it is guild bound.
-
-    Raises
-    ------
-    hikari.errors.ForbiddenError
-        If you are not part of the guild.
-    hikari.errors.NotFoundError
-        If the guild is not found.
-    hikari.errors.UnauthorizedError
-        If you are unauthorized to make the request (invalid/missing token).
-    hikari.errors.RateLimitTooLongError
-        Raised in the event that a rate limit occurs that is
-        longer than `max_rate_limit` when making a request.
-    hikari.errors.InternalServerError
-        If an internal error occurs on Discord while handling the request.
+    This raises the same exceptions as `hikari.api.rest.fetch_guild`.
     """
     if self.guild_id is None:
         return None
