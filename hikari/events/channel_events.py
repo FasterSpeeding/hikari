@@ -139,16 +139,16 @@ class GuildChannelEvent(ChannelEvent, abc.ABC):
     """Get the guild this guild channel is in from the cache."""
 
     fetch_channel: typing.ClassVar[
-        model_methods.FetchChannelSig[Self, channels.PermissibleGuildChannel]
-    ] = model_methods.make_fetch_channel(types=channels.PermissibleGuildChannel)
+        model_methods.FetchChannelSig[Self, channels.GuildChannel]
+    ] = model_methods.make_fetch_channel(types=channels.GuildChannel)
     """Fetch the channel this event is for.
 
     Raises the same exception as `hikari.api.rest.fetch_channel`.
     """
 
     get_channel: typing.ClassVar[
-        model_methods.GetChannelSig[Self, channels.PermissibleGuildChannel]
-    ] = model_methods.make_get_channel(types=channels.PermissibleGuildChannel, try_threads=False)
+        model_methods.GetChannelSig[Self, channels.GuildChannel]
+    ] = model_methods.make_get_channel(types=channels.GuildChannel)
     """Get the guild channel this event is for the cache."""
 
 
@@ -329,8 +329,8 @@ class GuildPinsUpdateEvent(PinsUpdateEvent, GuildChannelEvent):
     """
 
     get_channel: typing.ClassVar[
-        model_methods.GetChannelSig[Self, channels.PermissibleGuildChannel]
-    ] = model_methods.make_get_channel(types=channels.PermissibleGuildChannel, try_threads=False)
+        model_methods.GetChannelSig[Self, channels.TextableGuildChannel]
+    ] = model_methods.make_get_channel(types=channels.TextableGuildChannel)
     """Get the guild channel this message was pinned/unpinned in from the cache."""
 
 
@@ -536,6 +536,7 @@ class WebhookUpdateEvent(GuildChannelEvent):
         return await self.app.rest.fetch_guild_webhooks(self.guild_id)
 
 
+# TODO: this should probably inherit from GuildChannelEvent
 @base_events.requires_intents(intents.Intents.GUILDS, intents.Intents.GUILDS | intents.Intents.GUILD_MEMBERS)
 class GuildThreadEvent(shard_events.ShardEvent, abc.ABC):
     """Event base for any event that is related to a guild thread."""
