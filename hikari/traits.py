@@ -208,7 +208,7 @@ class VoiceAware(fast_protocol.FastProtocolChecking, typing.Protocol):
 
 @typing.runtime_checkable
 class ShardAware(
-    IntentsAware, NetworkSettingsAware, ExecutorAware, VoiceAware, fast_protocol.FastProtocolChecking, typing.Protocol
+    IntentsAware, NetworkSettingsAware, fast_protocol.FastProtocolChecking, typing.Protocol
 ):
     """Structural supertype for a shard-aware object.
 
