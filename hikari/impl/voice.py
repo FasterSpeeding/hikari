@@ -44,6 +44,10 @@ if typing.TYPE_CHECKING:
 
     _VoiceConnectionT = typing.TypeVar("_VoiceConnectionT", bound="voice.VoiceConnection")
 
+    class _AppAware(traits.ShardAware, traits.RESTAware, traits.EventManagerAware, typing.Protocol):
+        """Trait of a shard-less Gateway bot."""
+
+
 _LOGGER: typing.Final[logging.Logger] = logging.getLogger("hikari.voice.management")
 
 
@@ -66,7 +70,7 @@ class VoiceComponentImpl(voice.VoiceComponent):
     _connections: typing.Dict[snowflakes.Snowflake, voice.VoiceConnection]
     connections: typing.Mapping[snowflakes.Snowflake, voice.VoiceConnection]
 
-    def __init__(self, app: traits.GatewayBotAware) -> None:
+    def __init__(self, app: _AppAware) -> None:
         self._app = app
         self._connections = {}
         self.connections = types.MappingProxyType(self._connections)
@@ -156,7 +160,12 @@ class VoiceComponentImpl(voice.VoiceComponent):
                 f"Cannot connect to shard {shard_id} as it is not present in this application"
             ) from None
 
-        user = self._app.cache.get_me()
+        if isinstance(self._app, traits.CacheAware):
+            user = self._app.cache.get_me()
+
+        else:
+            user = None
+
         if not user:
             user = await self._app.rest.fetch_my_user()
 
